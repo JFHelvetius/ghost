@@ -1,0 +1,35 @@
+# Architecture Decision Records
+
+This directory holds the project's **significant architectural decisions**.
+
+## Rules
+
+- An ADR documents **a single decision**.
+- ADRs are **immutable** once accepted. Changing a decision requires a new ADR that supersedes the old one.
+- Sequential numbering, padded to four digits: `0000-`, `0001-`, ...
+- Format: Markdown with mandatory sections `Context`, `Decision`, `Consequences`, `Alternatives considered`, `Status`.
+
+## Possible statuses
+
+- **Proposed** — under discussion.
+- **Accepted** — active.
+- **Superseded by ADR-NNNN** — replaced.
+- **Deprecated** — abandoned without replacement.
+
+## Index
+
+| ID | Title | Status |
+|---|---|---|
+| [ADR-0000](0000-vision.md) | Vision | Accepted |
+| [ADR-0001](0001-hal-first.md) | HAL First | Accepted |
+| [ADR-0002](0002-deterministic-simulation.md) | Deterministic Simulation | Accepted |
+| [ADR-0003](0003-telemetry-everywhere.md) | Telemetry Everywhere | Accepted |
+| [ADR-0004](0004-backend-independence.md) | Backend Independence | Accepted |
+| [ADR-0005](0005-canonical-vehicle-state.md) | Canonical Vehicle State | Accepted |
+| [ADR-0006](0006-event-driven-core.md) | Event Driven Core | Accepted |
+| [ADR-0007](0007-hardware-migration-strategy.md) | Hardware Migration Strategy | Accepted |
+| [ADR-0008](0008-perception-failure-modes.md) | Perception Failure Modes and Uncertainty Propagation | Accepted (catalog amended by ADR-0010) |
+| [ADR-0009](0009-autonomy-under-uncertainty.md) | Autonomy Under Uncertainty | Accepted (pilot override amended by ADR-0011) |
+| [ADR-0010](0010-revised-perception-mode-catalog.md) | Revised Perception Mode Catalog and Parameter Coupling Discipline | Accepted |
+| [ADR-0011](0011-t0-safety-vetoes-pilot.md) | T0 Safety Vetoes Over Pilot Input | Accepted |
+| [ADR-0012](0012-run-retention-policy.md) | Run Retention Policy | Accepted |

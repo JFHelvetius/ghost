@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint + types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,telemetry]"
+      - name: Ruff
+        run: ruff check src tests
+      - name: Ruff format check
+        run: ruff format --check src tests
+      - name: MyPy
+        run: mypy
+      - name: Deptry
+        run: deptry src
+      - name: No global random
+        run: python scripts/check_no_global_random.py
+
+  test:
+    name: Tests (${{ matrix.os }}, py${{ matrix.python }})
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[sim,telemetry,dev]"
+      - name: Unit tests
+        run: pytest -m "not slow and not scenario" --cov=project_ghost --cov-report=xml
+      - name: Conformance tests
+        run: pytest -m conformance
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
