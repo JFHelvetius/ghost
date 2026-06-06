@@ -6,8 +6,10 @@ Submódulos (incrementales por sub-tarea de T2.a):
   `SensorSpec`, payloads (`IMUPayload`, `RGBImagePayload`,
   `DepthImagePayload`, `GpsPayload`, `AltimeterPayload`) y `NoiseModel`
   marker.
-- ``actuators`` (T2.a.2, pendiente): `ActuatorLevel`, comandos jerárquicos,
-  `CommandAck`, `SafetyEnvelope`, `RejectReason`.
+- ``actuators`` (T2.a.2, implementado): `ActuatorLevel`, `ActuatorCommand`
+  Protocol + 6 niveles concretos (`DirectMotorCommand` ..
+  `TrajectoryCommand`), `CommandAck`, `RejectReason`, `SafetyEnvelope`,
+  `ActuatorSpec`.
 
 Las definiciones se re-exportan desde aquí para que los consumidores
 escriban ``from project_ghost.hal.messages import SensorSample, ...``.
@@ -15,6 +17,21 @@ escriban ``from project_ghost.hal.messages import SensorSample, ...``.
 
 from __future__ import annotations
 
+from .actuators import (
+    ActuatorCommand,
+    ActuatorLevel,
+    ActuatorSpec,
+    AttitudeCommand,
+    BodyRateCommand,
+    CommandAck,
+    DirectMotorCommand,
+    PositionCommand,
+    RejectReason,
+    SafetyEnvelope,
+    TrajectoryCommand,
+    VelocityCommand,
+    VelocityFrame,
+)
 from .sensors import (
     AltimeterPayload,
     AltimeterReference,
@@ -34,19 +51,32 @@ from .sensors import (
 )
 
 __all__ = [
+    "ActuatorCommand",
+    "ActuatorLevel",
+    "ActuatorSpec",
     "AltimeterPayload",
     "AltimeterReference",
+    "AttitudeCommand",
+    "BodyRateCommand",
     "CameraIntrinsics",
+    "CommandAck",
     "DepthImagePayload",
+    "DirectMotorCommand",
     "DistortionModel",
     "GpsFix",
     "GpsPayload",
     "IMUPayload",
     "NoiseModel",
+    "PositionCommand",
     "RGBImagePayload",
+    "RejectReason",
+    "SafetyEnvelope",
     "SensorHealth",
     "SensorId",
     "SensorMeta",
     "SensorSample",
     "SensorSpec",
+    "TrajectoryCommand",
+    "VelocityCommand",
+    "VelocityFrame",
 ]
