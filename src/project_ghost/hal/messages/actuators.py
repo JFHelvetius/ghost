@@ -34,15 +34,12 @@ Fuera de alcance T2.a.2:
 
 from __future__ import annotations
 
+from collections.abc import Mapping  # noqa: TC003
 from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
-from typing import TYPE_CHECKING, Any, Final, Literal, Protocol, runtime_checkable
+from typing import Any, Final, Literal, Protocol, runtime_checkable
 
 import numpy as np
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
 
 # ---------------------------------------------------------------------------
 # Enums

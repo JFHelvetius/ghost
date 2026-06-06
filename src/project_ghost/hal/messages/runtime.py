@@ -25,17 +25,18 @@ facilitar imports `from project_ghost.hal.messages import ...`.
 
 from __future__ import annotations
 
+from collections.abc import Mapping  # noqa: TC003
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final
+from typing import Any, Final
 
 import numpy as np
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
-    from .actuators import ActuatorLevel
-    from .sensors import SensorId
-
+# `SensorId`, `ActuatorLevel` y `Mapping` se importan a runtime (no en
+# TYPE_CHECKING) para que `typing.get_type_hints` pueda resolver las
+# anotaciones — `telemetry.serialization.from_json_dict` lo necesita para
+# round-trip decoding.
+from .actuators import ActuatorLevel  # noqa: TC001
+from .sensors import SensorId  # noqa: TC001
 
 # ---------------------------------------------------------------------------
 # Constantes

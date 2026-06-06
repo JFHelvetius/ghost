@@ -46,17 +46,18 @@ Fuera de alcance T2.a.3:
 
 from __future__ import annotations
 
+# `SensorHealth`, `SensorId` y `Mapping` se importan a runtime (no en
+# TYPE_CHECKING) para que `typing.get_type_hints` pueda resolver las
+# anotaciones — `telemetry.serialization.from_json_dict` lo necesita para
+# round-trip decoding.
+from collections.abc import Mapping  # noqa: TC003
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import Any, Final, Literal
 
 import numpy as np
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
-    from project_ghost.hal.messages import SensorHealth, SensorId
-
+from project_ghost.hal.messages import SensorHealth, SensorId  # noqa: TC001
 
 # ---------------------------------------------------------------------------
 # Constantes

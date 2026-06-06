@@ -25,14 +25,12 @@ Fuera de alcance T2.a.1:
 
 from __future__ import annotations
 
+from collections.abc import Mapping  # noqa: TC003
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import TYPE_CHECKING, Any, Final, Generic, Literal, Protocol, TypeVar
+from typing import Any, Final, Generic, Literal, Protocol, TypeVar
 
 import numpy as np
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
 
 # ---------------------------------------------------------------------------
 # Type aliases

@@ -33,9 +33,7 @@ sim = [
 ]
 telemetry = [
     "mcap>=1.2.0",
-    "mcap-protobuf-support>=0.5.0",
     "rerun-sdk>=0.21.0",
-    "protobuf>=4.25,<6.0",
 ]
 dev = [
     "ruff>=0.6.0",
@@ -95,6 +93,10 @@ ignore = [
 # para matriz de rotación.
 "src/project_ghost/state/transforms.py" = ["N802", "N803", "N806"]
 "tests/state/test_transforms.py" = ["N802", "N803", "N806", "PLR2004", "S101", "ARG"]
+# telemetry tests use intra-function imports for type narrowing
+# (e.g. importing FrozenInstanceError only in the test that asserts it),
+# and Path is purely an annotation type.
+"tests/telemetry/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "SIM117", "TC003"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["project_ghost"]
@@ -161,12 +163,10 @@ known_first_party = ["project_ghost"]
 # See docs/roadmaps/phase1.md for the task mapping.
 [tool.deptry.per_rule_ignores]
 DEP002 = [
-    "protobuf",              # implicit via mcap-protobuf-support
     # numpy: usado por core.uncertainty (U1.a) — ya no exento
+    # mcap: removido tras T4 — ahora se importa lazy desde telemetry.mcap_sink
     "pybullet",              # T6: simulation.pybullet backend
-    "mcap",                  # T4: telemetry.mcap_sink
-    "mcap-protobuf-support", # T4: telemetry serialization
-    "rerun-sdk",             # T4: telemetry.rerun_sink
+    "rerun-sdk",             # extra `telemetry`; sin integracion en repo (Rerun rechazado en T4)
     "ruff",                  # dev tool; never imported from src
     "mypy",                  # dev tool; never imported from src
     "pytest",                # used by tests/ (not scanned by deptry src)

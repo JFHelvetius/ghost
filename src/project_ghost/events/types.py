@@ -22,12 +22,13 @@ Fuera de alcance T5.a:
 
 from __future__ import annotations
 
+# `Mapping` se importa a runtime (no en TYPE_CHECKING) para que
+# `typing.get_type_hints(Event)` pueda resolver `payload: Mapping[str, Any]`
+# — `telemetry.serialization.from_json_dict` lo necesita para round-trip.
+from collections.abc import Mapping  # noqa: TC003
 from dataclasses import dataclass
 from enum import IntEnum, StrEnum
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
+from typing import Any
 
 
 class EventSeverity(IntEnum):
