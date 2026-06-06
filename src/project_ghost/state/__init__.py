@@ -11,13 +11,19 @@ Submódulos:
   de conversiones de marco — Hamilton↔scipy, body↔world via R, ENU↔NED,
   FLU↔FRD. Cualquier inversión manual fuera de estas funciones es
   candidata a bug (state.md §7).
+- `state.aggregator` (T2.a.6, implementado): `vehicle_state_from_ground_truth`
+  como vía sim-only para construir un `VehicleState` desde el oráculo del
+  simulador. Path de produccion (`from_navigation`) deferido hasta que
+  exista un estimador.
 
 `VehicleState` se publica al canal `/state/nav` (state.md §5.3) por el
-agregador de T9.
+agregador de T9 cuando aterrice end-to-end con T4 (telemetria) y T6
+(backend real).
 """
 
 from __future__ import annotations
 
+from .aggregator import vehicle_state_from_ground_truth
 from .messages import (
     FlightMode,
     FlightStatus,
@@ -46,4 +52,5 @@ __all__ = [
     "Twist",
     "TwistFrame",
     "VehicleState",
+    "vehicle_state_from_ground_truth",
 ]
