@@ -1,15 +1,16 @@
 """`hal.messages` — dataclasses canónicas del HAL (T2 del roadmap).
 
-Submódulos (incrementales por sub-tarea de T2.a):
+Submódulos:
 
 - ``sensors`` (T2.a.1, implementado): `SensorHealth`, `SensorSample[T]`,
   `SensorSpec`, payloads (`IMUPayload`, `RGBImagePayload`,
   `DepthImagePayload`, `GpsPayload`, `AltimeterPayload`) y `NoiseModel`
   marker.
 - ``actuators`` (T2.a.2, implementado): `ActuatorLevel`, `ActuatorCommand`
-  Protocol + 6 niveles concretos (`DirectMotorCommand` ..
-  `TrajectoryCommand`), `CommandAck`, `RejectReason`, `SafetyEnvelope`,
-  `ActuatorSpec`.
+  Protocol + 6 niveles concretos, `CommandAck`, `RejectReason`,
+  `SafetyEnvelope`, `ActuatorSpec`.
+- ``runtime`` (T2.a.4, implementado): `Capabilities`, `ScenarioSpec`,
+  `GroundTruth`, `StepReport`.
 
 Las definiciones se re-exportan desde aquí para que los consumidores
 escriban ``from project_ghost.hal.messages import SensorSample, ...``.
@@ -32,6 +33,7 @@ from .actuators import (
     VelocityCommand,
     VelocityFrame,
 )
+from .runtime import Capabilities, GroundTruth, ScenarioSpec, StepReport
 from .sensors import (
     AltimeterPayload,
     AltimeterReference,
@@ -59,23 +61,27 @@ __all__ = [
     "AttitudeCommand",
     "BodyRateCommand",
     "CameraIntrinsics",
+    "Capabilities",
     "CommandAck",
     "DepthImagePayload",
     "DirectMotorCommand",
     "DistortionModel",
     "GpsFix",
     "GpsPayload",
+    "GroundTruth",
     "IMUPayload",
     "NoiseModel",
     "PositionCommand",
     "RGBImagePayload",
     "RejectReason",
     "SafetyEnvelope",
+    "ScenarioSpec",
     "SensorHealth",
     "SensorId",
     "SensorMeta",
     "SensorSample",
     "SensorSpec",
+    "StepReport",
     "TrajectoryCommand",
     "VelocityCommand",
     "VelocityFrame",

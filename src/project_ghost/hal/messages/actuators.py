@@ -149,11 +149,22 @@ def _check_stamp_and_schema(stamp_ns: int, schema_version: int) -> None:
 
 @runtime_checkable
 class ActuatorCommand(Protocol):
-    """Atributos comunes a todo comando de actuador (actuators.md §2)."""
+    """Atributos comunes a todo comando de actuador (actuators.md §2).
 
-    level: ActuatorLevel
-    stamp_ns: int
-    schema_version: int
+    Declarados como `@property` (read-only per PEP 544): las dataclasses
+    concretas (`DirectMotorCommand` etc.) son `frozen=True`, por lo que
+    sus atributos son inmutables. Un Protocol con atributos settable
+    (`level: ActuatorLevel`) sería incompatible con frozen, así que el
+    Protocol declara la variante read-only — cualquier impl (frozen o
+    no) satisface.
+    """
+
+    @property
+    def level(self) -> ActuatorLevel: ...
+    @property
+    def stamp_ns(self) -> int: ...
+    @property
+    def schema_version(self) -> int: ...
 
 
 # ---------------------------------------------------------------------------
