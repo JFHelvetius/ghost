@@ -28,6 +28,7 @@ publicado por un adapter clock -> events).
 
 from __future__ import annotations
 
+from .adapters import SchedulerErrorToEventBusAdapter
 from .bus import (
     EventBus,
     NullSubscriberErrorSink,
@@ -48,6 +49,7 @@ __all__ = [
     "EventType",
     "NullSubscriberErrorSink",
     "RecordingSubscriberErrorSink",
+    "SchedulerErrorToEventBusAdapter",
     "SubscriberError",
     "SubscriberErrorSink",
     "Subscription",
