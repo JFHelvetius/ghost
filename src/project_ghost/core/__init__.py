@@ -2,8 +2,8 @@
 
 Subpaquetes:
 
-- `core.uncertainty`: tipos y helpers del modelo de incertidumbre. Ver
-  ``docs/specs/uncertainty.md``. Implementacion pendiente en U1.a.
+- `core.uncertainty` (U1.a, implementado): tipos y helpers del modelo de
+  incertidumbre. Ver ``docs/specs/uncertainty.md``.
 
 Reservados, implementacion en Fase 1 (T2/T3 del roadmap):
 
