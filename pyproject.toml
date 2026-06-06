@@ -90,6 +90,11 @@ ignore = [
 # These come from the spec (docs/specs/uncertainty.md §5) and stay capitalized.
 "src/project_ghost/core/uncertainty/**/*.py" = ["N803", "N806"]
 "tests/core/**/*.py" = ["PLR2004", "S101", "ARG", "N803", "N806", "RUF002", "RUF003"]
+# state.transforms: nombres `R_body_to_world` / `R_world_to_body` vienen
+# literales de docs/specs/state.md §6; R mayúscula es notación estándar
+# para matriz de rotación.
+"src/project_ghost/state/transforms.py" = ["N802", "N803", "N806"]
+"tests/state/test_transforms.py" = ["N802", "N803", "N806", "PLR2004", "S101", "ARG"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["project_ghost"]
