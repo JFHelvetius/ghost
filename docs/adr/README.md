@@ -38,3 +38,4 @@ This directory holds the project's **significant architectural decisions**.
 | [ADR-0015](0015-noisy-ground-truth-estimator.md) | Noisy Ground Truth Estimator | Accepted |
 | [ADR-0016](0016-belief-traceability-report-v1.md) | Belief Traceability Report v1 | Accepted |
 | [ADR-0017](0017-belief-consistency-analysis-v1.md) | Belief Consistency Analysis v1 | Accepted |
+| [ADR-0018](0018-comparative-belief-analysis.md) | Comparative Belief Analysis with Provenance Manifests v1 | Accepted |

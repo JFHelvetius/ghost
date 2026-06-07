@@ -1,7 +1,8 @@
 """`analysis` — derived run analysis artifacts.
 
 T5 / ADR-0013 (`RunSummary`), ADR-0016 (`BeliefTraceabilityReport`),
-ADR-0017 (`BeliefConsistencySummary`).
+ADR-0017 (`BeliefConsistencySummary`), ADR-0018
+(`RunManifest` + `ComparativeBeliefReport`).
 
 Offline only. Deterministic. JSON-only output. No databases, dashboards,
 services, threads, async, ML, or anomaly detection.
@@ -34,13 +35,36 @@ Public API:
   for ADR-0017.
 - ``BELIEF_CONSISTENCY_ANALYSIS_VERSION`` /
   ``BELIEF_CONSISTENCY_REPORT_SCHEMA_VERSION``: versioned contracts.
+- ``ManifestArtifact`` / ``RunManifest`` (frozen dataclasses):
+  content-addressed provenance for a run (ADR-0018).
+- ``LabeledSummary`` / ``MetricDelta`` /
+  ``ComparativeBeliefReport`` (frozen dataclasses): N-way structured
+  deltas between summaries (ADR-0018).
+- ``build_run_manifest`` / ``verify_run_manifest`` /
+  ``build_comparative_report``: pure functions for provenance and
+  comparison.
+- ``decode_consistency_summary_from_json`` /
+  ``decode_run_manifest_from_json`` /
+  ``decode_comparative_report_from_json``: companion decoders.
+- ``encode_run_manifest_to_bytes`` /
+  ``encode_comparative_report_to_bytes`` /
+  ``generate_run_manifest`` / ``generate_comparative_report``:
+  canonical JSON encoders + file writers for ADR-0018.
+- ``BELIEF_COMPARISON_ANALYSIS_VERSION`` /
+  ``BELIEF_COMPARISON_REPORT_SCHEMA_VERSION`` /
+  ``RUN_MANIFEST_SCHEMA_VERSION``: versioned contracts.
 
-CLI: three subcommands live in ``project_ghost.cli``:
+CLI: five subcommands live in ``project_ghost.cli``:
 
 - ``ghost analyze-run --mcap PATH --state PATH --output PATH``
 - ``ghost analyze-belief --truth-mcap PATH --belief-mcap PATH
   [--output PATH]``
 - ``ghost summarize-belief --report PATH [--output PATH]``
+- ``ghost build-manifest --run-id ID [--config-json PATH]
+  [--config-kv KEY=VALUE ...] [--input PATH=KIND ...]
+  [--output-artifact PATH=KIND ...] [--output PATH]``
+- ``ghost compare-belief --summary LABEL=PATH ...
+  [--manifest LABEL=PATH ...] [--output PATH]``
 """
 
 from __future__ import annotations
@@ -65,6 +89,26 @@ from .belief_traceability import (
     encode_belief_report_to_bytes,
     generate_belief_report,
 )
+from .comparison import (
+    BELIEF_COMPARISON_ANALYSIS_VERSION,
+    BELIEF_COMPARISON_REPORT_SCHEMA_VERSION,
+    RUN_MANIFEST_SCHEMA_VERSION,
+    ComparativeBeliefReport,
+    LabeledSummary,
+    ManifestArtifact,
+    MetricDelta,
+    RunManifest,
+    build_comparative_report,
+    build_run_manifest,
+    decode_comparative_report_from_json,
+    decode_consistency_summary_from_json,
+    decode_run_manifest_from_json,
+    encode_comparative_report_to_bytes,
+    encode_run_manifest_to_bytes,
+    generate_comparative_report,
+    generate_run_manifest,
+    verify_run_manifest,
+)
 from .models import SUMMARY_SCHEMA_VERSION, RunSummary
 from .report import (
     REPORT_SCHEMA_VERSION,
@@ -74,26 +118,44 @@ from .report import (
 from .summary import build_run_summary
 
 __all__ = [
+    "BELIEF_COMPARISON_ANALYSIS_VERSION",
+    "BELIEF_COMPARISON_REPORT_SCHEMA_VERSION",
     "BELIEF_CONSISTENCY_ANALYSIS_VERSION",
     "BELIEF_CONSISTENCY_REPORT_SCHEMA_VERSION",
     "BELIEF_TRACEABILITY_ANALYSIS_VERSION",
     "BELIEF_TRACEABILITY_REPORT_SCHEMA_VERSION",
     "REPORT_SCHEMA_VERSION",
+    "RUN_MANIFEST_SCHEMA_VERSION",
     "SUMMARY_SCHEMA_VERSION",
     "BeliefConsistencySummary",
     "BeliefTraceRecord",
     "BeliefTraceabilityReport",
+    "ComparativeBeliefReport",
+    "LabeledSummary",
+    "ManifestArtifact",
+    "MetricDelta",
+    "RunManifest",
     "RunSummary",
+    "build_comparative_report",
+    "build_run_manifest",
     "build_run_summary",
     "build_traceability_report",
     "compute_orientation_error",
     "compute_position_error",
     "decode_belief_report_from_json",
+    "decode_comparative_report_from_json",
+    "decode_consistency_summary_from_json",
+    "decode_run_manifest_from_json",
     "encode_belief_report_to_bytes",
+    "encode_comparative_report_to_bytes",
     "encode_consistency_summary_to_bytes",
     "encode_report_to_bytes",
+    "encode_run_manifest_to_bytes",
     "generate_belief_report",
+    "generate_comparative_report",
     "generate_consistency_report",
+    "generate_run_manifest",
     "generate_run_report",
     "summarize_belief_consistency",
+    "verify_run_manifest",
 ]
