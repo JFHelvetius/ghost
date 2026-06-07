@@ -394,6 +394,43 @@ def test_different_replays_yield_different_summaries(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# T6 backward-compatible extension: traceable_events_count
+# ---------------------------------------------------------------------------
+
+
+def test_traceable_events_count_equals_event_count(tmp_path: Path) -> None:
+    """Per ADR-0014: every event on /events is a valid trace target,
+    so traceable_events_count == event_count."""
+    mcap = tmp_path / "x.mcap"
+    with MCAPFileSink(mcap) as sink:
+        for i in range(7):
+            sink.publish(CHANNEL_EVENTS, i * 100, make_event(type_=EventType.ARMED))
+
+    state = make_vehicle_state()
+    with MCAPReplayReader(mcap) as reader:
+        summary = build_run_summary(
+            run_id="x", reader=reader, final_state=state
+        )
+
+    assert summary.event_count == 7
+    assert summary.traceable_events_count == 7
+
+
+def test_traceable_events_count_zero_on_empty_replay(tmp_path: Path) -> None:
+    mcap = tmp_path / "empty.mcap"
+    with MCAPFileSink(mcap):
+        pass
+
+    state = make_vehicle_state()
+    with MCAPReplayReader(mcap) as reader:
+        summary = build_run_summary(
+            run_id="x", reader=reader, final_state=state
+        )
+
+    assert summary.traceable_events_count == 0
+
+
 def test_mixed_traffic_counted_separately_per_channel_type(
     tmp_path: Path,
 ) -> None:

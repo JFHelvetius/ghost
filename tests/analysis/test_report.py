@@ -76,6 +76,8 @@ def test_report_summary_contains_all_run_summary_fields() -> None:
         "actuator_type_counts",
         "final_state_hash",
         "schema_version",
+        # T6 (ADR-0014): backward-compatible extension
+        "traceable_events_count",
     }
     assert set(summary.keys()) == expected_fields
 

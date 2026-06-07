@@ -3,11 +3,14 @@
 Subcommands:
 
 - ``analyze-run``: derive a ``RunSummary`` report from an MCAP file +
-  final state snapshot.
+  final state snapshot (T5, ADR-0013).
+- ``trace-event``: reconstruct the observational pre-event message
+  sequence around a target event (T6, ADR-0014). NOT explanation:
+  reconstructs observed sequences, does not infer intent.
 
 The CLI is intentionally tiny: argument parsing + thin glue around the
-``analysis`` package's pure functions. No long-running processes, no
-network, no background threads.
+``analysis`` and ``traceability`` packages' pure functions. No
+long-running processes, no network, no background threads.
 """
 
 from __future__ import annotations
@@ -21,9 +24,17 @@ from typing import TYPE_CHECKING
 from project_ghost.analysis import build_run_summary, generate_run_report
 from project_ghost.state.messages import VehicleState
 from project_ghost.telemetry import MCAPReplayReader, from_json_dict
+from project_ghost.traceability import (
+    EventNotFoundError,
+    build_behavior_trace,
+    generate_trace_report,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+
+_NANOSECONDS_PER_SECOND: int = 1_000_000_000
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -32,6 +43,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     Returns process exit code:
 
     - ``0``: success.
+    - ``1``: runtime error (e.g., event_id not found).
     - ``2``: argument parsing failure (argparse default).
     """
     parser = argparse.ArgumentParser(
@@ -43,6 +55,30 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    _add_analyze_run_parser(subparsers)
+    _add_trace_event_parser(subparsers)
+
+    args = parser.parse_args(argv)
+
+    if args.command == "analyze-run":
+        return _cmd_analyze_run(args)
+    if args.command == "trace-event":
+        return _cmd_trace_event(args)
+
+    # argparse with `required=True` on the subparsers prevents reaching
+    # this point with an unknown command, but we keep the explicit
+    # error for defensive symmetry. parser.error raises SystemExit(2).
+    parser.error(f"unknown command: {args.command}")
+
+
+# ---------------------------------------------------------------------------
+# Subparser builders
+# ---------------------------------------------------------------------------
+
+
+def _add_analyze_run_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
     analyze = subparsers.add_parser(
         "analyze-run",
         help=(
@@ -85,15 +121,51 @@ def main(argv: Sequence[str] | None = None) -> int:
         ),
     )
 
-    args = parser.parse_args(argv)
 
-    if args.command == "analyze-run":
-        return _cmd_analyze_run(args)
+def _add_trace_event_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    trace = subparsers.add_parser(
+        "trace-event",
+        help=(
+            "Reconstruct the observational pre-event message sequence for "
+            "a target event."
+        ),
+        description=(
+            "Walks the MCAP, finds the event by sequence number, and "
+            "writes a deterministic JSON trace of messages in the window "
+            "before it. NOT explanation: this is observation, not "
+            "inference."
+        ),
+    )
+    trace.add_argument(
+        "--mcap",
+        type=Path,
+        required=True,
+        help="Path to the MCAP file (input; never modified).",
+    )
+    trace.add_argument(
+        "--event-id",
+        type=int,
+        required=True,
+        help="The target event's `sequence` field (integer).",
+    )
+    trace.add_argument(
+        "--window-seconds",
+        type=float,
+        default=5.0,
+        help=(
+            "Window duration before the target event, in seconds. "
+            "Converted to nanoseconds via int(window_seconds * 1e9). "
+            "Default 5.0. Use 0 for an empty trace (the request is still "
+            "valid and resolves the target event)."
+        ),
+    )
 
-    # argparse with `required=True` on the subparsers prevents reaching
-    # this point with an unknown command, but we keep the explicit
-    # error for defensive symmetry. parser.error raises SystemExit(2).
-    parser.error(f"unknown command: {args.command}")
+
+# ---------------------------------------------------------------------------
+# Subcommand implementations
+# ---------------------------------------------------------------------------
 
 
 def _cmd_analyze_run(args: argparse.Namespace) -> int:
@@ -111,6 +183,33 @@ def _cmd_analyze_run(args: argparse.Namespace) -> int:
         )
 
     generate_run_report(summary, args.output)
+    return 0
+
+
+def _cmd_trace_event(args: argparse.Namespace) -> int:
+    """Implementation of `ghost trace-event`.
+
+    Writes the trace JSON to stdout. Returns 1 if event_id is not found.
+    """
+    if args.window_seconds < 0:
+        sys.stderr.write(
+            f"error: --window-seconds must be >= 0; got {args.window_seconds}\n"
+        )
+        return 1
+    window_ns = int(args.window_seconds * _NANOSECONDS_PER_SECOND)
+
+    try:
+        with MCAPReplayReader(args.mcap) as reader:
+            trace = build_behavior_trace(
+                reader=reader,
+                event_id=args.event_id,
+                window_ns=window_ns,
+            )
+    except EventNotFoundError as e:
+        sys.stderr.write(f"error: {e}\n")
+        return 1
+
+    generate_trace_report(trace, output=None)
     return 0
 
 

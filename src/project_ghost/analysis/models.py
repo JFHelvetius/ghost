@@ -69,6 +69,12 @@ class RunSummary:
     actuator_type_counts: dict[str, int]
     final_state_hash: str
     schema_version: str = SUMMARY_SCHEMA_VERSION
+    # T6 (ADR-0014) backward-compatible extension. Counts the number of
+    # events on the `/events` channel — i.e. the number of valid targets
+    # for `traceability.build_behavior_trace`. Defaults to 0 so existing
+    # construction sites continue to work; the field is populated by
+    # `build_run_summary`.
+    traceable_events_count: int = 0
 
 
 __all__ = ["SUMMARY_SCHEMA_VERSION", "RunSummary"]

@@ -133,6 +133,12 @@ def build_run_summary(
         sensor_type_counts=_sorted_dict(sensor_type_counts),
         actuator_type_counts=_sorted_dict(actuator_type_counts),
         final_state_hash=final_state_hash,
+        # T6 (ADR-0014): every event on /events is a valid target for
+        # `traceability.build_behavior_trace`. The count is identical to
+        # `event_count`; we expose it as a separate field so consumers
+        # can distinguish "events observed" from "events traceable" if
+        # the two definitions ever diverge.
+        traceable_events_count=event_count,
     )
 
 
