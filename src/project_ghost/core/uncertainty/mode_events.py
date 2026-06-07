@@ -14,10 +14,13 @@ Schema canónico: ``docs/specs/uncertainty.md`` §9 (canal ``/perception/mode``)
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
-if TYPE_CHECKING:
-    from .types import PerceptionMode
+# `PerceptionMode` se importa a runtime (no en TYPE_CHECKING) para que
+# `typing.get_type_hints(PerceptionModeChanged)` pueda resolver las
+# anotaciones — `telemetry.serialization.from_json_dict` lo necesita para
+# round-trip decoding (T7 / decoder catalog en replay.py).
+from .types import PerceptionMode  # noqa: TC001
 
 
 @dataclass(frozen=True)

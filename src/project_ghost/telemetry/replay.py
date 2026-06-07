@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
+from project_ghost.core.uncertainty.mode_events import PerceptionModeChanged
 from project_ghost.events.types import Event
 from project_ghost.hal.messages.sensors import (
     AltimeterPayload,
@@ -65,6 +66,12 @@ def _decode_vehicle_state(d: Mapping[str, Any]) -> VehicleState:
     return cast("VehicleState", from_json_dict(VehicleState, d))
 
 
+def _decode_perception_mode_changed(
+    d: Mapping[str, Any],
+) -> PerceptionModeChanged:
+    return cast("PerceptionModeChanged", from_json_dict(PerceptionModeChanged, d))
+
+
 def make_sensor_sample_decoder(
     payload_cls: type[Any],
 ) -> Callable[[Mapping[str, Any]], SensorSample[Any]]:
@@ -102,6 +109,10 @@ def _build_decoder_table() -> dict[str, Callable[[Mapping[str, Any]], Any]]:
     table: dict[str, Callable[[Mapping[str, Any]], Any]] = {
         f"{Event.__module__}.{Event.__name__}": _decode_event,
         f"{VehicleState.__module__}.{VehicleState.__name__}": _decode_vehicle_state,
+        (
+            f"{PerceptionModeChanged.__module__}."
+            f"{PerceptionModeChanged.__name__}"
+        ): _decode_perception_mode_changed,
     }
     for payload_cls in (
         IMUPayload,

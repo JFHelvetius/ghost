@@ -20,6 +20,11 @@ CHANNEL_STATE_NAV: str = "/state/nav"
 """`VehicleState` snapshots from `state.aggregator` (and, eventually, from
 real estimators)."""
 
+CHANNEL_PERCEPTION_MODE: str = "/perception/mode"
+"""`PerceptionModeChanged` events from `core.uncertainty.PerceptionModeDetector`
+(spec: uncertainty.md §9). Persisted via
+``telemetry.adapters.ModeEventToTelemetryAdapter``."""
+
 _SENSOR_PREFIX: str = "/sensors/"
 
 
@@ -40,6 +45,7 @@ def channel_for_sensor(sensor_id: str) -> str:
 
 __all__ = [
     "CHANNEL_EVENTS",
+    "CHANNEL_PERCEPTION_MODE",
     "CHANNEL_STATE_NAV",
     "TELEMETRY_PROTOCOL_VERSION",
     "channel_for_sensor",

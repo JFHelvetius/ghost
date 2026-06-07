@@ -17,6 +17,12 @@ def test_channel_constants_are_frozen_strings() -> None:
     assert CHANNEL_STATE_NAV == "/state/nav"
 
 
+def test_channel_perception_mode_constant() -> None:
+    from project_ghost.telemetry import CHANNEL_PERCEPTION_MODE
+
+    assert CHANNEL_PERCEPTION_MODE == "/perception/mode"
+
+
 def test_telemetry_protocol_version_is_one() -> None:
     assert TELEMETRY_PROTOCOL_VERSION == 1
 
