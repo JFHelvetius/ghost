@@ -22,6 +22,10 @@ Subcommands:
   ``BeliefConsistencySummary`` instances into a deterministic
   ``ComparativeBeliefReport`` JSON (ADR-0018). Description is not
   evaluation; comparison is not judgment.
+- ``analyze-calibration``: audit declared-vs-empirical uncertainty
+  ratios over a ``BeliefTraceabilityReport`` and emit a deterministic
+  ``BeliefCalibrationReport`` JSON (ADR-0019). Description is not
+  calibration; the system exposes ratios, the operator interprets.
 
 The CLI is intentionally tiny: argument parsing + thin glue around the
 ``analysis`` and ``traceability`` packages' pure functions. No
@@ -31,6 +35,7 @@ long-running processes, no network, no background threads.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -38,6 +43,7 @@ from typing import TYPE_CHECKING, Any
 
 from project_ghost.analysis import (
     LabeledSummary,
+    analyze_belief_calibration,
     build_comparative_report,
     build_run_manifest,
     build_run_summary,
@@ -46,6 +52,7 @@ from project_ghost.analysis import (
     decode_consistency_summary_from_json,
     decode_run_manifest_from_json,
     encode_belief_report_to_bytes,
+    encode_calibration_report_to_bytes,
     encode_comparative_report_to_bytes,
     encode_consistency_summary_to_bytes,
     encode_run_manifest_to_bytes,
@@ -67,7 +74,7 @@ if TYPE_CHECKING:
 _NANOSECONDS_PER_SECOND: int = 1_000_000_000
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
     """Entry point for ``ghost`` CLI.
 
     Returns process exit code:
@@ -91,6 +98,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     _add_summarize_belief_parser(subparsers)
     _add_build_manifest_parser(subparsers)
     _add_compare_belief_parser(subparsers)
+    _add_analyze_calibration_parser(subparsers)
 
     args = parser.parse_args(argv)
 
@@ -106,6 +114,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _cmd_build_manifest(args)
     if args.command == "compare-belief":
         return _cmd_compare_belief(args)
+    if args.command == "analyze-calibration":
+        return _cmd_analyze_calibration(args)
 
     # argparse with `required=True` on the subparsers prevents reaching
     # this point with an unknown command, but we keep the explicit
@@ -271,6 +281,45 @@ def _add_analyze_belief_parser(
         help=(
             "Path where the belief_report.json will be written. If "
             "omitted, the report is written to stdout."
+        ),
+    )
+
+
+def _add_analyze_calibration_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    ac = subparsers.add_parser(
+        "analyze-calibration",
+        help=(
+            "Audit declared-vs-empirical uncertainty ratios over a "
+            "BeliefTraceabilityReport (ADR-0019). Observational only."
+        ),
+        description=(
+            "Reads a belief_report.json (ADR-0016), computes per-record "
+            "ratios of empirical error magnitude to declared "
+            "uncertainty scale (sqrt of covariance_trace), and writes a "
+            "deterministic JSON calibration report. JSON only — no "
+            "verdicts, no thresholds, no statistical tests. "
+            "Description is not calibration (ADR-0019)."
+        ),
+    )
+    ac.add_argument(
+        "--belief-report",
+        type=Path,
+        required=True,
+        help=(
+            "Path to the BeliefTraceabilityReport JSON file "
+            "(input; never modified). SHA-256 of its bytes is recorded "
+            "in the output report's source_belief_report_sha256."
+        ),
+    )
+    ac.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help=(
+            "Path where the calibration_report.json will be written. "
+            "If omitted, the report is written to stdout."
         ),
     )
 
@@ -777,6 +826,50 @@ def _cmd_compare_belief(  # noqa: PLR0911, PLR0912
         return 1
 
     encoded = encode_comparative_report_to_bytes(report)
+    if args.output is None:
+        sys.stdout.write(encoded.decode("utf-8"))
+    else:
+        args.output.write_bytes(encoded)
+    return 0
+
+
+def _cmd_analyze_calibration(args: argparse.Namespace) -> int:
+    """Implementation of ``ghost analyze-calibration``.
+
+    Reads the belief_report file, computes its SHA-256, decodes via
+    ``decode_belief_report_from_json`` (ADR-0017 helper), runs
+    ``analyze_belief_calibration`` and writes the canonical JSON to
+    ``--output`` or to stdout.
+
+    Returns ``1`` on missing file / malformed JSON / schema mismatch /
+    decoder failure.
+    """
+    try:
+        raw_bytes = args.belief_report.read_bytes()
+    except (FileNotFoundError, OSError) as e:
+        sys.stderr.write(f"error: {e}\n")
+        return 1
+
+    sha = hashlib.sha256(raw_bytes).hexdigest()
+
+    try:
+        data = json.loads(raw_bytes.decode("utf-8"))
+    except json.JSONDecodeError as e:
+        sys.stderr.write(
+            f"error: invalid JSON in {args.belief_report}: {e}\n"
+        )
+        return 1
+
+    try:
+        report = decode_belief_report_from_json(data)
+    except (TypeError, ValueError, KeyError) as e:
+        sys.stderr.write(f"error: {e}\n")
+        return 1
+
+    calibration = analyze_belief_calibration(
+        report, source_belief_report_sha256=sha
+    )
+    encoded = encode_calibration_report_to_bytes(calibration)
     if args.output is None:
         sys.stdout.write(encoded.decode("utf-8"))
     else:

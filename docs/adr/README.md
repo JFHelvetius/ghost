@@ -39,3 +39,4 @@ This directory holds the project's **significant architectural decisions**.
 | [ADR-0016](0016-belief-traceability-report-v1.md) | Belief Traceability Report v1 | Accepted |
 | [ADR-0017](0017-belief-consistency-analysis-v1.md) | Belief Consistency Analysis v1 | Accepted |
 | [ADR-0018](0018-comparative-belief-analysis.md) | Comparative Belief Analysis with Provenance Manifests v1 | Accepted |
+| [ADR-0019](0019-belief-calibration-honesty-check-v1.md) | Belief Calibration Honesty Check v1 | Accepted |
