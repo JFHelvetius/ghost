@@ -36,3 +36,4 @@ This directory holds the project's **significant architectural decisions**.
 | [ADR-0013](0013-run-analysis-artifacts.md) | Run Analysis Artifacts | Accepted |
 | [ADR-0014](0014-behavior-traceability-v1.md) | Behavior Traceability v1 | Accepted |
 | [ADR-0015](0015-noisy-ground-truth-estimator.md) | Noisy Ground Truth Estimator | Accepted |
+| [ADR-0016](0016-belief-traceability-report-v1.md) | Belief Traceability Report v1 | Accepted |

@@ -7,6 +7,10 @@ Subcommands:
 - ``trace-event``: reconstruct the observational pre-event message
   sequence around a target event (T6, ADR-0014). NOT explanation:
   reconstructs observed sequences, does not infer intent.
+- ``analyze-belief``: align truth and belief ``VehicleState`` streams
+  from two MCAP files and emit a deterministic JSON traceability
+  report (ADR-0016). NOT evaluation: reconstructs paired observations,
+  does not score the belief.
 
 The CLI is intentionally tiny: argument parsing + thin glue around the
 ``analysis`` and ``traceability`` packages' pure functions. No
@@ -21,7 +25,12 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from project_ghost.analysis import build_run_summary, generate_run_report
+from project_ghost.analysis import (
+    build_run_summary,
+    build_traceability_report,
+    encode_belief_report_to_bytes,
+    generate_run_report,
+)
 from project_ghost.state.messages import VehicleState
 from project_ghost.telemetry import MCAPReplayReader, from_json_dict
 from project_ghost.traceability import (
@@ -57,6 +66,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     _add_analyze_run_parser(subparsers)
     _add_trace_event_parser(subparsers)
+    _add_analyze_belief_parser(subparsers)
 
     args = parser.parse_args(argv)
 
@@ -64,6 +74,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _cmd_analyze_run(args)
     if args.command == "trace-event":
         return _cmd_trace_event(args)
+    if args.command == "analyze-belief":
+        return _cmd_analyze_belief(args)
 
     # argparse with `required=True` on the subparsers prevents reaching
     # this point with an unknown command, but we keep the explicit
@@ -186,6 +198,53 @@ def _cmd_analyze_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def _add_analyze_belief_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    analyze = subparsers.add_parser(
+        "analyze-belief",
+        help=(
+            "Build a BeliefTraceabilityReport JSON from two MCAP files "
+            "containing aligned truth and belief VehicleState streams."
+        ),
+        description=(
+            "Reads VehicleState records from --truth-mcap and "
+            "--belief-mcap, requires same length and same stamp_sim_ns "
+            "per index, computes per-sample position/orientation error "
+            "and covariance diagnostics, and writes a deterministic "
+            "JSON report. JSON only — no text, no charts, no "
+            "recommendations (ADR-0016)."
+        ),
+    )
+    analyze.add_argument(
+        "--truth-mcap",
+        type=Path,
+        required=True,
+        help=(
+            "Path to MCAP containing the truth VehicleState stream "
+            "(input; never modified)."
+        ),
+    )
+    analyze.add_argument(
+        "--belief-mcap",
+        type=Path,
+        required=True,
+        help=(
+            "Path to MCAP containing the belief VehicleState stream "
+            "(input; never modified)."
+        ),
+    )
+    analyze.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help=(
+            "Path where the belief_report.json will be written. If "
+            "omitted, the report is written to stdout."
+        ),
+    )
+
+
 def _cmd_trace_event(args: argparse.Namespace) -> int:
     """Implementation of `ghost trace-event`.
 
@@ -210,6 +269,53 @@ def _cmd_trace_event(args: argparse.Namespace) -> int:
         return 1
 
     generate_trace_report(trace, output=None)
+    return 0
+
+
+def _read_vehicle_states_from_mcap(path: Path) -> list[VehicleState]:
+    """Decode all ``VehicleState`` records from an MCAP file in order.
+
+    Filters by schema name to avoid mis-decoding sibling channels
+    that may carry other types. Records are returned in the MCAP's
+    stored order (chronological by ``log_time``).
+    """
+    schema_name = f"{VehicleState.__module__}.{VehicleState.__name__}"
+    states: list[VehicleState] = []
+    with MCAPReplayReader(path) as reader:
+        for msg in reader.iter_messages():
+            if msg.schema_name != schema_name:
+                continue
+            state = from_json_dict(VehicleState, msg.payload_dict)
+            states.append(state)
+    return states
+
+
+def _cmd_analyze_belief(args: argparse.Namespace) -> int:
+    """Implementation of ``ghost analyze-belief``.
+
+    Reads ``VehicleState`` records from both MCAPs, builds the
+    traceability report, and writes the canonical JSON either to
+    ``--output`` or to stdout.
+
+    Returns ``1`` on alignment errors raised by
+    ``build_traceability_report`` (length mismatch, stamp mismatch).
+    """
+    truth_states = _read_vehicle_states_from_mcap(args.truth_mcap)
+    belief_states = _read_vehicle_states_from_mcap(args.belief_mcap)
+
+    try:
+        report = build_traceability_report(
+            truth=truth_states, belief=belief_states
+        )
+    except ValueError as e:
+        sys.stderr.write(f"error: {e}\n")
+        return 1
+
+    encoded = encode_belief_report_to_bytes(report)
+    if args.output is None:
+        sys.stdout.write(encoded.decode("utf-8"))
+    else:
+        args.output.write_bytes(encoded)
     return 0
 
 
