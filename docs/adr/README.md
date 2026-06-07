@@ -33,3 +33,6 @@ This directory holds the project's **significant architectural decisions**.
 | [ADR-0010](0010-revised-perception-mode-catalog.md) | Revised Perception Mode Catalog and Parameter Coupling Discipline | Accepted |
 | [ADR-0011](0011-t0-safety-vetoes-pilot.md) | T0 Safety Vetoes Over Pilot Input | Accepted |
 | [ADR-0012](0012-run-retention-policy.md) | Run Retention Policy | Accepted |
+| [ADR-0013](0013-run-analysis-artifacts.md) | Run Analysis Artifacts | Accepted |
+| [ADR-0014](0014-behavior-traceability-v1.md) | Behavior Traceability v1 | Accepted |
+| [ADR-0015](0015-noisy-ground-truth-estimator.md) | Noisy Ground Truth Estimator | Accepted |
