@@ -11,6 +11,10 @@ Subcommands:
   from two MCAP files and emit a deterministic JSON traceability
   report (ADR-0016). NOT evaluation: reconstructs paired observations,
   does not score the belief.
+- ``summarize-belief``: aggregate descriptive statistics over a
+  ``BeliefTraceabilityReport`` and emit a deterministic JSON
+  consistency summary (ADR-0017). NOT evaluation: descriptive
+  statistics only.
 
 The CLI is intentionally tiny: argument parsing + thin glue around the
 ``analysis`` and ``traceability`` packages' pure functions. No
@@ -28,8 +32,11 @@ from typing import TYPE_CHECKING
 from project_ghost.analysis import (
     build_run_summary,
     build_traceability_report,
+    decode_belief_report_from_json,
     encode_belief_report_to_bytes,
+    encode_consistency_summary_to_bytes,
     generate_run_report,
+    summarize_belief_consistency,
 )
 from project_ghost.state.messages import VehicleState
 from project_ghost.telemetry import MCAPReplayReader, from_json_dict
@@ -67,6 +74,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     _add_analyze_run_parser(subparsers)
     _add_trace_event_parser(subparsers)
     _add_analyze_belief_parser(subparsers)
+    _add_summarize_belief_parser(subparsers)
 
     args = parser.parse_args(argv)
 
@@ -76,6 +84,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _cmd_trace_event(args)
     if args.command == "analyze-belief":
         return _cmd_analyze_belief(args)
+    if args.command == "summarize-belief":
+        return _cmd_summarize_belief(args)
 
     # argparse with `required=True` on the subparsers prevents reaching
     # this point with an unknown command, but we keep the explicit
@@ -245,6 +255,43 @@ def _add_analyze_belief_parser(
     )
 
 
+def _add_summarize_belief_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    summarize = subparsers.add_parser(
+        "summarize-belief",
+        help=(
+            "Aggregate descriptive statistics over a "
+            "BeliefTraceabilityReport JSON (ADR-0017)."
+        ),
+        description=(
+            "Reads the canonical JSON produced by `ghost analyze-belief`, "
+            "computes min / max / mean over per-sample errors and "
+            "covariance diagnostics, and writes a deterministic JSON "
+            "summary. JSON only — no text, no charts, no recommendations. "
+            "Description is not evaluation (ADR-0017)."
+        ),
+    )
+    summarize.add_argument(
+        "--report",
+        type=Path,
+        required=True,
+        help=(
+            "Path to the BeliefTraceabilityReport JSON file "
+            "(input; never modified)."
+        ),
+    )
+    summarize.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help=(
+            "Path where the consistency_summary.json will be written. "
+            "If omitted, the summary is written to stdout."
+        ),
+    )
+
+
 def _cmd_trace_event(args: argparse.Namespace) -> int:
     """Implementation of `ghost trace-event`.
 
@@ -312,6 +359,48 @@ def _cmd_analyze_belief(args: argparse.Namespace) -> int:
         return 1
 
     encoded = encode_belief_report_to_bytes(report)
+    if args.output is None:
+        sys.stdout.write(encoded.decode("utf-8"))
+    else:
+        args.output.write_bytes(encoded)
+    return 0
+
+
+def _cmd_summarize_belief(args: argparse.Namespace) -> int:
+    """Implementation of ``ghost summarize-belief``.
+
+    Reads the report JSON, decodes via
+    ``decode_belief_report_from_json``, summarizes, and writes the
+    canonical JSON to ``--output`` or to stdout.
+
+    Returns ``1`` on any of:
+
+    - missing input file (``FileNotFoundError``),
+    - malformed JSON (``json.JSONDecodeError``),
+    - schema mismatch or decoder failure (``ValueError`` / ``TypeError``
+      / ``KeyError`` raised by ``decode_belief_report_from_json`` or
+      the dataclass constructors it invokes).
+    """
+    try:
+        raw = args.report.read_text(encoding="utf-8")
+    except (FileNotFoundError, OSError) as e:
+        sys.stderr.write(f"error: {e}\n")
+        return 1
+
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        sys.stderr.write(f"error: invalid JSON in {args.report}: {e}\n")
+        return 1
+
+    try:
+        report = decode_belief_report_from_json(data)
+    except (TypeError, ValueError, KeyError) as e:
+        sys.stderr.write(f"error: {e}\n")
+        return 1
+
+    summary = summarize_belief_consistency(report)
+    encoded = encode_consistency_summary_to_bytes(summary)
     if args.output is None:
         sys.stdout.write(encoded.decode("utf-8"))
     else:
