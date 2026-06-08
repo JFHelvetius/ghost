@@ -31,6 +31,11 @@ Subcommands:
   per level per block + timestamp coverage, emit a deterministic
   ``SelfAssessmentSummary`` JSON (ADR-0020). Observational only —
   reports what the agent claimed it knew.
+- ``trace-decisions``: read the agent's decision records from an MCAP
+  (``/decisions`` channel), pair each ``DecisionRationale`` with the
+  ``BeliefSelfAssessment`` that justified it, re-compute the SHA-256
+  chain and emit a deterministic ``DecisionTraceReport`` JSON
+  (ADR-0022). Verifies the belief→decision provenance chain bit-for-bit.
 
 The CLI is intentionally tiny: argument parsing + thin glue around the
 ``analysis`` and ``traceability`` packages' pure functions. No
@@ -50,6 +55,7 @@ from project_ghost.analysis import (
     LabeledSummary,
     analyze_belief_calibration,
     build_comparative_report,
+    build_decision_trace_report,
     build_run_manifest,
     build_run_summary,
     build_traceability_report,
@@ -60,6 +66,7 @@ from project_ghost.analysis import (
     encode_calibration_report_to_bytes,
     encode_comparative_report_to_bytes,
     encode_consistency_summary_to_bytes,
+    encode_decision_trace_report_to_bytes,
     encode_run_manifest_to_bytes,
     encode_self_assessment_summary_to_bytes,
     generate_run_report,
@@ -108,6 +115,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
     _add_compare_belief_parser(subparsers)
     _add_analyze_calibration_parser(subparsers)
     _add_analyze_self_assessment_parser(subparsers)
+    _add_trace_decisions_parser(subparsers)
 
     args = parser.parse_args(argv)
 
@@ -127,6 +135,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
         return _cmd_analyze_calibration(args)
     if args.command == "analyze-self-assessment":
         return _cmd_analyze_self_assessment(args)
+    if args.command == "trace-decisions":
+        return _cmd_trace_decisions(args)
 
     # argparse with `required=True` on the subparsers prevents reaching
     # this point with an unknown command, but we keep the explicit
@@ -292,6 +302,48 @@ def _add_analyze_belief_parser(
         help=(
             "Path where the belief_report.json will be written. If "
             "omitted, the report is written to stdout."
+        ),
+    )
+
+
+def _add_trace_decisions_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    td = subparsers.add_parser(
+        "trace-decisions",
+        help=(
+            "Pair decision records with the belief self-assessments "
+            "that justified them and verify the SHA-256 chain (ADR-0022)."
+        ),
+        description=(
+            "Reads `/decisions` and `/self_assessment` records from the "
+            "given MCAP, pairs each DecisionRationale with the "
+            "BeliefSelfAssessment at the same belief_stamp_sim_ns, "
+            "re-computes the canonical SHA-256 and reports the chain "
+            "status (verified / broken / assessment_missing / "
+            "no_assessment_claimed). Emits a deterministic JSON "
+            "DecisionTraceReport. Observational: does not classify "
+            "decisions as good or bad."
+        ),
+    )
+    td.add_argument(
+        "--mcap",
+        type=Path,
+        required=True,
+        help=(
+            "Path to the MCAP containing /decisions and "
+            "/self_assessment records (input; never modified). "
+            "SHA-256 of the file goes into the report's "
+            "source_mcap_sha256."
+        ),
+    )
+    td.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help=(
+            "Path where the decision_trace_report.json will be "
+            "written. If omitted, the report is written to stdout."
         ),
     )
 
@@ -948,6 +1000,33 @@ def _cmd_analyze_self_assessment(args: argparse.Namespace) -> int:
 
     summary = summarize_self_assessments(records)
     encoded = encode_self_assessment_summary_to_bytes(summary)
+    if args.output is None:
+        sys.stdout.write(encoded.decode("utf-8"))
+    else:
+        args.output.write_bytes(encoded)
+    return 0
+
+
+def _cmd_trace_decisions(args: argparse.Namespace) -> int:
+    """Implementation of ``ghost trace-decisions``.
+
+    Reads /decisions + /self_assessment records from MCAP, pairs them,
+    verifies the SHA-256 chain, emits a deterministic JSON report.
+
+    Returns ``1`` on missing file or MCAP read errors.
+    """
+    if not args.mcap.exists():
+        sys.stderr.write(
+            f"error: --mcap path does not exist: {args.mcap}\n"
+        )
+        return 1
+    try:
+        report = build_decision_trace_report(args.mcap)
+    except (FileNotFoundError, OSError) as e:
+        sys.stderr.write(f"error: {e}\n")
+        return 1
+
+    encoded = encode_decision_trace_report_to_bytes(report)
     if args.output is None:
         sys.stdout.write(encoded.decode("utf-8"))
     else:
