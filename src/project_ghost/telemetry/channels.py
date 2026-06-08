@@ -38,6 +38,13 @@ con la creencia que tiene (ADR-0021). Cada record carga la decisión Y
 la justificación content-addressed al ``BeliefSelfAssessment`` input.
 Persistido vía ``telemetry.adapters.DecisionToTelemetryAdapter``."""
 
+CHANNEL_ACTUATIONS: str = "/actuations"
+"""`ActuationDirective` records — el directive que ata cada decisión
+a un ``ActuatorCommand`` opcional (ADR-0023). ``actuator_command=None``
+es estado legítimo cuando la policy declara que para esa decisión no
+procede emitir comando. Persistido vía
+``telemetry.adapters.ActuationToTelemetryAdapter``."""
+
 _SENSOR_PREFIX: str = "/sensors/"
 
 
@@ -57,6 +64,7 @@ def channel_for_sensor(sensor_id: str) -> str:
 
 
 __all__ = [
+    "CHANNEL_ACTUATIONS",
     "CHANNEL_DECISIONS",
     "CHANNEL_EVENTS",
     "CHANNEL_PERCEPTION_MODE",

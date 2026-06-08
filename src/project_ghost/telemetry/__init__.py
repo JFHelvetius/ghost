@@ -40,11 +40,13 @@ Determinism guarantees (verified by test):
 from __future__ import annotations
 
 from .adapters import (
+    ActuationToTelemetryAdapter,
     DecisionToTelemetryAdapter,
     ModeEventToTelemetryAdapter,
     SelfAssessmentToTelemetryAdapter,
 )
 from .channels import (
+    CHANNEL_ACTUATIONS,
     CHANNEL_DECISIONS,
     CHANNEL_EVENTS,
     CHANNEL_PERCEPTION_MODE,
@@ -65,12 +67,14 @@ from .serialization import encode_to_bytes, from_json_dict, to_json_safe
 from .sink import CapturedMessage, InMemorySink, TelemetrySink
 
 __all__ = [
+    "CHANNEL_ACTUATIONS",
     "CHANNEL_DECISIONS",
     "CHANNEL_EVENTS",
     "CHANNEL_PERCEPTION_MODE",
     "CHANNEL_SELF_ASSESSMENT",
     "CHANNEL_STATE_NAV",
     "TELEMETRY_PROTOCOL_VERSION",
+    "ActuationToTelemetryAdapter",
     "CapturedMessage",
     "DecisionToTelemetryAdapter",
     "InMemorySink",

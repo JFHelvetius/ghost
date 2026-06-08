@@ -23,6 +23,9 @@ Adapters incluidos:
   ``core.decisions.DecisionSink``; publica cada `(decision,
   rationale)` en ``CHANNEL_DECISIONS`` como ``DecisionRationale``
   (ADR-0021).
+- ``ActuationToTelemetryAdapter`` — implementa
+  ``core.actuation.ActuationSink``; publica cada
+  ``ActuationDirective`` en ``CHANNEL_ACTUATIONS`` (ADR-0023).
 """
 
 from __future__ import annotations
@@ -30,12 +33,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .channels import (
+    CHANNEL_ACTUATIONS,
     CHANNEL_DECISIONS,
     CHANNEL_PERCEPTION_MODE,
     CHANNEL_SELF_ASSESSMENT,
 )
 
 if TYPE_CHECKING:
+    from project_ghost.core.actuation.types import ActuationDirective
     from project_ghost.core.decisions.types import (
         Decision,
         DecisionRationale,
@@ -222,7 +227,64 @@ class DecisionToTelemetryAdapter:
         )
 
 
+class ActuationToTelemetryAdapter:
+    """Implementa ``core.actuation.ActuationSink`` reenviando al
+    ``TelemetrySink`` (ADR-0023).
+
+    Publica el ``ActuationDirective`` completo (incluye la decisión
+    productora y el comando opcional) en ``CHANNEL_ACTUATIONS``.
+
+    Uso típico — wiring del agente runtime hasta actuador:
+
+    .. code-block:: python
+
+        from project_ghost.core.actuation import (
+            KillOnlyActuationPolicy, actuate_and_publish,
+        )
+        from project_ghost.telemetry import (
+            MCAPFileSink, ActuationToTelemetryAdapter,
+        )
+
+        policy = KillOnlyActuationPolicy()
+        with MCAPFileSink(path) as mcap:
+            sink = ActuationToTelemetryAdapter(mcap)
+            for decision in decision_stream:
+                actuate_and_publish(policy, decision, sink)
+
+    Contrato:
+
+    - ``publish(directive)`` usa ``directive.directive_stamp_sim_ns``
+      como ``log_time`` de MCAP. No lee reloj de pared (ADR-0002).
+    - El canal se puede sobrescribir vía constructor; default es
+      ``CHANNEL_ACTUATIONS``.
+    """
+
+    def __init__(
+        self,
+        sink: TelemetrySink,
+        channel: str = CHANNEL_ACTUATIONS,
+    ) -> None:
+        if not channel.startswith("/"):
+            raise ValueError(
+                f"channel debe empezar con '/'; recibido {channel!r}"
+            )
+        self._sink: TelemetrySink = sink
+        self._channel: str = channel
+
+    @property
+    def channel(self) -> str:
+        return self._channel
+
+    def publish(self, directive: ActuationDirective) -> None:
+        self._sink.publish(
+            self._channel,
+            directive.directive_stamp_sim_ns,
+            directive,
+        )
+
+
 __all__ = [
+    "ActuationToTelemetryAdapter",
     "DecisionToTelemetryAdapter",
     "ModeEventToTelemetryAdapter",
     "SelfAssessmentToTelemetryAdapter",
