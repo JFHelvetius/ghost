@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
+from project_ghost.core.decisions.types import DecisionRationale
 from project_ghost.core.uncertainty.mode_events import PerceptionModeChanged
 from project_ghost.core.uncertainty.self_assessment import BeliefSelfAssessment
 from project_ghost.events.types import Event
@@ -81,6 +82,14 @@ def _decode_belief_self_assessment(
     )
 
 
+def _decode_decision_rationale(
+    d: Mapping[str, Any],
+) -> DecisionRationale:
+    return cast(
+        "DecisionRationale", from_json_dict(DecisionRationale, d)
+    )
+
+
 def make_sensor_sample_decoder(
     payload_cls: type[Any],
 ) -> Callable[[Mapping[str, Any]], SensorSample[Any]]:
@@ -126,6 +135,10 @@ def _build_decoder_table() -> dict[str, Callable[[Mapping[str, Any]], Any]]:
             f"{BeliefSelfAssessment.__module__}."
             f"{BeliefSelfAssessment.__name__}"
         ): _decode_belief_self_assessment,
+        (
+            f"{DecisionRationale.__module__}."
+            f"{DecisionRationale.__name__}"
+        ): _decode_decision_rationale,
     }
     for payload_cls in (
         IMUPayload,

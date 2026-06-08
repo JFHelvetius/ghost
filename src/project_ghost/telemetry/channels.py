@@ -32,6 +32,12 @@ record is the agent's classificatory claim about what it believes it
 knows. Persisted via
 ``telemetry.adapters.SelfAssessmentToTelemetryAdapter``."""
 
+CHANNEL_DECISIONS: str = "/decisions"
+"""`DecisionRationale` records — el agente afirmando qué decide hacer
+con la creencia que tiene (ADR-0021). Cada record carga la decisión Y
+la justificación content-addressed al ``BeliefSelfAssessment`` input.
+Persistido vía ``telemetry.adapters.DecisionToTelemetryAdapter``."""
+
 _SENSOR_PREFIX: str = "/sensors/"
 
 
@@ -51,6 +57,7 @@ def channel_for_sensor(sensor_id: str) -> str:
 
 
 __all__ = [
+    "CHANNEL_DECISIONS",
     "CHANNEL_EVENTS",
     "CHANNEL_PERCEPTION_MODE",
     "CHANNEL_SELF_ASSESSMENT",

@@ -41,3 +41,4 @@ This directory holds the project's **significant architectural decisions**.
 | [ADR-0018](0018-comparative-belief-analysis.md) | Comparative Belief Analysis with Provenance Manifests v1 | Accepted |
 | [ADR-0019](0019-belief-calibration-honesty-check-v1.md) | Belief Calibration Honesty Check v1 | Accepted |
 | [ADR-0020](0020-belief-self-assessment-v1.md) | Belief Self-Assessment v1 | Accepted |
+| [ADR-0021](0021-belief-to-action-contract-layer-v1.md) | Belief-to-Action Contract Layer v1 | Accepted |

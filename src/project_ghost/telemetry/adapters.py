@@ -19,15 +19,27 @@ Adapters incluidos:
 - ``SelfAssessmentToTelemetryAdapter`` — publica cada
   ``BeliefSelfAssessment`` en ``CHANNEL_SELF_ASSESSMENT``
   (ADR-0020).
+- ``DecisionToTelemetryAdapter`` — implementa
+  ``core.decisions.DecisionSink``; publica cada `(decision,
+  rationale)` en ``CHANNEL_DECISIONS`` como ``DecisionRationale``
+  (ADR-0021).
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .channels import CHANNEL_PERCEPTION_MODE, CHANNEL_SELF_ASSESSMENT
+from .channels import (
+    CHANNEL_DECISIONS,
+    CHANNEL_PERCEPTION_MODE,
+    CHANNEL_SELF_ASSESSMENT,
+)
 
 if TYPE_CHECKING:
+    from project_ghost.core.decisions.types import (
+        Decision,
+        DecisionRationale,
+    )
     from project_ghost.core.uncertainty.mode_events import PerceptionModeChanged
     from project_ghost.core.uncertainty.self_assessment import (
         BeliefSelfAssessment,
@@ -139,7 +151,79 @@ class SelfAssessmentToTelemetryAdapter:
         )
 
 
+class DecisionToTelemetryAdapter:
+    """Implementa ``core.decisions.DecisionSink`` reenviando al
+    ``TelemetrySink`` (ADR-0021).
+
+    Publica el ``DecisionRationale`` como record en
+    ``CHANNEL_DECISIONS``. El ``Decision`` viaja dentro del rationale
+    (``rationale.decision``); no se publica por separado — el contrato
+    de ADR-0021 requiere que toda decisión publicada lleve rationale
+    adjunto, y publicar el rationale satisface ambos al mismo tiempo.
+
+    Uso típico — wiring de un agente runtime con decisiones:
+
+    .. code-block:: python
+
+        from project_ghost.core.decisions import (
+            UncertaintyAwareReferencePolicy, decide_and_publish,
+        )
+        from project_ghost.telemetry import (
+            MCAPFileSink, DecisionToTelemetryAdapter,
+        )
+
+        policy = UncertaintyAwareReferencePolicy()
+        with MCAPFileSink(path) as mcap:
+            sink = DecisionToTelemetryAdapter(mcap)
+            for context in agent_context_stream:
+                decide_and_publish(policy, context, sink)
+
+    Contrato:
+
+    - ``publish(decision, rationale)`` valida que ``rationale.decision
+      == decision``. Si no matchea, raise ``ValueError`` (no se
+      publica nada — falla loud).
+    - ``decision.decision_stamp_sim_ns`` se usa como ``log_time``
+      de MCAP. No lee reloj de pared (ADR-0002).
+    - El canal se puede sobrescribir vía constructor; default es
+      ``CHANNEL_DECISIONS``.
+    """
+
+    def __init__(
+        self,
+        sink: TelemetrySink,
+        channel: str = CHANNEL_DECISIONS,
+    ) -> None:
+        if not channel.startswith("/"):
+            raise ValueError(
+                f"channel debe empezar con '/'; recibido {channel!r}"
+            )
+        self._sink: TelemetrySink = sink
+        self._channel: str = channel
+
+    @property
+    def channel(self) -> str:
+        return self._channel
+
+    def publish(
+        self,
+        decision: Decision,
+        rationale: DecisionRationale,
+    ) -> None:
+        if rationale.decision != decision:
+            raise ValueError(
+                "DecisionToTelemetryAdapter.publish: rationale.decision "
+                "must equal decision"
+            )
+        self._sink.publish(
+            self._channel,
+            decision.decision_stamp_sim_ns,
+            rationale,
+        )
+
+
 __all__ = [
+    "DecisionToTelemetryAdapter",
     "ModeEventToTelemetryAdapter",
     "SelfAssessmentToTelemetryAdapter",
 ]
