@@ -52,6 +52,14 @@ posicional + orientacional, opcionalmente atado a un
 ``ActuationDirective`` via ``associated_directive_hash``. Persistido
 vía ``telemetry.adapters.ForwardPredictionToTelemetryAdapter``."""
 
+CHANNEL_PREDICTION_OUTCOMES: str = "/predictions/outcomes"
+"""`PredictionOutcome` records — la observación real comparada contra
+una predicción previamente emitida (ADR-0025). Cada record carga la
+predicción inline, la pose observada, los residuos posicional y
+orientacional, los Mahalanobis máximos por eje y un verdict categórico
+cerrado. Persistido vía
+``telemetry.adapters.PredictionOutcomeToTelemetryAdapter``."""
+
 _SENSOR_PREFIX: str = "/sensors/"
 
 
@@ -76,6 +84,7 @@ __all__ = [
     "CHANNEL_EVENTS",
     "CHANNEL_FORWARD_PREDICTIONS",
     "CHANNEL_PERCEPTION_MODE",
+    "CHANNEL_PREDICTION_OUTCOMES",
     "CHANNEL_SELF_ASSESSMENT",
     "CHANNEL_STATE_NAV",
     "TELEMETRY_PROTOCOL_VERSION",

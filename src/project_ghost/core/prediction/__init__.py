@@ -23,6 +23,12 @@ divergencia entre predicción y observación llega en ADR-0025.
 
 from __future__ import annotations
 
+from .divergence import (
+    DIVERGENCE_PROTOCOL_VERSION,
+    DivergenceVerdict,
+    PredictionOutcome,
+    compute_divergence,
+)
 from .orchestration import forward_predict_and_publish
 from .protocols import ForwardPredictionSink, ForwardPredictor
 from .reference_predictor import ConstantVelocityForwardPredictor
@@ -34,13 +40,17 @@ from .types import (
 )
 
 __all__ = [
+    "DIVERGENCE_PROTOCOL_VERSION",
     "PREDICTION_PROTOCOL_VERSION",
     "BeliefForwardPrediction",
     "ConstantVelocityForwardPredictor",
+    "DivergenceVerdict",
     "ForwardPredictionSink",
     "ForwardPredictor",
     "NullForwardPredictionSink",
     "PoseStd",
+    "PredictionOutcome",
     "RecordingForwardPredictionSink",
+    "compute_divergence",
     "forward_predict_and_publish",
 ]

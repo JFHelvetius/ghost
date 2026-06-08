@@ -30,6 +30,9 @@ Adapters incluidos:
   ``core.prediction.ForwardPredictionSink``; publica cada
   ``BeliefForwardPrediction`` en ``CHANNEL_FORWARD_PREDICTIONS``
   (ADR-0024).
+- ``PredictionOutcomeToTelemetryAdapter`` — publica cada
+  ``PredictionOutcome`` en ``CHANNEL_PREDICTION_OUTCOMES`` con
+  ``actual_belief_stamp_sim_ns`` como ``log_time`` (ADR-0025).
 """
 
 from __future__ import annotations
@@ -41,6 +44,7 @@ from .channels import (
     CHANNEL_DECISIONS,
     CHANNEL_FORWARD_PREDICTIONS,
     CHANNEL_PERCEPTION_MODE,
+    CHANNEL_PREDICTION_OUTCOMES,
     CHANNEL_SELF_ASSESSMENT,
 )
 
@@ -50,6 +54,7 @@ if TYPE_CHECKING:
         Decision,
         DecisionRationale,
     )
+    from project_ghost.core.prediction.divergence import PredictionOutcome
     from project_ghost.core.prediction.types import BeliefForwardPrediction
     from project_ghost.core.uncertainty.mode_events import PerceptionModeChanged
     from project_ghost.core.uncertainty.self_assessment import (
@@ -352,10 +357,71 @@ class ForwardPredictionToTelemetryAdapter:
         )
 
 
+class PredictionOutcomeToTelemetryAdapter:
+    """Publica ``PredictionOutcome`` al ``TelemetrySink`` (ADR-0025).
+
+    El record carga la ``BeliefForwardPrediction`` original inline más
+    los residuos posicional/orientacional, los Mahalanobis máximos y un
+    verdict categórico cerrado. El stamp usado como ``log_time`` es
+    ``actual_belief_stamp_sim_ns`` — el instante en que la observación
+    se midió y la divergencia es computable.
+
+    Uso típico — wiring de auditoría post-observación:
+
+    .. code-block:: python
+
+        from project_ghost.core.prediction import (
+            compute_divergence,
+        )
+        from project_ghost.telemetry import (
+            MCAPFileSink, PredictionOutcomeToTelemetryAdapter,
+        )
+
+        with MCAPFileSink(path) as mcap:
+            sink = PredictionOutcomeToTelemetryAdapter(mcap)
+            for prediction, actual_pose, actual_stamp in matches:
+                outcome = compute_divergence(
+                    prediction, actual_pose, actual_stamp,
+                )
+                sink.publish(outcome)
+
+    Contrato:
+
+    - ``publish(outcome)`` usa ``outcome.actual_belief_stamp_sim_ns``
+      como ``log_time`` de MCAP. No lee reloj de pared (ADR-0002).
+    - El canal se puede sobrescribir vía constructor; default es
+      ``CHANNEL_PREDICTION_OUTCOMES``.
+    """
+
+    def __init__(
+        self,
+        sink: TelemetrySink,
+        channel: str = CHANNEL_PREDICTION_OUTCOMES,
+    ) -> None:
+        if not channel.startswith("/"):
+            raise ValueError(
+                f"channel debe empezar con '/'; recibido {channel!r}"
+            )
+        self._sink: TelemetrySink = sink
+        self._channel: str = channel
+
+    @property
+    def channel(self) -> str:
+        return self._channel
+
+    def publish(self, outcome: PredictionOutcome) -> None:
+        self._sink.publish(
+            self._channel,
+            outcome.actual_belief_stamp_sim_ns,
+            outcome,
+        )
+
+
 __all__ = [
     "ActuationToTelemetryAdapter",
     "DecisionToTelemetryAdapter",
     "ForwardPredictionToTelemetryAdapter",
     "ModeEventToTelemetryAdapter",
+    "PredictionOutcomeToTelemetryAdapter",
     "SelfAssessmentToTelemetryAdapter",
 ]

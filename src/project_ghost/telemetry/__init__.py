@@ -44,6 +44,7 @@ from .adapters import (
     DecisionToTelemetryAdapter,
     ForwardPredictionToTelemetryAdapter,
     ModeEventToTelemetryAdapter,
+    PredictionOutcomeToTelemetryAdapter,
     SelfAssessmentToTelemetryAdapter,
 )
 from .channels import (
@@ -52,6 +53,7 @@ from .channels import (
     CHANNEL_EVENTS,
     CHANNEL_FORWARD_PREDICTIONS,
     CHANNEL_PERCEPTION_MODE,
+    CHANNEL_PREDICTION_OUTCOMES,
     CHANNEL_SELF_ASSESSMENT,
     CHANNEL_STATE_NAV,
     TELEMETRY_PROTOCOL_VERSION,
@@ -74,6 +76,7 @@ __all__ = [
     "CHANNEL_EVENTS",
     "CHANNEL_FORWARD_PREDICTIONS",
     "CHANNEL_PERCEPTION_MODE",
+    "CHANNEL_PREDICTION_OUTCOMES",
     "CHANNEL_SELF_ASSESSMENT",
     "CHANNEL_STATE_NAV",
     "TELEMETRY_PROTOCOL_VERSION",
@@ -85,6 +88,7 @@ __all__ = [
     "MCAPFileSink",
     "MCAPReplayReader",
     "ModeEventToTelemetryAdapter",
+    "PredictionOutcomeToTelemetryAdapter",
     "ReplayMessage",
     "SelfAssessmentToTelemetryAdapter",
     "TelemetrySink",
