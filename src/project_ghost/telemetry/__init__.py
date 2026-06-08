@@ -39,10 +39,14 @@ Determinism guarantees (verified by test):
 
 from __future__ import annotations
 
-from .adapters import ModeEventToTelemetryAdapter
+from .adapters import (
+    ModeEventToTelemetryAdapter,
+    SelfAssessmentToTelemetryAdapter,
+)
 from .channels import (
     CHANNEL_EVENTS,
     CHANNEL_PERCEPTION_MODE,
+    CHANNEL_SELF_ASSESSMENT,
     CHANNEL_STATE_NAV,
     TELEMETRY_PROTOCOL_VERSION,
     channel_for_sensor,
@@ -61,6 +65,7 @@ from .sink import CapturedMessage, InMemorySink, TelemetrySink
 __all__ = [
     "CHANNEL_EVENTS",
     "CHANNEL_PERCEPTION_MODE",
+    "CHANNEL_SELF_ASSESSMENT",
     "CHANNEL_STATE_NAV",
     "TELEMETRY_PROTOCOL_VERSION",
     "CapturedMessage",
@@ -69,6 +74,7 @@ __all__ = [
     "MCAPReplayReader",
     "ModeEventToTelemetryAdapter",
     "ReplayMessage",
+    "SelfAssessmentToTelemetryAdapter",
     "TelemetrySink",
     "channel_for_sensor",
     "decode_message",

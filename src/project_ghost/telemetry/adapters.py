@@ -16,16 +16,22 @@ Adapters incluidos:
 - ``ModeEventToTelemetryAdapter`` — implementa
   ``core.uncertainty.mode_events.ModeEventSink``; publica cada
   ``PerceptionModeChanged`` en ``CHANNEL_PERCEPTION_MODE``.
+- ``SelfAssessmentToTelemetryAdapter`` — publica cada
+  ``BeliefSelfAssessment`` en ``CHANNEL_SELF_ASSESSMENT``
+  (ADR-0020).
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .channels import CHANNEL_PERCEPTION_MODE
+from .channels import CHANNEL_PERCEPTION_MODE, CHANNEL_SELF_ASSESSMENT
 
 if TYPE_CHECKING:
     from project_ghost.core.uncertainty.mode_events import PerceptionModeChanged
+    from project_ghost.core.uncertainty.self_assessment import (
+        BeliefSelfAssessment,
+    )
 
     from .sink import TelemetrySink
 
@@ -80,4 +86,60 @@ class ModeEventToTelemetryAdapter:
         self._sink.publish(self._channel, event.stamp_sim_ns, event)
 
 
-__all__ = ["ModeEventToTelemetryAdapter"]
+class SelfAssessmentToTelemetryAdapter:
+    """Publica ``BeliefSelfAssessment`` al ``TelemetrySink``.
+
+    Uso típico — wiring del agente runtime de introspección (ADR-0020):
+
+    .. code-block:: python
+
+        from project_ghost.core.uncertainty.self_assessment import (
+            assess_belief, AssessmentThresholds,
+        )
+        from project_ghost.telemetry import (
+            MCAPFileSink, SelfAssessmentToTelemetryAdapter,
+        )
+
+        thresholds = AssessmentThresholds(...)
+        with MCAPFileSink(path) as mcap:
+            adapter = SelfAssessmentToTelemetryAdapter(mcap)
+            for vehicle_state in belief_stream:
+                assessment = assess_belief(vehicle_state, thresholds)
+                adapter.publish(assessment)
+
+    Contrato:
+
+    - ``publish(assessment)`` toma ``assessment.belief_stamp_sim_ns``
+      como ``log_time`` del MCAP. No lee reloj de pared (ADR-0002).
+    - Si el sink falla, la excepción se propaga. El caller decide
+      el envoltorio defensivo.
+    - El canal se puede sobrescribir vía constructor; el default es
+      ``CHANNEL_SELF_ASSESSMENT``.
+    """
+
+    def __init__(
+        self,
+        sink: TelemetrySink,
+        channel: str = CHANNEL_SELF_ASSESSMENT,
+    ) -> None:
+        if not channel.startswith("/"):
+            raise ValueError(
+                f"channel debe empezar con '/'; recibido {channel!r}"
+            )
+        self._sink: TelemetrySink = sink
+        self._channel: str = channel
+
+    @property
+    def channel(self) -> str:
+        return self._channel
+
+    def publish(self, assessment: BeliefSelfAssessment) -> None:
+        self._sink.publish(
+            self._channel, assessment.belief_stamp_sim_ns, assessment
+        )
+
+
+__all__ = [
+    "ModeEventToTelemetryAdapter",
+    "SelfAssessmentToTelemetryAdapter",
+]

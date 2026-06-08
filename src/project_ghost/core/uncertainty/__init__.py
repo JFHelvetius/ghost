@@ -44,6 +44,14 @@ from .mode_events import (
     PerceptionModeChanged,
     RecordingModeEventSink,
 )
+from .self_assessment import (
+    SELF_ASSESSMENT_PROTOCOL_VERSION,
+    AssessmentThresholds,
+    BeliefSelfAssessment,
+    SelfAssessmentLevel,
+    assess_belief,
+    thresholds_sha256,
+)
 from .types import (
     EstimateKind,
     EstimateSource,
@@ -56,7 +64,10 @@ from .types import (
 UNCERTAINTY_PROTOCOL_VERSION: int = 1
 
 __all__ = [
+    "SELF_ASSESSMENT_PROTOCOL_VERSION",
     "UNCERTAINTY_PROTOCOL_VERSION",
+    "AssessmentThresholds",
+    "BeliefSelfAssessment",
     "DetectorConfig",
     "Estimate",
     "EstimateKind",
@@ -69,12 +80,15 @@ __all__ = [
     "PerceptionModeChanged",
     "PerceptionModeDetector",
     "RecordingModeEventSink",
+    "SelfAssessmentLevel",
     "Validity",
     "age_ns",
+    "assess_belief",
     "compose_validity",
     "downgrade_by_age",
     "inflate_directional",
     "inflate_isotropic",
     "inflate_stale",
     "make_estimate",
+    "thresholds_sha256",
 ]

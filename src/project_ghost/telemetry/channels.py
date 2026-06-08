@@ -25,6 +25,13 @@ CHANNEL_PERCEPTION_MODE: str = "/perception/mode"
 (spec: uncertainty.md §9). Persisted via
 ``telemetry.adapters.ModeEventToTelemetryAdapter``."""
 
+CHANNEL_SELF_ASSESSMENT: str = "/self_assessment"
+"""`BeliefSelfAssessment` runtime introspection records from
+``core.uncertainty.self_assessment.assess_belief`` (ADR-0020). Each
+record is the agent's classificatory claim about what it believes it
+knows. Persisted via
+``telemetry.adapters.SelfAssessmentToTelemetryAdapter``."""
+
 _SENSOR_PREFIX: str = "/sensors/"
 
 
@@ -46,6 +53,7 @@ def channel_for_sensor(sensor_id: str) -> str:
 __all__ = [
     "CHANNEL_EVENTS",
     "CHANNEL_PERCEPTION_MODE",
+    "CHANNEL_SELF_ASSESSMENT",
     "CHANNEL_STATE_NAV",
     "TELEMETRY_PROTOCOL_VERSION",
     "channel_for_sensor",

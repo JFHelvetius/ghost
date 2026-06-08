@@ -26,6 +26,11 @@ Subcommands:
   ratios over a ``BeliefTraceabilityReport`` and emit a deterministic
   ``BeliefCalibrationReport`` JSON (ADR-0019). Description is not
   calibration; the system exposes ratios, the operator interprets.
+- ``analyze-self-assessment``: read the agent's runtime self-assessment
+  records from an MCAP (``/self_assessment`` channel), summarize counts
+  per level per block + timestamp coverage, emit a deterministic
+  ``SelfAssessmentSummary`` JSON (ADR-0020). Observational only —
+  reports what the agent claimed it knew.
 
 The CLI is intentionally tiny: argument parsing + thin glue around the
 ``analysis`` and ``traceability`` packages' pure functions. No
@@ -56,8 +61,11 @@ from project_ghost.analysis import (
     encode_comparative_report_to_bytes,
     encode_consistency_summary_to_bytes,
     encode_run_manifest_to_bytes,
+    encode_self_assessment_summary_to_bytes,
     generate_run_report,
+    read_self_assessments_from_mcap,
     summarize_belief_consistency,
+    summarize_self_assessments,
 )
 from project_ghost.state.messages import VehicleState
 from project_ghost.telemetry import MCAPReplayReader, from_json_dict
@@ -99,6 +107,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
     _add_build_manifest_parser(subparsers)
     _add_compare_belief_parser(subparsers)
     _add_analyze_calibration_parser(subparsers)
+    _add_analyze_self_assessment_parser(subparsers)
 
     args = parser.parse_args(argv)
 
@@ -116,6 +125,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
         return _cmd_compare_belief(args)
     if args.command == "analyze-calibration":
         return _cmd_analyze_calibration(args)
+    if args.command == "analyze-self-assessment":
+        return _cmd_analyze_self_assessment(args)
 
     # argparse with `required=True` on the subparsers prevents reaching
     # this point with an unknown command, but we keep the explicit
@@ -281,6 +292,44 @@ def _add_analyze_belief_parser(
         help=(
             "Path where the belief_report.json will be written. If "
             "omitted, the report is written to stdout."
+        ),
+    )
+
+
+def _add_analyze_self_assessment_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    asa = subparsers.add_parser(
+        "analyze-self-assessment",
+        help=(
+            "Summarize the agent's runtime self-assessment records "
+            "from an MCAP (ADR-0020). Observational only."
+        ),
+        description=(
+            "Reads `BeliefSelfAssessment` records from the "
+            "`/self_assessment` channel of the given MCAP, aggregates "
+            "counts per level per block (KNOWN/UNCERTAIN/UNKNOWN), "
+            "computes timestamp coverage, and emits a deterministic "
+            "JSON summary. The summary reflects what the agent itself "
+            "claimed about its knowledge; the operator interprets."
+        ),
+    )
+    asa.add_argument(
+        "--mcap",
+        type=Path,
+        required=True,
+        help=(
+            "Path to the MCAP file containing the `/self_assessment` "
+            "stream (input; never modified)."
+        ),
+    )
+    asa.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help=(
+            "Path where the self_assessment_summary.json will be "
+            "written. If omitted, the summary is written to stdout."
         ),
     )
 
@@ -870,6 +919,35 @@ def _cmd_analyze_calibration(args: argparse.Namespace) -> int:
         report, source_belief_report_sha256=sha
     )
     encoded = encode_calibration_report_to_bytes(calibration)
+    if args.output is None:
+        sys.stdout.write(encoded.decode("utf-8"))
+    else:
+        args.output.write_bytes(encoded)
+    return 0
+
+
+def _cmd_analyze_self_assessment(args: argparse.Namespace) -> int:
+    """Implementation of ``ghost analyze-self-assessment``.
+
+    Reads `BeliefSelfAssessment` records from the MCAP, summarizes
+    counts + timestamp coverage, writes canonical JSON to ``--output``
+    or stdout.
+
+    Returns ``1`` on missing file / MCAP errors.
+    """
+    if not args.mcap.exists():
+        sys.stderr.write(
+            f"error: --mcap path does not exist: {args.mcap}\n"
+        )
+        return 1
+    try:
+        records = read_self_assessments_from_mcap(args.mcap)
+    except (FileNotFoundError, OSError) as e:
+        sys.stderr.write(f"error: {e}\n")
+        return 1
+
+    summary = summarize_self_assessments(records)
+    encoded = encode_self_assessment_summary_to_bytes(summary)
     if args.output is None:
         sys.stdout.write(encoded.decode("utf-8"))
     else:
