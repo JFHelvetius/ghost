@@ -42,6 +42,7 @@ from __future__ import annotations
 from .adapters import (
     ActuationToTelemetryAdapter,
     DecisionToTelemetryAdapter,
+    ForwardPredictionToTelemetryAdapter,
     ModeEventToTelemetryAdapter,
     SelfAssessmentToTelemetryAdapter,
 )
@@ -49,6 +50,7 @@ from .channels import (
     CHANNEL_ACTUATIONS,
     CHANNEL_DECISIONS,
     CHANNEL_EVENTS,
+    CHANNEL_FORWARD_PREDICTIONS,
     CHANNEL_PERCEPTION_MODE,
     CHANNEL_SELF_ASSESSMENT,
     CHANNEL_STATE_NAV,
@@ -70,6 +72,7 @@ __all__ = [
     "CHANNEL_ACTUATIONS",
     "CHANNEL_DECISIONS",
     "CHANNEL_EVENTS",
+    "CHANNEL_FORWARD_PREDICTIONS",
     "CHANNEL_PERCEPTION_MODE",
     "CHANNEL_SELF_ASSESSMENT",
     "CHANNEL_STATE_NAV",
@@ -77,6 +80,7 @@ __all__ = [
     "ActuationToTelemetryAdapter",
     "CapturedMessage",
     "DecisionToTelemetryAdapter",
+    "ForwardPredictionToTelemetryAdapter",
     "InMemorySink",
     "MCAPFileSink",
     "MCAPReplayReader",

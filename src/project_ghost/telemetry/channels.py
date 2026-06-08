@@ -45,6 +45,13 @@ es estado legítimo cuando la policy declara que para esa decisión no
 procede emitir comando. Persistido vía
 ``telemetry.adapters.ActuationToTelemetryAdapter``."""
 
+CHANNEL_FORWARD_PREDICTIONS: str = "/predictions/forward"
+"""`BeliefForwardPrediction` records — el agente declarando qué espera
+observar en ``stamp + horizon_ns`` (ADR-0024). El record viaja con std
+posicional + orientacional, opcionalmente atado a un
+``ActuationDirective`` via ``associated_directive_hash``. Persistido
+vía ``telemetry.adapters.ForwardPredictionToTelemetryAdapter``."""
+
 _SENSOR_PREFIX: str = "/sensors/"
 
 
@@ -67,6 +74,7 @@ __all__ = [
     "CHANNEL_ACTUATIONS",
     "CHANNEL_DECISIONS",
     "CHANNEL_EVENTS",
+    "CHANNEL_FORWARD_PREDICTIONS",
     "CHANNEL_PERCEPTION_MODE",
     "CHANNEL_SELF_ASSESSMENT",
     "CHANNEL_STATE_NAV",

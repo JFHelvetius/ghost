@@ -26,6 +26,10 @@ Adapters incluidos:
 - ``ActuationToTelemetryAdapter`` — implementa
   ``core.actuation.ActuationSink``; publica cada
   ``ActuationDirective`` en ``CHANNEL_ACTUATIONS`` (ADR-0023).
+- ``ForwardPredictionToTelemetryAdapter`` — implementa
+  ``core.prediction.ForwardPredictionSink``; publica cada
+  ``BeliefForwardPrediction`` en ``CHANNEL_FORWARD_PREDICTIONS``
+  (ADR-0024).
 """
 
 from __future__ import annotations
@@ -35,6 +39,7 @@ from typing import TYPE_CHECKING
 from .channels import (
     CHANNEL_ACTUATIONS,
     CHANNEL_DECISIONS,
+    CHANNEL_FORWARD_PREDICTIONS,
     CHANNEL_PERCEPTION_MODE,
     CHANNEL_SELF_ASSESSMENT,
 )
@@ -45,6 +50,7 @@ if TYPE_CHECKING:
         Decision,
         DecisionRationale,
     )
+    from project_ghost.core.prediction.types import BeliefForwardPrediction
     from project_ghost.core.uncertainty.mode_events import PerceptionModeChanged
     from project_ghost.core.uncertainty.self_assessment import (
         BeliefSelfAssessment,
@@ -283,9 +289,73 @@ class ActuationToTelemetryAdapter:
         )
 
 
+class ForwardPredictionToTelemetryAdapter:
+    """Implementa ``core.prediction.ForwardPredictionSink`` reenviando
+    al ``TelemetrySink`` (ADR-0024).
+
+    Publica el ``BeliefForwardPrediction`` completo (incluye pose
+    predicha, std predicha, link opcional a directive) en
+    ``CHANNEL_FORWARD_PREDICTIONS``.
+
+    Uso típico — wiring del agente runtime con forward-prediction:
+
+    .. code-block:: python
+
+        from project_ghost.core.prediction import (
+            ConstantVelocityForwardPredictor,
+            forward_predict_and_publish,
+        )
+        from project_ghost.telemetry import (
+            MCAPFileSink, ForwardPredictionToTelemetryAdapter,
+        )
+
+        predictor = ConstantVelocityForwardPredictor()
+        with MCAPFileSink(path) as mcap:
+            sink = ForwardPredictionToTelemetryAdapter(mcap)
+            for belief in belief_stream:
+                forward_predict_and_publish(
+                    predictor, belief, horizon_ns=100_000_000, sink=sink,
+                )
+
+    Contrato:
+
+    - ``publish(prediction)`` usa
+      ``prediction.source_belief_stamp_sim_ns`` como ``log_time`` de
+      MCAP. No lee reloj de pared (ADR-0002). Se usa el stamp del
+      belief origen — no el del horizonte — porque eso es el instante
+      en que el agente se comprometió con la predicción.
+    - El canal se puede sobrescribir vía constructor; default es
+      ``CHANNEL_FORWARD_PREDICTIONS``.
+    """
+
+    def __init__(
+        self,
+        sink: TelemetrySink,
+        channel: str = CHANNEL_FORWARD_PREDICTIONS,
+    ) -> None:
+        if not channel.startswith("/"):
+            raise ValueError(
+                f"channel debe empezar con '/'; recibido {channel!r}"
+            )
+        self._sink: TelemetrySink = sink
+        self._channel: str = channel
+
+    @property
+    def channel(self) -> str:
+        return self._channel
+
+    def publish(self, prediction: BeliefForwardPrediction) -> None:
+        self._sink.publish(
+            self._channel,
+            prediction.source_belief_stamp_sim_ns,
+            prediction,
+        )
+
+
 __all__ = [
     "ActuationToTelemetryAdapter",
     "DecisionToTelemetryAdapter",
+    "ForwardPredictionToTelemetryAdapter",
     "ModeEventToTelemetryAdapter",
     "SelfAssessmentToTelemetryAdapter",
 ]

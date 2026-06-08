@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from project_ghost.core.actuation.types import ActuationDirective
 from project_ghost.core.decisions.types import DecisionRationale
+from project_ghost.core.prediction.types import BeliefForwardPrediction
 from project_ghost.core.uncertainty.mode_events import PerceptionModeChanged
 from project_ghost.core.uncertainty.self_assessment import BeliefSelfAssessment
 from project_ghost.events.types import Event
@@ -99,6 +100,15 @@ def _decode_actuation_directive(
     )
 
 
+def _decode_belief_forward_prediction(
+    d: Mapping[str, Any],
+) -> BeliefForwardPrediction:
+    return cast(
+        "BeliefForwardPrediction",
+        from_json_dict(BeliefForwardPrediction, d),
+    )
+
+
 def make_sensor_sample_decoder(
     payload_cls: type[Any],
 ) -> Callable[[Mapping[str, Any]], SensorSample[Any]]:
@@ -152,6 +162,10 @@ def _build_decoder_table() -> dict[str, Callable[[Mapping[str, Any]], Any]]:
             f"{ActuationDirective.__module__}."
             f"{ActuationDirective.__name__}"
         ): _decode_actuation_directive,
+        (
+            f"{BeliefForwardPrediction.__module__}."
+            f"{BeliefForwardPrediction.__name__}"
+        ): _decode_belief_forward_prediction,
     }
     for payload_cls in (
         IMUPayload,

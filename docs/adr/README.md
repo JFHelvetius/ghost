@@ -44,3 +44,4 @@ This directory holds the project's **significant architectural decisions**.
 | [ADR-0021](0021-belief-to-action-contract-layer-v1.md) | Belief-to-Action Contract Layer v1 | Accepted |
 | [ADR-0022](0022-decision-trace-verification-v1.md) | Decision Trace and Chain Verification v1 | Accepted |
 | [ADR-0023](0023-action-emission-contract-layer-v1.md) | Action Emission Contract Layer v1 | Accepted |
+| [ADR-0024](0024-belief-forward-prediction-contract-v1.md) | Belief Forward-Prediction Contract v1 | Accepted |
