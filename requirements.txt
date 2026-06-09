@@ -1,0 +1,9 @@
+# Core scientific stack
+numpy>=1.26,<3.0
+
+# MCAP telemetry (capture + replay)
+mcap>=1.2.0
+
+# Web dashboard
+streamlit>=1.35,<2.0
+pandas>=2.0,<3.0
