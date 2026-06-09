@@ -49,3 +49,4 @@ This directory holds the project's **significant architectural decisions**.
 | [ADR-0026](0026-closed-loop-feedback-v1.md) | Closed-Loop Feedback v1 | Accepted |
 | [ADR-0027](0027-calibration-aware-decision-context-v1.md) | Calibration-Aware Decision Context v1 | Accepted |
 | [ADR-0028](0028-sensor-to-belief-fusion-contract-v1.md) | Sensor-to-Belief Fusion Contract v1 | Accepted |
+| [ADR-0029](0029-trajectory-controller-reference-v1.md) | Trajectory Controller Reference v1 | Accepted |

@@ -47,7 +47,7 @@ from typing import TYPE_CHECKING, Final
 import numpy as np
 
 from project_ghost.core.actuation import (
-    KillOnlyActuationPolicy,
+    AttitudeHoldReferencePolicy,
     actuate_and_publish,
 )
 from project_ghost.core.decisions import (
@@ -186,7 +186,7 @@ def run_closed_loop_smoke(
     )
     predictor = ConstantVelocityForwardPredictor()
     decision_policy = UncertaintyAwareReferencePolicy()
-    actuation_policy = KillOnlyActuationPolicy()
+    actuation_policy = AttitudeHoldReferencePolicy()
     feedback_policy = MahalanobisDowngradePolicy(
         min_outcomes=4, downgrade_threshold=2
     )

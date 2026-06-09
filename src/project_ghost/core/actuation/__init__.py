@@ -12,16 +12,15 @@ si la policy declara no emitir).
 - ``NullActuationSink`` / ``RecordingActuationSink`` (implementaciones
   de referencia para tests).
 - ``KillOnlyActuationPolicy`` (mapping mínimo que valida que el
-  contrato es sound).
+  contrato es sound — ADR-0023).
+- ``AttitudeHoldReferencePolicy`` (PROCEED/HOLD → AttitudeCommand de
+  attitude hold a identidad; ADR-0029).
 - ``actuate_and_publish`` (orquestación canónica).
-
-Cero implementaciones de control real. Cero trayectorias, cero
-attitude targets para PROCEED/HOLD/RTL/LAND. Esos llegan en ADRs
-futuras componiéndose sobre estos shapes.
 """
 
 from __future__ import annotations
 
+from .attitude_hold_policy import AttitudeHoldReferencePolicy
 from .orchestration import actuate_and_publish
 from .protocols import ActuationPolicy, ActuationSink
 from .reference_policy import KillOnlyActuationPolicy
@@ -36,6 +35,7 @@ __all__ = [
     "ActuationDirective",
     "ActuationPolicy",
     "ActuationSink",
+    "AttitudeHoldReferencePolicy",
     "KillOnlyActuationPolicy",
     "NullActuationSink",
     "RecordingActuationSink",

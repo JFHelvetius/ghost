@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from project_ghost.core.actuation.types import ActuationDirective
 from project_ghost.core.feedback.types import CalibratedSelfAssessment
 from project_ghost.core.fusion.types import FusionResult
 from project_ghost.core.prediction.divergence import PredictionOutcome
@@ -32,6 +33,7 @@ from project_ghost.core.uncertainty.self_assessment import (
     BeliefSelfAssessment,
 )
 from project_ghost.examples.closed_loop_smoke import run_closed_loop_smoke
+from project_ghost.hal.messages.actuators import AttitudeCommand
 from project_ghost.telemetry import (
     CHANNEL_ACTUATIONS,
     CHANNEL_CALIBRATED_SELF_ASSESSMENT,
@@ -194,6 +196,26 @@ def test_smoke_per_channel_log_times_are_monotonic(tmp_path: Path) -> None:
                     f"{prev} -> {msg.log_time_sim_ns}"
                 )
             last_seen[msg.channel] = msg.log_time_sim_ns
+
+
+def test_smoke_proceed_directives_carry_attitude_command(
+    tmp_path: Path,
+) -> None:
+    """ADR-0029 closure: PROCEED decisions produce AttitudeCommand
+    instances (not None) via AttitudeHoldReferencePolicy."""
+    out = tmp_path / "smoke.mcap"
+    run_closed_loop_smoke(out, n_cycles=10)
+    proceed_commands = []
+    with MCAPReplayReader(out) as reader:
+        for msg in reader.iter_messages():
+            if msg.channel != CHANNEL_ACTUATIONS:
+                continue
+            directive = decode_message(msg)
+            assert isinstance(directive, ActuationDirective)
+            if directive.decision.kind.value == "proceed":
+                proceed_commands.append(directive.actuator_command)
+    assert len(proceed_commands) == 4
+    assert all(isinstance(c, AttitudeCommand) for c in proceed_commands)
 
 
 def test_smoke_outcome_predictions_link_back_to_forward_records(
