@@ -1,7 +1,8 @@
-# Core scientific stack
-numpy>=1.26,<3.0
+# Install the project-ghost package from the repo root
+# (src/ layout — needed so `from project_ghost import ...` resolves)
+-e .
 
-# MCAP telemetry (capture + replay)
+# MCAP telemetry (capture + replay) — not included in base install
 mcap>=1.2.0
 
 # Web dashboard
