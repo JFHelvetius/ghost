@@ -37,6 +37,10 @@ Adapters incluidos:
   ``CalibratedSelfAssessment`` en
   ``CHANNEL_CALIBRATED_SELF_ASSESSMENT`` con
   ``raw_assessment.belief_stamp_sim_ns`` como ``log_time`` (ADR-0026).
+- ``FusionResultToTelemetryAdapter`` — implementa
+  ``core.fusion.FusionResultSink``; publica cada ``FusionResult`` en
+  ``CHANNEL_FUSION_RESULTS`` con ``belief.stamp_sim_ns`` como
+  ``log_time`` (ADR-0028).
 """
 
 from __future__ import annotations
@@ -48,6 +52,7 @@ from .channels import (
     CHANNEL_CALIBRATED_SELF_ASSESSMENT,
     CHANNEL_DECISIONS,
     CHANNEL_FORWARD_PREDICTIONS,
+    CHANNEL_FUSION_RESULTS,
     CHANNEL_PERCEPTION_MODE,
     CHANNEL_PREDICTION_OUTCOMES,
     CHANNEL_SELF_ASSESSMENT,
@@ -60,6 +65,7 @@ if TYPE_CHECKING:
         DecisionRationale,
     )
     from project_ghost.core.feedback.types import CalibratedSelfAssessment
+    from project_ghost.core.fusion.types import FusionResult
     from project_ghost.core.prediction.divergence import PredictionOutcome
     from project_ghost.core.prediction.types import BeliefForwardPrediction
     from project_ghost.core.uncertainty.mode_events import PerceptionModeChanged
@@ -486,11 +492,73 @@ class CalibratedSelfAssessmentToTelemetryAdapter:
         )
 
 
+class FusionResultToTelemetryAdapter:
+    """Implementa ``core.fusion.FusionResultSink`` reenviando al
+    ``TelemetrySink`` (ADR-0028).
+
+    Publica el ``FusionResult`` completo (incluye el belief, el hash del
+    input productor y el ``fusion_policy_id``) en
+    ``CHANNEL_FUSION_RESULTS``.
+
+    Uso típico — wiring del agente runtime con fusion layer:
+
+    .. code-block:: python
+
+        from project_ghost.core.fusion import (
+            LinearMotionOracleFusionPolicy,
+            FusionInput,
+            fuse_and_publish,
+        )
+        from project_ghost.telemetry import (
+            MCAPFileSink, FusionResultToTelemetryAdapter,
+        )
+
+        policy = LinearMotionOracleFusionPolicy(...)
+        with MCAPFileSink(path) as mcap:
+            sink = FusionResultToTelemetryAdapter(mcap)
+            for fusion_input in input_stream:
+                fuse_and_publish(policy, fusion_input, sink)
+
+    Contrato:
+
+    - ``publish(result)`` usa ``result.belief.stamp_sim_ns`` como
+      ``log_time`` de MCAP. No lee reloj de pared (ADR-0002). Se usa
+      el stamp del belief producido — el instante al que aplica la
+      estimación.
+    - El canal se puede sobrescribir vía constructor; default es
+      ``CHANNEL_FUSION_RESULTS``.
+    """
+
+    def __init__(
+        self,
+        sink: TelemetrySink,
+        channel: str = CHANNEL_FUSION_RESULTS,
+    ) -> None:
+        if not channel.startswith("/"):
+            raise ValueError(
+                f"channel debe empezar con '/'; recibido {channel!r}"
+            )
+        self._sink: TelemetrySink = sink
+        self._channel: str = channel
+
+    @property
+    def channel(self) -> str:
+        return self._channel
+
+    def publish(self, result: FusionResult) -> None:
+        self._sink.publish(
+            self._channel,
+            result.belief.stamp_sim_ns,
+            result,
+        )
+
+
 __all__ = [
     "ActuationToTelemetryAdapter",
     "CalibratedSelfAssessmentToTelemetryAdapter",
     "DecisionToTelemetryAdapter",
     "ForwardPredictionToTelemetryAdapter",
+    "FusionResultToTelemetryAdapter",
     "ModeEventToTelemetryAdapter",
     "PredictionOutcomeToTelemetryAdapter",
     "SelfAssessmentToTelemetryAdapter",

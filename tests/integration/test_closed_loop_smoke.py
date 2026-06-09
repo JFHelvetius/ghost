@@ -1,5 +1,5 @@
 """Integration test for the closed-loop smoke (ADR-0019 through
-ADR-0026 composed in a single pipeline).
+ADR-0028 composed in a single pipeline).
 
 This test is **not** a contract test — it verifies that the contracts
 *compose*. When this test breaks because a single ADR shape changed,
@@ -12,6 +12,10 @@ the reference policy reads ``effective_overall_level``. Decisions
 transition from PROCEED to HOLD as the calibration downgrades the
 effective level. The previously pinned "gap" test is replaced by the
 "closure" test below.
+
+ADR-0028 adds the fusion layer: the smoke now uses
+``LinearMotionOracleFusionPolicy`` to produce the belief at each cycle
+and publishes ``FusionResult`` records to ``/fusion/results``.
 """
 
 from __future__ import annotations
@@ -21,6 +25,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from project_ghost.core.feedback.types import CalibratedSelfAssessment
+from project_ghost.core.fusion.types import FusionResult
 from project_ghost.core.prediction.divergence import PredictionOutcome
 from project_ghost.core.prediction.types import BeliefForwardPrediction
 from project_ghost.core.uncertainty.self_assessment import (
@@ -32,6 +37,7 @@ from project_ghost.telemetry import (
     CHANNEL_CALIBRATED_SELF_ASSESSMENT,
     CHANNEL_DECISIONS,
     CHANNEL_FORWARD_PREDICTIONS,
+    CHANNEL_FUSION_RESULTS,
     CHANNEL_PREDICTION_OUTCOMES,
     CHANNEL_SELF_ASSESSMENT,
     CHANNEL_STATE_NAV,
@@ -114,12 +120,13 @@ def test_smoke_decisions_track_calibration_closure(
 def test_smoke_mcap_contains_all_expected_channels(
     tmp_path: Path,
 ) -> None:
-    """All seven channels must be present in the captured MCAP."""
+    """All eight channels must be present in the captured MCAP."""
     out = tmp_path / "smoke.mcap"
     run_closed_loop_smoke(out, n_cycles=10)
     with MCAPReplayReader(out) as reader:
         channels = {msg.channel for msg in reader.iter_messages()}
     assert channels == {
+        CHANNEL_FUSION_RESULTS,
         CHANNEL_STATE_NAV,
         CHANNEL_SELF_ASSESSMENT,
         CHANNEL_CALIBRATED_SELF_ASSESSMENT,
@@ -138,7 +145,8 @@ def test_smoke_mcap_message_counts_per_channel(tmp_path: Path) -> None:
         counts: dict[str, int] = {}
         for msg in reader.iter_messages():
             counts[msg.channel] = counts.get(msg.channel, 0) + 1
-    # 10 per cycle for state/assess/cal/dec/act/pred; 9 for outcomes.
+    # 10 per cycle for fusion/state/assess/cal/dec/act/pred; 9 for outcomes.
+    assert counts[CHANNEL_FUSION_RESULTS] == 10
     assert counts[CHANNEL_STATE_NAV] == 10
     assert counts[CHANNEL_SELF_ASSESSMENT] == 10
     assert counts[CHANNEL_CALIBRATED_SELF_ASSESSMENT] == 10
@@ -155,6 +163,7 @@ def test_smoke_mcap_messages_decode_to_expected_types(
     out = tmp_path / "smoke.mcap"
     run_closed_loop_smoke(out, n_cycles=10)
     expected_type_per_channel: dict[str, type] = {
+        CHANNEL_FUSION_RESULTS: FusionResult,
         CHANNEL_SELF_ASSESSMENT: BeliefSelfAssessment,
         CHANNEL_CALIBRATED_SELF_ASSESSMENT: CalibratedSelfAssessment,
         CHANNEL_FORWARD_PREDICTIONS: BeliefForwardPrediction,

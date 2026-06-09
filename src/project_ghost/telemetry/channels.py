@@ -69,6 +69,13 @@ lo informa, el level ajustado, el ``adjustment_policy_id`` y el
 ``adjustment_reason`` taxonomizados. Persistido vía
 ``telemetry.adapters.CalibratedSelfAssessmentToTelemetryAdapter``."""
 
+CHANNEL_FUSION_RESULTS: str = "/fusion/results"
+"""`FusionResult` records — el belief producido por la capa de
+sensor-to-belief fusion (ADR-0028). Cada record carga el ``VehicleState``
+resultante, el SHA-256 del ``FusionInput`` productor y el
+``fusion_policy_id`` de la policy que lo generó. Persistido vía
+``telemetry.adapters.FusionResultToTelemetryAdapter``."""
+
 _SENSOR_PREFIX: str = "/sensors/"
 
 
@@ -93,6 +100,7 @@ __all__ = [
     "CHANNEL_DECISIONS",
     "CHANNEL_EVENTS",
     "CHANNEL_FORWARD_PREDICTIONS",
+    "CHANNEL_FUSION_RESULTS",
     "CHANNEL_PERCEPTION_MODE",
     "CHANNEL_PREDICTION_OUTCOMES",
     "CHANNEL_SELF_ASSESSMENT",

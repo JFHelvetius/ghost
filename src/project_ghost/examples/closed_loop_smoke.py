@@ -1,13 +1,14 @@
 """N-cycle closed-loop smoke that exercises every contract from
-ADR-0019 through ADR-0026 in a single pipeline.
+ADR-0019 through ADR-0028 in a single pipeline.
 
 Scenario design (deliberately constructed to expose feedback):
 
-- The agent's twist is zero — it thinks it's stationary.
+- ``LinearMotionOracleFusionPolicy`` produces the agent's belief with
+  zero velocity — the agent thinks it is stationary at the origin.
 - The covariance is small — the agent declares itself KNOWN.
 - The constant-velocity predictor extrapolates "no motion" with small
   std.
-- Groundtruth drifts at a constant rate. Each observation lands far
+- Ground truth drifts at a constant rate. Each observation lands far
   from the prediction.
 - Outcomes verdict ``BEYOND_5_STD`` consistently.
 - ``MahalanobisDowngradePolicy`` downgrades the calibrated assessment
@@ -15,6 +16,7 @@ Scenario design (deliberately constructed to expose feedback):
 
 Wiring of channels (all to one MCAP):
 
+- ``/fusion/results``               each ``FusionResult`` (ADR-0028)
 - ``/state/nav``                    each ``VehicleState``
 - ``/self_assessment``              each raw ``BeliefSelfAssessment``
 - ``/self_assessment/calibrated``   each ``CalibratedSelfAssessment``
@@ -40,7 +42,6 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
-from types import MappingProxyType
 from typing import TYPE_CHECKING, Final
 
 import numpy as np
@@ -58,6 +59,11 @@ from project_ghost.core.feedback import (
     MahalanobisDowngradePolicy,
     assess_with_feedback,
 )
+from project_ghost.core.fusion import (
+    FusionInput,
+    LinearMotionOracleFusionPolicy,
+    fuse_and_publish,
+)
 from project_ghost.core.prediction import (
     ConstantVelocityForwardPredictor,
     compute_divergence,
@@ -66,28 +72,16 @@ from project_ghost.core.uncertainty.self_assessment import (
     AssessmentThresholds,
     assess_belief,
 )
-from project_ghost.hal.messages import SensorHealth
-from project_ghost.state.messages import (
-    FlightMode,
-    FlightStatus,
-    IMUBiases,
-    MissionMode,
-    MissionStatus,
-    NavigationState,
-    Pose,
-    SensorHealthMap,
-    Twist,
-    VehicleState,
-)
+from project_ghost.state.messages import Pose  # used in _ground_truth_pose
 from project_ghost.telemetry import (
     ActuationToTelemetryAdapter,
     CalibratedSelfAssessmentToTelemetryAdapter,
     DecisionToTelemetryAdapter,
     ForwardPredictionToTelemetryAdapter,
+    FusionResultToTelemetryAdapter,
     MCAPFileSink,
     PredictionOutcomeToTelemetryAdapter,
     SelfAssessmentToTelemetryAdapter,
-    encode_to_bytes,
 )
 from project_ghost.telemetry.channels import CHANNEL_STATE_NAV
 
@@ -97,16 +91,13 @@ if TYPE_CHECKING:
         BeliefForwardPrediction,
         PredictionOutcome,
     )
+    from project_ghost.state.messages import VehicleState
     from project_ghost.telemetry import TelemetrySink
 
     _PredictionType = BeliefForwardPrediction
     _OutcomeType = PredictionOutcome
     _CalibratedType = CalibratedSelfAssessment
 
-
-_Q_IDENTITY: Final[np.ndarray] = np.array(
-    [1.0, 0.0, 0.0, 0.0], dtype=np.float64
-)
 
 # Scenario parameters. Picked to force feedback to fire by ~cycle 4.
 _DT_NS: Final[int] = 100_000_000  # 100 ms cycle
@@ -149,6 +140,8 @@ def _ground_truth_pose(t_ns: int) -> Pose:
     """Ground-truth pose at sim time ``t_ns``.
 
     Pure function of time — deterministic. Linear drift in x.
+    The oracle belief stays at the origin with zero velocity, so the
+    gap between this and the prediction grows each cycle.
     """
     dt_s = (t_ns - _T0_NS) / 1e9
     return Pose(
@@ -156,70 +149,12 @@ def _ground_truth_pose(t_ns: int) -> Pose:
             [_GROUND_TRUTH_DRIFT_X_MPS * dt_s, 0.0, 0.0],
             dtype=np.float64,
         ),
-        orientation_q=_Q_IDENTITY.copy(),
-    )
-
-
-def _make_state(t_ns: int) -> VehicleState:
-    """Construct the agent's belief at sim time ``t_ns``.
-
-    The agent believes pose = ground truth (perfect estimator for the
-    smoke; the gap is in *prediction*, not estimation).
-    The agent's twist is *zero* in world frame — the agent doesn't
-    know it's drifting. The covariance is small — the agent declares
-    itself KNOWN.
-    """
-    pose = _ground_truth_pose(t_ns)
-    cov = np.eye(15, dtype=np.float64) * _COVARIANCE_DIAG
-    nav = NavigationState(
-        pose=pose,
-        twist_world=Twist(
-            linear_mps=np.zeros(3, dtype=np.float64),
-            angular_rps=np.zeros(3, dtype=np.float64),
-            frame="world",
-        ),
-        twist_body=Twist(
-            linear_mps=np.zeros(3, dtype=np.float64),
-            angular_rps=np.zeros(3, dtype=np.float64),
-            frame="body",
-        ),
-        accel_body_mps2=np.zeros(3, dtype=np.float64),
-        imu_biases=IMUBiases(
-            accel_bias_mps2=np.zeros(3, dtype=np.float64),
-            gyro_bias_rps=np.zeros(3, dtype=np.float64),
-        ),
-        covariance_15x15=cov,
-    )
-    return VehicleState(
-        stamp_sim_ns=t_ns,
-        stamp_wall_ns=0,
-        nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
-        flight=FlightStatus(
-            armed=True,
-            flight_mode=FlightMode.OFFBOARD,
-            battery_v=12.0,
-            battery_pct=0.9,
-            error_flags=0,
-        ),
-        mission=MissionStatus(
-            mode=MissionMode.IDLE,
-            current_goal=None,
-            progress=0.0,
-            started_sim_ns=None,
-        ),
+        orientation_q=np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64),
     )
 
 
 def _publish_vehicle_state(sink: TelemetrySink, state: VehicleState) -> None:
-    """Publish ``state`` to ``/state/nav`` channel.
-
-    Inlined here because no canonical adapter exists yet for
-    ``VehicleState`` → telemetry (state is published directly by the
-    aggregator in real wiring).
-    """
+    """Publish ``state`` to ``/state/nav`` channel."""
     sink.publish(CHANNEL_STATE_NAV, state.stamp_sim_ns, state)
 
 
@@ -243,6 +178,12 @@ def run_closed_loop_smoke(
         )
 
     thresholds = _make_thresholds()
+    oracle = LinearMotionOracleFusionPolicy(
+        initial_position_enu_m=np.zeros(3, dtype=np.float64),
+        velocity_world_mps=np.zeros(3, dtype=np.float64),
+        start_stamp_sim_ns=_T0_NS,
+        covariance_diag=_COVARIANCE_DIAG,
+    )
     predictor = ConstantVelocityForwardPredictor()
     decision_policy = UncertaintyAwareReferencePolicy()
     actuation_policy = KillOnlyActuationPolicy()
@@ -256,6 +197,7 @@ def run_closed_loop_smoke(
     decisions_by_kind: dict[str, int] = {}
 
     with MCAPFileSink(output_path) as sink:
+        fusion_adapter = FusionResultToTelemetryAdapter(sink)
         sa_adapter = SelfAssessmentToTelemetryAdapter(sink)
         cal_adapter = CalibratedSelfAssessmentToTelemetryAdapter(sink)
         dec_adapter = DecisionToTelemetryAdapter(sink)
@@ -268,7 +210,7 @@ def run_closed_loop_smoke(
 
             # ---- 1. Outcome from previous cycle's prediction --------
             # (We process the outcome BEFORE building this cycle's
-            # state so feedback can use it.)
+            # belief so feedback can use it.)
             if k > 0:
                 prior_prediction = predictions_by_cycle[k - 1]
                 actual_pose = _ground_truth_pose(t_k)
@@ -278,8 +220,15 @@ def run_closed_loop_smoke(
                 outcomes_so_far.append(outcome)
                 out_adapter.publish(outcome)
 
-            # ---- 2. Belief at t_k ----------------------------------
-            state = _make_state(t_k)
+            # ---- 2. Belief at t_k via fusion oracle (ADR-0028) -----
+            prior_stamp = _T0_NS + (k - 1) * _DT_NS if k > 0 else None
+            fusion_input = FusionInput(
+                sensor_samples=(),
+                prior_belief_stamp_sim_ns=prior_stamp,
+                target_stamp_sim_ns=t_k,
+            )
+            fusion_result = fuse_and_publish(oracle, fusion_input, fusion_adapter)
+            state = fusion_result.belief
             _publish_vehicle_state(sink, state)
 
             # ---- 3. Raw self-assessment ----------------------------
@@ -334,10 +283,6 @@ def run_closed_loop_smoke(
     mcap_bytes = output_path.read_bytes()
     mcap_sha = hashlib.sha256(mcap_bytes).hexdigest()
 
-    # Sanity: encode the last calibrated record to bytes to confirm
-    # the determinism contract holds round-trip per type.
-    _ = encode_to_bytes(calibrated_records[-1])
-
     return SmokeSummary(
         n_cycles=n_cycles,
         n_outcomes=len(outcomes_so_far),
@@ -354,14 +299,14 @@ def main() -> None:
     """CLI entry: write to ``./closed_loop_smoke.mcap`` and print summary."""
     out = Path("closed_loop_smoke.mcap").resolve()
     summary = run_closed_loop_smoke(out, n_cycles=10)
-    print(f"MCAP:                       {summary.mcap_path}")
-    print(f"SHA-256:                    {summary.mcap_sha256}")
-    print(f"Cycles:                     {summary.n_cycles}")
-    print(f"Outcomes:                   {summary.n_outcomes}")
-    print(f"Final verdict:              {summary.final_verdict}")
-    print(f"Decisions by kind:          {summary.decisions_by_kind}")
+    print(f"MCAP:               {summary.mcap_path}")
+    print(f"SHA-256:            {summary.mcap_sha256}")
+    print(f"Cycles:             {summary.n_cycles}")
+    print(f"Outcomes:           {summary.n_outcomes}")
+    print(f"Final verdict:      {summary.final_verdict}")
+    print(f"Decisions by kind:  {summary.decisions_by_kind}")
     print(
-        "Calibrated levels:          "
+        "Calibrated levels:  "
         + " -> ".join(summary.calibrated_levels_observed)
     )
 
