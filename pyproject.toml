@@ -35,6 +35,10 @@ telemetry = [
     "mcap>=1.2.0",
     "rerun-sdk>=0.21.0",
 ]
+app = [
+    "streamlit>=1.35,<2.0",
+    "pandas>=2.0,<3.0",
+]
 dev = [
     "ruff>=0.6.0",
     "mypy>=1.11",
@@ -47,6 +51,7 @@ dev = [
 
 [project.scripts]
 ghost = "project_ghost.cli:main"
+ghost-app = "project_ghost.app:run"
 
 [project.urls]
 Documentation = "https://github.com/project-ghost/project-ghost/tree/main/docs"
@@ -110,6 +115,9 @@ ignore = [
 # array literals, numeric thresholds and helper fixtures with ARG-like
 # parameters are intentional.
 "tests/estimation/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "SIM117", "TC003"]
+# app: Streamlit UI code uses magic values, lazy imports, and Path annotations
+# that are idiomatic in the framework but flagged by strict ruff rules.
+"src/project_ghost/app/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "TC003", "TRY003", "TRY301"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["project_ghost"]
@@ -134,8 +142,20 @@ module = [
     "mcap.*",
     "mcap_protobuf.*",
     "rerun",
+    "streamlit",
+    "streamlit.*",
+    "pandas",
+    "pandas.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# App code uses streamlit patterns (Any returns, lazy imports, widget
+# magic values) that are impractical to annotate strictly.
+module = ["project_ghost.app.*"]
+disallow_any_generics = false
+disallow_untyped_defs = false
+warn_return_any = false
 
 # --- pytest -------------------------------------------------------------
 [tool.pytest.ini_options]
