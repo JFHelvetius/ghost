@@ -33,6 +33,10 @@ Adapters incluidos:
 - ``PredictionOutcomeToTelemetryAdapter`` — publica cada
   ``PredictionOutcome`` en ``CHANNEL_PREDICTION_OUTCOMES`` con
   ``actual_belief_stamp_sim_ns`` como ``log_time`` (ADR-0025).
+- ``CalibratedSelfAssessmentToTelemetryAdapter`` — publica cada
+  ``CalibratedSelfAssessment`` en
+  ``CHANNEL_CALIBRATED_SELF_ASSESSMENT`` con
+  ``raw_assessment.belief_stamp_sim_ns`` como ``log_time`` (ADR-0026).
 """
 
 from __future__ import annotations
@@ -41,6 +45,7 @@ from typing import TYPE_CHECKING
 
 from .channels import (
     CHANNEL_ACTUATIONS,
+    CHANNEL_CALIBRATED_SELF_ASSESSMENT,
     CHANNEL_DECISIONS,
     CHANNEL_FORWARD_PREDICTIONS,
     CHANNEL_PERCEPTION_MODE,
@@ -54,6 +59,7 @@ if TYPE_CHECKING:
         Decision,
         DecisionRationale,
     )
+    from project_ghost.core.feedback.types import CalibratedSelfAssessment
     from project_ghost.core.prediction.divergence import PredictionOutcome
     from project_ghost.core.prediction.types import BeliefForwardPrediction
     from project_ghost.core.uncertainty.mode_events import PerceptionModeChanged
@@ -417,8 +423,72 @@ class PredictionOutcomeToTelemetryAdapter:
         )
 
 
+class CalibratedSelfAssessmentToTelemetryAdapter:
+    """Publica ``CalibratedSelfAssessment`` al ``TelemetrySink``
+    (ADR-0026).
+
+    El record carga el ``BeliefSelfAssessment`` crudo inline (con sus
+    thresholds y hash), el ``CalibrationHistory`` que lo informa y el
+    nivel overall ajustado por la
+    ``CalibrationAdjustmentPolicy``. El stamp usado como ``log_time``
+    es ``raw_assessment.belief_stamp_sim_ns`` — mantiene consistencia
+    con ``SelfAssessmentToTelemetryAdapter`` y permite alinear ambos
+    canales por timestamp.
+
+    Uso típico — wiring del agente runtime con closed-loop feedback:
+
+    .. code-block:: python
+
+        from project_ghost.core.feedback import (
+            MahalanobisDowngradePolicy, assess_with_feedback,
+        )
+        from project_ghost.telemetry import (
+            MCAPFileSink, CalibratedSelfAssessmentToTelemetryAdapter,
+        )
+
+        policy = MahalanobisDowngradePolicy()
+        with MCAPFileSink(path) as mcap:
+            sink = CalibratedSelfAssessmentToTelemetryAdapter(mcap)
+            for raw, outcomes in stream:
+                calibrated = assess_with_feedback(raw, outcomes, policy)
+                sink.publish(calibrated)
+
+    Contrato:
+
+    - ``publish(calibrated)`` usa
+      ``calibrated.raw_assessment.belief_stamp_sim_ns`` como
+      ``log_time`` de MCAP. No lee reloj de pared (ADR-0002).
+    - El canal se puede sobrescribir vía constructor; default es
+      ``CHANNEL_CALIBRATED_SELF_ASSESSMENT``.
+    """
+
+    def __init__(
+        self,
+        sink: TelemetrySink,
+        channel: str = CHANNEL_CALIBRATED_SELF_ASSESSMENT,
+    ) -> None:
+        if not channel.startswith("/"):
+            raise ValueError(
+                f"channel debe empezar con '/'; recibido {channel!r}"
+            )
+        self._sink: TelemetrySink = sink
+        self._channel: str = channel
+
+    @property
+    def channel(self) -> str:
+        return self._channel
+
+    def publish(self, calibrated: CalibratedSelfAssessment) -> None:
+        self._sink.publish(
+            self._channel,
+            calibrated.raw_assessment.belief_stamp_sim_ns,
+            calibrated,
+        )
+
+
 __all__ = [
     "ActuationToTelemetryAdapter",
+    "CalibratedSelfAssessmentToTelemetryAdapter",
     "DecisionToTelemetryAdapter",
     "ForwardPredictionToTelemetryAdapter",
     "ModeEventToTelemetryAdapter",

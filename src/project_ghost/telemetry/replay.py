@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from project_ghost.core.actuation.types import ActuationDirective
 from project_ghost.core.decisions.types import DecisionRationale
+from project_ghost.core.feedback.types import CalibratedSelfAssessment
 from project_ghost.core.prediction.divergence import PredictionOutcome
 from project_ghost.core.prediction.types import BeliefForwardPrediction
 from project_ghost.core.uncertainty.mode_events import PerceptionModeChanged
@@ -118,6 +119,15 @@ def _decode_prediction_outcome(
     )
 
 
+def _decode_calibrated_self_assessment(
+    d: Mapping[str, Any],
+) -> CalibratedSelfAssessment:
+    return cast(
+        "CalibratedSelfAssessment",
+        from_json_dict(CalibratedSelfAssessment, d),
+    )
+
+
 def make_sensor_sample_decoder(
     payload_cls: type[Any],
 ) -> Callable[[Mapping[str, Any]], SensorSample[Any]]:
@@ -179,6 +189,10 @@ def _build_decoder_table() -> dict[str, Callable[[Mapping[str, Any]], Any]]:
             f"{PredictionOutcome.__module__}."
             f"{PredictionOutcome.__name__}"
         ): _decode_prediction_outcome,
+        (
+            f"{CalibratedSelfAssessment.__module__}."
+            f"{CalibratedSelfAssessment.__name__}"
+        ): _decode_calibrated_self_assessment,
     }
     for payload_cls in (
         IMUPayload,

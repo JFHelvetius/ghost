@@ -41,6 +41,7 @@ from __future__ import annotations
 
 from .adapters import (
     ActuationToTelemetryAdapter,
+    CalibratedSelfAssessmentToTelemetryAdapter,
     DecisionToTelemetryAdapter,
     ForwardPredictionToTelemetryAdapter,
     ModeEventToTelemetryAdapter,
@@ -49,6 +50,7 @@ from .adapters import (
 )
 from .channels import (
     CHANNEL_ACTUATIONS,
+    CHANNEL_CALIBRATED_SELF_ASSESSMENT,
     CHANNEL_DECISIONS,
     CHANNEL_EVENTS,
     CHANNEL_FORWARD_PREDICTIONS,
@@ -72,6 +74,7 @@ from .sink import CapturedMessage, InMemorySink, TelemetrySink
 
 __all__ = [
     "CHANNEL_ACTUATIONS",
+    "CHANNEL_CALIBRATED_SELF_ASSESSMENT",
     "CHANNEL_DECISIONS",
     "CHANNEL_EVENTS",
     "CHANNEL_FORWARD_PREDICTIONS",
@@ -81,6 +84,7 @@ __all__ = [
     "CHANNEL_STATE_NAV",
     "TELEMETRY_PROTOCOL_VERSION",
     "ActuationToTelemetryAdapter",
+    "CalibratedSelfAssessmentToTelemetryAdapter",
     "CapturedMessage",
     "DecisionToTelemetryAdapter",
     "ForwardPredictionToTelemetryAdapter",

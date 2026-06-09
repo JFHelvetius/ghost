@@ -60,6 +60,15 @@ orientacional, los Mahalanobis máximos por eje y un verdict categórico
 cerrado. Persistido vía
 ``telemetry.adapters.PredictionOutcomeToTelemetryAdapter``."""
 
+CHANNEL_CALIBRATED_SELF_ASSESSMENT: str = "/self_assessment/calibrated"
+"""`CalibratedSelfAssessment` records — el self-assessment crudo
+(ADR-0020) ajustado por la evidencia agregada de outcomes recientes
+(ADR-0025) vía una ``CalibrationAdjustmentPolicy`` (ADR-0026). Cada
+record carga el assessment crudo inline, el ``CalibrationHistory`` que
+lo informa, el level ajustado, el ``adjustment_policy_id`` y el
+``adjustment_reason`` taxonomizados. Persistido vía
+``telemetry.adapters.CalibratedSelfAssessmentToTelemetryAdapter``."""
+
 _SENSOR_PREFIX: str = "/sensors/"
 
 
@@ -80,6 +89,7 @@ def channel_for_sensor(sensor_id: str) -> str:
 
 __all__ = [
     "CHANNEL_ACTUATIONS",
+    "CHANNEL_CALIBRATED_SELF_ASSESSMENT",
     "CHANNEL_DECISIONS",
     "CHANNEL_EVENTS",
     "CHANNEL_FORWARD_PREDICTIONS",
