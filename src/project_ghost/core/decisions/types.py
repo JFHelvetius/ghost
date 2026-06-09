@@ -14,9 +14,12 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Final
 
+from project_ghost.core.feedback.types import CalibratedSelfAssessment
+
 if TYPE_CHECKING:
     from project_ghost.core.uncertainty.self_assessment import (
         BeliefSelfAssessment,
+        SelfAssessmentLevel,
     )
     from project_ghost.core.uncertainty.types import PerceptionMode
     from project_ghost.state.messages import FlightStatus, MissionStatus
@@ -117,6 +120,13 @@ class DecisionContext:
 
     ``perception_mode`` es opcional; presente cuando un
     ``PerceptionModeDetector`` esté wireado.
+
+    ``calibrated_self_assessment`` (ADR-0027 amendment) es opcional;
+    presente cuando el caller wireó closed-loop feedback (ADR-0026).
+    Cuando está presente, su stamp debe matchear el del
+    ``self_assessment`` crudo. Calibration-aware policies leen
+    ``effective_overall_level`` que prioriza el ajuste calibrado
+    sobre el level crudo.
     """
 
     belief_stamp_sim_ns: int
@@ -124,6 +134,7 @@ class DecisionContext:
     flight_status: FlightStatus
     mission_status: MissionStatus
     perception_mode: PerceptionMode | None
+    calibrated_self_assessment: CalibratedSelfAssessment | None = None
     schema_version: int = DECISION_PROTOCOL_VERSION
 
     def __post_init__(self) -> None:
@@ -132,11 +143,47 @@ class DecisionContext:
                 f"belief_stamp_sim_ns must be >= 0; got "
                 f"{self.belief_stamp_sim_ns}"
             )
+        if self.calibrated_self_assessment is not None:
+            if not isinstance(
+                self.calibrated_self_assessment, CalibratedSelfAssessment
+            ):
+                raise TypeError(
+                    f"calibrated_self_assessment must be "
+                    f"CalibratedSelfAssessment; got "
+                    f"{type(self.calibrated_self_assessment).__name__}"
+                )
+            if self.self_assessment is not None:
+                cal_stamp = (
+                    self.calibrated_self_assessment.raw_assessment.belief_stamp_sim_ns
+                )
+                raw_stamp = self.self_assessment.belief_stamp_sim_ns
+                if cal_stamp != raw_stamp:
+                    raise ValueError(
+                        f"calibrated_self_assessment stamp ({cal_stamp}) "
+                        f"must equal self_assessment stamp ({raw_stamp})"
+                    )
         if self.schema_version != DECISION_PROTOCOL_VERSION:
             raise ValueError(
                 f"schema_version must be {DECISION_PROTOCOL_VERSION}; "
                 f"got {self.schema_version}"
             )
+
+    @property
+    def effective_overall_level(self) -> SelfAssessmentLevel | None:
+        """Calibration-aware overall level (ADR-0027).
+
+        Priority: ``calibrated_self_assessment.adjusted_overall_level``
+        if calibrated is present, else
+        ``self_assessment.overall_level`` if raw is present, else
+        ``None`` (caller should treat as no-assessment).
+        """
+        if self.calibrated_self_assessment is not None:
+            return (
+                self.calibrated_self_assessment.adjusted_overall_level
+            )
+        if self.self_assessment is not None:
+            return self.self_assessment.overall_level
+        return None
 
 
 @dataclass(frozen=True)

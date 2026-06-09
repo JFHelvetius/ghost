@@ -6,12 +6,12 @@ This test is **not** a contract test — it verifies that the contracts
 the right response is usually to revisit the offending ADR for
 composability, not to patch the smoke.
 
-The test also pins the *finding* surfaced by ADR-0026: the calibrated
-assessment downgrades (good), but the decision policy still consumes
-raw and so behavior stays ``PROCEED`` (gap). If a future ADR closes
-that gap by routing calibrated state through decisions, the
-assertions about ``decisions_by_kind`` change and this test must be
-updated. That's intentional — the smoke is the canary.
+ADR-0027 closed the gap originally surfaced by ADR-0026: the smoke
+now wires the calibrated assessment through ``DecisionContext`` and
+the reference policy reads ``effective_overall_level``. Decisions
+transition from PROCEED to HOLD as the calibration downgrades the
+effective level. The previously pinned "gap" test is replaced by the
+"closure" test below.
 """
 
 from __future__ import annotations
@@ -93,23 +93,22 @@ def test_smoke_calibration_downgrades_after_threshold(
     assert summary.calibrated_levels_observed[-1] == "uncertain"
 
 
-def test_smoke_decisions_stay_proceed_documented_gap(
+def test_smoke_decisions_track_calibration_closure(
     tmp_path: Path,
 ) -> None:
-    """ADR-0026 gap, surfaced and pinned by this test.
+    """ADR-0027 closure of the ADR-0026 gap.
 
-    The decision policy consumes raw ``BeliefSelfAssessment`` (which
-    stays KNOWN because covariance is small), not the
-    ``CalibratedSelfAssessment``. So even when calibration downgrades
-    to UNCERTAIN, the agent keeps deciding PROCEED.
+    With ``calibrated_self_assessment`` wired into ``DecisionContext``,
+    the reference policy reads ``effective_overall_level`` (calibrated
+    priority). When the feedback downgrade fires at cycle 5, decisions
+    flip from PROCEED to HOLD.
 
-    When a future ADR closes this gap, this assertion fails and gets
-    rewritten to match the new behavior. That failure is the signal
-    that the gap is closed.
+    Expected: 4 PROCEED (cycles 1-4, calibration still KNOWN) +
+    6 HOLD (cycles 5-10, calibration downgraded to UNCERTAIN).
     """
     out = tmp_path / "smoke.mcap"
     summary = run_closed_loop_smoke(out, n_cycles=10)
-    assert summary.decisions_by_kind == {"proceed": 10}
+    assert summary.decisions_by_kind == {"proceed": 4, "hold": 6}
 
 
 def test_smoke_mcap_contains_all_expected_channels(

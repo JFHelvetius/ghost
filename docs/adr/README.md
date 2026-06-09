@@ -41,9 +41,10 @@ This directory holds the project's **significant architectural decisions**.
 | [ADR-0018](0018-comparative-belief-analysis.md) | Comparative Belief Analysis with Provenance Manifests v1 | Accepted |
 | [ADR-0019](0019-belief-calibration-honesty-check-v1.md) | Belief Calibration Honesty Check v1 | Accepted |
 | [ADR-0020](0020-belief-self-assessment-v1.md) | Belief Self-Assessment v1 | Accepted |
-| [ADR-0021](0021-belief-to-action-contract-layer-v1.md) | Belief-to-Action Contract Layer v1 | Accepted |
+| [ADR-0021](0021-belief-to-action-contract-layer-v1.md) | Belief-to-Action Contract Layer v1 | Accepted (DecisionContext amended additively by ADR-0027) |
 | [ADR-0022](0022-decision-trace-verification-v1.md) | Decision Trace and Chain Verification v1 | Accepted |
 | [ADR-0023](0023-action-emission-contract-layer-v1.md) | Action Emission Contract Layer v1 | Accepted |
 | [ADR-0024](0024-belief-forward-prediction-contract-v1.md) | Belief Forward-Prediction Contract v1 | Accepted |
 | [ADR-0025](0025-prediction-observation-divergence-check-v1.md) | Prediction-Observation Divergence Check v1 | Accepted |
 | [ADR-0026](0026-closed-loop-feedback-v1.md) | Closed-Loop Feedback v1 | Accepted |
+| [ADR-0027](0027-calibration-aware-decision-context-v1.md) | Calibration-Aware Decision Context v1 | Accepted |

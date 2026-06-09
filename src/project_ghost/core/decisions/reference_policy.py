@@ -1,8 +1,15 @@
-"""Reference Policy: ``UncertaintyAwareReferencePolicy`` (ADR-0021).
+"""Reference Policy: ``UncertaintyAwareReferencePolicy`` (ADR-0021;
+calibration-aware via ADR-0027).
 
 Policy mínima documentada que demuestra que el contrato ``Policy``
 es sound: mapea ``SelfAssessmentLevel.{KNOWN, UNCERTAIN, UNKNOWN}``
 a ``DecisionKind.{PROCEED, HOLD, ABSTAIN_UNCERTAIN}`` respectivamente.
+
+Desde ADR-0027 lee ``context.effective_overall_level`` en lugar de
+``context.self_assessment.overall_level``. Cuando el caller wirea
+``calibrated_self_assessment``, el ajuste calibrado tiene prioridad.
+Sin calibrated wireado, el comportamiento es idéntico al de
+ADR-0021.
 
 **No es una recomendación de control.** Es la validación más simple
 posible del shape de la capa. Operadores reales usan policies más
@@ -69,23 +76,23 @@ class UncertaintyAwareReferencePolicy:
 
     def decide(self, context: DecisionContext) -> Decision:
         stamp = context.belief_stamp_sim_ns
-        sa = context.self_assessment
+        level = context.effective_overall_level
 
-        if sa is None:
+        if level is None:
             return Decision(
                 kind=DecisionKind.ABSTAIN_UNCERTAIN,
                 decision_stamp_sim_ns=stamp,
                 reason=_REASON_NO_ASSESSMENT,
             )
 
-        if sa.overall_level == SelfAssessmentLevel.UNKNOWN:
+        if level == SelfAssessmentLevel.UNKNOWN:
             return Decision(
                 kind=DecisionKind.ABSTAIN_UNCERTAIN,
                 decision_stamp_sim_ns=stamp,
                 reason=_REASON_OVERALL_UNKNOWN,
             )
 
-        if sa.overall_level == SelfAssessmentLevel.UNCERTAIN:
+        if level == SelfAssessmentLevel.UNCERTAIN:
             return Decision(
                 kind=DecisionKind.HOLD,
                 decision_stamp_sim_ns=stamp,

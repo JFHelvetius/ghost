@@ -23,15 +23,16 @@ Wiring of channels (all to one MCAP):
 - ``/predictions/forward``          each ``BeliefForwardPrediction``
 - ``/predictions/outcomes``         each ``PredictionOutcome`` (k>=1)
 
-Finding surfaced by this smoke (intentionally honest):
+Closure of the gap identified in the previous smoke (ADR-0027):
 
-ADR-0026 produces ``CalibratedSelfAssessment`` with a downgraded
-``adjusted_overall_level``. **But the decision policy still consumes
-the raw ``BeliefSelfAssessment``** — the calibration has no behavioral
-consequence in v1. The decision stays ``PROCEED`` even after the
-feedback fires. This is a known gap that a future ADR closes by
-either (a) extending ``DecisionContext`` to carry calibrated state, or
-(b) adding a calibration-aware decision policy.
+The previous version of this smoke surfaced that the decision policy
+consumed only the raw ``BeliefSelfAssessment``, so the calibrated
+downgrade had no behavioral effect. ADR-0027 closes that by adding an
+optional ``calibrated_self_assessment`` field to ``DecisionContext``
+and routing ``effective_overall_level`` (calibrated priority) through
+the reference policy. This smoke now wires the calibrated record into
+the context, so cycles 5-10 transition from PROCEED to HOLD as the
+feedback kicks in.
 """
 
 from __future__ import annotations
@@ -295,17 +296,17 @@ def run_closed_loop_smoke(
             calibrated_records.append(calibrated)
             cal_adapter.publish(calibrated)
 
-            # ---- 5. Decision (using RAW — surfaced finding) --------
-            # ADR-0026 produces calibrated assessment but the decision
-            # contract (ADR-0021) consumes BeliefSelfAssessment, not
-            # CalibratedSelfAssessment. The calibration is auditable
-            # but has no behavioral effect on the decision in v1.
+            # ---- 5. Decision (calibration-aware via ADR-0027) ------
+            # The calibrated assessment is wired into the context; the
+            # reference policy reads context.effective_overall_level
+            # which prioritizes the adjusted level over the raw.
             ctx = DecisionContext(
                 belief_stamp_sim_ns=state.stamp_sim_ns,
                 self_assessment=raw_assessment,
                 flight_status=state.flight,
                 mission_status=state.mission,
                 perception_mode=None,
+                calibrated_self_assessment=calibrated,
             )
             decision, rationale = decide_with_rationale(
                 decision_policy, ctx
