@@ -936,7 +936,7 @@ def _axis_style(**kw: Any) -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False)  # type: ignore[misc,unused-ignore]
 def _decode_mcap(file_bytes: bytes) -> dict[str, list[tuple[int, Any]]]:
     with tempfile.NamedTemporaryFile(suffix=".mcap", delete=False) as tmp:
         tmp.write(file_bytes)
