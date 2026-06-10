@@ -4,15 +4,20 @@ build-backend = "hatchling.build"
 
 [project]
 name = "project-ghost"
-version = "0.0.1"
-description = "Autonomous GPS-denied drone navigation: sim-first, hardware-eventual, vision-inertial."
+version = "0.1.0"
+description = "Autonomy under uncertainty: closed-loop reference pipeline + 5 formal safety properties verifiable byte-exact from any MCAP."
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 authors = [{ name = "Project Ghost contributors" }]
-keywords = ["robotics", "drone", "uav", "slam", "vio", "simulation", "autonomy"]
+keywords = [
+    "robotics", "drone", "uav", "autonomy",
+    "safety", "uncertainty", "calibration",
+    "formal-properties", "verifiable-autonomy",
+    "simulation", "mcap",
+]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License",
@@ -21,10 +26,14 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
     "numpy>=1.26,<3.0",
+    # MCAP is the data format every CLI subcommand operates on;
+    # making it optional would break ``ghost`` out of the box.
+    "mcap>=1.2.0",
 ]
 
 [project.optional-dependencies]
@@ -32,12 +41,15 @@ sim = [
     "pybullet>=3.2.6",
 ]
 telemetry = [
-    "mcap>=1.2.0",
+    # `mcap` is now a base dependency. `telemetry` extra is reserved
+    # for optional viewers like Rerun. Kept for backwards-compat with
+    # ``pip install 'project-ghost[telemetry]'``.
     "rerun-sdk>=0.21.0",
 ]
 app = [
     "streamlit>=1.35,<2.0",
     "pandas>=2.0,<3.0",
+    "plotly>=5.18,<6.0",
 ]
 dev = [
     "ruff>=0.6.0",
@@ -54,8 +66,11 @@ ghost = "project_ghost.cli:main"
 ghost-app = "project_ghost.app:run"
 
 [project.urls]
-Documentation = "https://github.com/project-ghost/project-ghost/tree/main/docs"
-Source = "https://github.com/project-ghost/project-ghost"
+Homepage      = "https://github.com/JFHelvetius/ghost"
+Repository    = "https://github.com/JFHelvetius/ghost"
+Documentation = "https://github.com/JFHelvetius/ghost/tree/main/docs"
+Issues        = "https://github.com/JFHelvetius/ghost/issues"
+Properties    = "https://github.com/JFHelvetius/ghost/tree/main/docs/adr#0031"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/project_ghost"]
@@ -115,6 +130,11 @@ ignore = [
 # array literals, numeric thresholds and helper fixtures with ARG-like
 # parameters are intentional.
 "tests/estimation/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "SIM117", "TC003"]
+# properties tests follow the same pattern: Path is purely an annotation
+# type, intra-function imports narrow scope for the BAUD safe-reason
+# witness, and pytest.raises is the natural shape for parameter
+# validation tests.
+"tests/properties/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "SIM117", "TC003", "PT011"]
 # app: Streamlit UI code uses magic values, lazy imports, and Path annotations
 # that are idiomatic in the framework but flagged by strict ruff rules.
 "src/project_ghost/app/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "TC003", "TRY003", "TRY301"]
