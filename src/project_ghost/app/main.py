@@ -222,6 +222,15 @@ the agent.
         "sec_decisions": "Decisions",
         "sec_calibration": "Calibration over time",
         "sec_provenance": "Provenance",
+        "sec_properties": "Safety properties (ADR-0031..0035)",
+        "properties_caption": (
+            "Five formal properties verified inline against the captured "
+            "MCAP. Each veredicto is byte-exact reproducible; the same "
+            "<code>ghost verify-properties --mcap &lt;path&gt;</code> "
+            "command from the shell produces identical output."
+        ),
+        "verdict_holds": "HOLDS",
+        "verdict_violated": "VIOLATED",
 
         # Banners
         "banner_downgrade": (
@@ -532,6 +541,15 @@ legítima del agente.
         "sec_decisions": "Decisiones",
         "sec_calibration": "Calibración en el tiempo",
         "sec_provenance": "Procedencia",
+        "sec_properties": "Propiedades formales de safety (ADR-0031..0035)",
+        "properties_caption": (
+            "Cinco propiedades formales verificadas inline sobre el MCAP "
+            "capturado. Cada veredicto es byte-exacto reproducible; el "
+            "mismo <code>ghost verify-properties --mcap &lt;path&gt;</code> "
+            "desde shell produce salida idéntica."
+        ),
+        "verdict_holds": "HOLDS",
+        "verdict_violated": "VIOLATED",
 
         "banner_downgrade": (
             "<strong>Confianza degradada en el ciclo {n}</strong> — los "
@@ -870,6 +888,39 @@ hr { border-color: #e2e8f0 !important; }
 .upload-hint .uh-icon { font-size: 2.2rem; margin-bottom: 0.55rem; opacity: 0.7; }
 .upload-hint .uh-title { font-size: 1rem; font-weight: 600; color: #0f172a; margin-bottom: 0.3rem; }
 .upload-hint .uh-body { font-size: 0.85rem; color: #64748b; line-height: 1.55; }
+
+/* Property panel (ADR-0031..0035) */
+.property-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.55rem;
+    margin: 0.6rem 0 1.4rem;
+}
+.property-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #94a3b8;
+    border-radius: 8px;
+    padding: 0.85rem 0.8rem;
+    transition: border-color 0.15s;
+}
+.property-card.holds { border-left-color: #0f766e; }
+.property-card.violated { border-left-color: #b91c1c; }
+.property-card .pc-name {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-weight: 700; color: #0f172a; font-size: 0.78rem;
+    letter-spacing: 0.2px;
+}
+.property-card .pc-verdict {
+    font-weight: 700; font-size: 0.85rem; margin-top: 0.3rem;
+    letter-spacing: 0.5px;
+}
+.property-card.holds .pc-verdict { color: #0f766e; }
+.property-card.violated .pc-verdict { color: #b91c1c; }
+.property-card .pc-stat {
+    font-size: 0.7rem; color: #64748b; margin-top: 0.3rem;
+    line-height: 1.4;
+}
 
 /* Hash block */
 .hash-block {
@@ -1273,6 +1324,49 @@ def _badges(mapping: dict[str, int], color_map: dict[str, str]) -> None:
 # Run tab
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _property_panel(summary: SmokeSummary) -> str:
+    """Render the 5-property panel as an HTML grid for ``_show_run_results``.
+
+    Each card carries the property tag (BAUD-v1, ERUR-v1, ...), the
+    HOLDS / VIOLATED veredicto with colour-coded border, and a compact
+    per-property stat block. Same data the ``ghost verify-properties``
+    CLI emits, but in dashboard shape.
+    """
+    cards: list[str] = []
+    for tag, report, stat in (
+        ("BAUD-v1", summary.baud_report,
+            f"M={summary.baud_report.min_outcomes}, "
+            f"K={summary.baud_report.downgrade_threshold} · "
+            f"{summary.baud_report.cycles_precondition_held}/"
+            f"{summary.baud_report.cycles_total} cycles"),
+        ("ERUR-v1", summary.erur_report,
+            f"M={summary.erur_report.min_outcomes}, "
+            f"K={summary.erur_report.downgrade_threshold} · "
+            f"{summary.erur_report.cycles_precondition_held}/"
+            f"{summary.erur_report.cycles_total} cycles"),
+        ("MD-v1", summary.md_report,
+            f"{summary.md_report.cycles_precondition_held}/"
+            f"{summary.md_report.cycles_total} cycles"),
+        ("RLB-v1", summary.rlb_report,
+            f"W={summary.rlb_report.max_history} · "
+            f"{summary.rlb_report.cycles_precondition_held}/"
+            f"{summary.rlb_report.cycles_total} recoveries"),
+        ("FPB-v1", summary.fpb_report,
+            f"fire_fraction={summary.fpb_report.fire_fraction:.2f} · "
+            f"bound={summary.fpb_report.max_fire_fraction:.2f}"),
+    ):
+        klass = "holds" if report.holds else "violated"
+        verdict = t("verdict_holds") if report.holds else t("verdict_violated")
+        cards.append(
+            f'<div class="property-card {klass}">'
+            f'<div class="pc-name">{tag}</div>'
+            f'<div class="pc-verdict">{verdict}</div>'
+            f'<div class="pc-stat">{stat}</div>'
+            f'</div>'
+        )
+    return f'<div class="property-grid">{"".join(cards)}</div>'
+
+
 def _show_run_results(summary: SmokeSummary, mcap_bytes: bytes) -> None:
     st.markdown(
         f'<div class="narrative">{_run_narrative(summary)}</div>',
@@ -1333,6 +1427,17 @@ def _show_run_results(summary: SmokeSummary, mcap_bytes: bytes) -> None:
             _chart_calibration(levels),
             use_container_width=True, config={"displayModeBar": False},
         )
+
+    st.markdown(
+        f'<div class="section-eyebrow">{t("sec_properties")}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<p style="color:#64748b;font-size:0.85rem;line-height:1.55;margin:0 0 0.6rem">'
+        f"{t('properties_caption')}</p>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(_property_panel(summary), unsafe_allow_html=True)
 
     st.markdown(
         f'<div class="section-eyebrow">{t("sec_provenance")}</div>',

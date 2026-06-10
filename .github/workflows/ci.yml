@@ -63,3 +63,43 @@ jobs:
         with:
           name: coverage
           path: coverage.xml
+
+  verify-properties:
+    # ADR-0031..0035 self-enforcement: every push must produce a smoke
+    # MCAP whose five formal safety properties hold under
+    # ``ghost verify-properties``. The job runs after tests pass and
+    # treats a property violation as a CI failure — making the README
+    # claim "all five properties hold byte-exact" a continuously
+    # verified fact rather than a local-only assertion.
+    name: Verify safety property set (ADR-0031..0035)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Run reference closed-loop smoke
+        run: python -m project_ghost.examples.closed_loop_smoke
+      - name: Verify property set (text)
+        run: ghost verify-properties --mcap closed_loop_smoke.mcap
+      - name: Verify property set (JSON for archival)
+        run: |
+          ghost verify-properties --mcap closed_loop_smoke.mcap --json \
+            > property_report.json
+          cat property_report.json
+      - name: Upload property report
+        uses: actions/upload-artifact@v4
+        with:
+          name: property-report
+          path: property_report.json
+      - name: Upload reference MCAP
+        uses: actions/upload-artifact@v4
+        with:
+          name: reference-mcap
+          path: closed_loop_smoke.mcap
