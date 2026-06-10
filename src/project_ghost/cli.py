@@ -36,10 +36,15 @@ Subcommands:
   ``BeliefSelfAssessment`` that justified it, re-compute the SHA-256
   chain and emit a deterministic ``DecisionTraceReport`` JSON
   (ADR-0022). Verifies the belief→decision provenance chain bit-for-bit.
+- ``verify-properties``: verify the ADR-0031..0035 safety-property set
+  (BAUD-v1 / ERUR-v1 / MD-v1 / RLB-v1 / FPB-v1) against any MCAP. Exit
+  code is ``0`` iff every property holds; ``1`` if any violates. Text
+  output mirrors the smoke CLI's tail; ``--json`` emits a structured
+  document suitable for CI parsing and external citation.
 
 The CLI is intentionally tiny: argument parsing + thin glue around the
-``analysis`` and ``traceability`` packages' pure functions. No
-long-running processes, no network, no background threads.
+``analysis``, ``traceability`` and ``properties`` packages' pure
+functions. No long-running processes, no network, no background threads.
 """
 
 from __future__ import annotations
@@ -116,6 +121,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
     _add_analyze_calibration_parser(subparsers)
     _add_analyze_self_assessment_parser(subparsers)
     _add_trace_decisions_parser(subparsers)
+    _add_verify_properties_parser(subparsers)
 
     args = parser.parse_args(argv)
 
@@ -137,6 +143,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
         return _cmd_analyze_self_assessment(args)
     if args.command == "trace-decisions":
         return _cmd_trace_decisions(args)
+    if args.command == "verify-properties":
+        return _cmd_verify_properties(args)
 
     # argparse with `required=True` on the subparsers prevents reaching
     # this point with an unknown command, but we keep the explicit
@@ -1032,6 +1040,184 @@ def _cmd_trace_decisions(args: argparse.Namespace) -> int:
     else:
         args.output.write_bytes(encoded)
     return 0
+
+
+# ---------------------------------------------------------------------------
+# verify-properties — ADR-0031..0035 verifier
+# ---------------------------------------------------------------------------
+
+
+def _add_verify_properties_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    """Subparser for ``ghost verify-properties``.
+
+    Runs all five property verifiers (BAUD-v1, ERUR-v1, MD-v1, RLB-v1,
+    FPB-v1) against an MCAP and reports holds/violations per property.
+
+    Default text output mirrors the smoke CLI's tail. ``--json`` emits
+    a structured report suitable for CI parsing.
+
+    Exit code: ``0`` iff all five properties hold; ``1`` if any
+    violates.
+    """
+    vp = subparsers.add_parser(
+        "verify-properties",
+        help=(
+            "Verify ADR-0031..0035 property set against an MCAP. "
+            "Returns 0 iff all five properties hold."
+        ),
+        description=(
+            "Runs verify_baud, verify_erur, verify_md, verify_rlb, "
+            "verify_fpb against the given MCAP and reports each "
+            "property's holds/violations. Parameters default to the "
+            "reference smoke's wiring (M=4, K=2, W=32, "
+            "max_fire_fraction=1.0); pass explicit values to verify "
+            "against a custom pipeline."
+        ),
+    )
+    vp.add_argument(
+        "--mcap", type=Path, required=True,
+        help="Path to the MCAP file (input; never modified).",
+    )
+    vp.add_argument(
+        "--min-outcomes", type=int, default=4,
+        help="M parameter of BAUD / ERUR / FPB preconditions. Default 4.",
+    )
+    vp.add_argument(
+        "--downgrade-threshold", type=int, default=2,
+        help="K parameter of BAUD / ERUR / FPB preconditions. Default 2.",
+    )
+    vp.add_argument(
+        "--max-history", type=int, default=32,
+        help="W parameter for RLB recovery bound. Default 32.",
+    )
+    vp.add_argument(
+        "--max-fire-fraction", type=float, default=1.0,
+        help=(
+            "FPB upper bound on BAUD's empirical fire fraction. "
+            "Default 1.0 (purely observational, never fails); set "
+            "tighter for regression gating."
+        ),
+    )
+    vp.add_argument(
+        "--json", action="store_true",
+        help="Emit a structured JSON report on stdout instead of text.",
+    )
+
+
+def _verify_properties_text(reports: dict[str, Any]) -> str:
+    """Render the property reports as the tail-format the smoke CLI uses."""
+    lines: list[str] = []
+    for tag, report in reports.items():
+        verdict = "HOLDS" if report.holds else "VIOLATED"
+        if tag in ("BAUD-v1", "ERUR-v1"):
+            params = (
+                f"M={report.min_outcomes}, K={report.downgrade_threshold}"
+            )
+        elif tag == "RLB-v1":
+            params = f"W={report.max_history}"
+        elif tag == "FPB-v1":
+            params = f"fire_fraction={report.fire_fraction:.2f}"
+        else:  # MD-v1
+            params = ""
+        params_str = f"{params}, " if params else ""
+        lines.append(
+            f"{tag}: {verdict}  ({params_str}"
+            f"{report.cycles_precondition_held}/{report.cycles_total} "
+            "cycles evaluated)"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def _verify_properties_json(
+    mcap_path: Path, reports: dict[str, Any], all_hold: bool,
+) -> str:
+    """Render the property reports as a deterministic JSON document."""
+    out: dict[str, Any] = {
+        "mcap_path": str(mcap_path),
+        "all_properties_hold": all_hold,
+        "properties": {},
+    }
+    for tag, report in reports.items():
+        entry: dict[str, Any] = {
+            "holds": report.holds,
+            "property_version": report.property_version,
+            "cycles_total": report.cycles_total,
+            "cycles_precondition_held": report.cycles_precondition_held,
+            "mcap_sha256": report.mcap_sha256,
+            "violation_count": len(report.violations),
+        }
+        # Per-report extras.
+        if tag in ("BAUD-v1", "ERUR-v1", "FPB-v1"):
+            entry["min_outcomes"] = report.min_outcomes
+            entry["downgrade_threshold"] = report.downgrade_threshold
+        if tag == "RLB-v1":
+            entry["max_history"] = report.max_history
+        if tag == "FPB-v1":
+            entry["fire_fraction"] = report.fire_fraction
+            entry["max_fire_fraction"] = report.max_fire_fraction
+        out["properties"][tag] = entry
+    return json.dumps(out, indent=2, sort_keys=True) + "\n"
+
+
+def _cmd_verify_properties(args: argparse.Namespace) -> int:
+    """Implementation of ``ghost verify-properties``.
+
+    Runs the five property verifiers and emits a report. Exit code is
+    ``0`` iff every property holds.
+    """
+    if not args.mcap.exists():
+        sys.stderr.write(
+            f"error: --mcap path does not exist: {args.mcap}\n"
+        )
+        return 1
+
+    from project_ghost.properties import (  # noqa: PLC0415
+        verify_baud,
+        verify_erur,
+        verify_fpb,
+        verify_md,
+        verify_rlb,
+    )
+
+    try:
+        reports: dict[str, Any] = {
+            "BAUD-v1": verify_baud(
+                args.mcap,
+                min_outcomes=args.min_outcomes,
+                downgrade_threshold=args.downgrade_threshold,
+            ),
+            "ERUR-v1": verify_erur(
+                args.mcap,
+                min_outcomes=args.min_outcomes,
+                downgrade_threshold=args.downgrade_threshold,
+            ),
+            "MD-v1": verify_md(args.mcap),
+            "RLB-v1": verify_rlb(
+                args.mcap, max_history=args.max_history,
+            ),
+            "FPB-v1": verify_fpb(
+                args.mcap,
+                min_outcomes=args.min_outcomes,
+                downgrade_threshold=args.downgrade_threshold,
+                max_fire_fraction=args.max_fire_fraction,
+            ),
+        }
+    except (FileNotFoundError, OSError) as e:
+        sys.stderr.write(f"error: {e}\n")
+        return 1
+
+    all_hold = all(r.holds for r in reports.values())
+
+    if args.json:
+        sys.stdout.write(
+            _verify_properties_json(args.mcap, reports, all_hold)
+        )
+    else:
+        sys.stdout.write(_verify_properties_text(reports))
+
+    return 0 if all_hold else 1
 
 
 if __name__ == "__main__":  # pragma: no cover

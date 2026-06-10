@@ -72,6 +72,18 @@ from project_ghost.core.uncertainty.self_assessment import (
     AssessmentThresholds,
     assess_belief,
 )
+from project_ghost.properties import (
+    BAUDVerificationReport,
+    ERURVerificationReport,
+    FPBVerificationReport,
+    MDVerificationReport,
+    RLBVerificationReport,
+    verify_baud,
+    verify_erur,
+    verify_fpb,
+    verify_md,
+    verify_rlb,
+)
 from project_ghost.state.messages import Pose  # used in _ground_truth_pose
 from project_ghost.telemetry import (
     ActuationToTelemetryAdapter,
@@ -106,6 +118,15 @@ _GROUND_TRUTH_DRIFT_X_MPS: Final[float] = 5.0  # ground truth moves
 _COVARIANCE_DIAG: Final[float] = 1e-4  # small -> predicted std small
 _MIN_CYCLES: Final[int] = 2  # need at least one outcome
 
+# Feedback / calibration parameters. Exposed as module-level Finals so
+# ``run_closed_loop_smoke`` and the inline BAUD-v1 verification step
+# (ADR-0031 §3.2) use the same M and K — the smoke's BAUD report is
+# meaningful only if it queries the property at the parameters the
+# pipeline was actually wired with.
+_FEEDBACK_MIN_OUTCOMES: Final[int] = 4
+_FEEDBACK_DOWNGRADE_THRESHOLD: Final[int] = 2
+_FEEDBACK_MAX_HISTORY: Final[int] = 32
+
 
 @dataclass(frozen=True)
 class SmokeSummary:
@@ -113,6 +134,13 @@ class SmokeSummary:
 
     Used by the integration test to assert invariants on the MCAP and
     on the run itself.
+
+    ``baud_report``, ``erur_report`` and ``md_report`` carry the inline
+    ADR-0031, ADR-0032 and ADR-0033 verification results against the
+    just-written MCAP. Every smoke run therefore carries its own
+    triple-property safety evidence — if any report's ``.holds`` is
+    ``False`` the smoke is broken in a way that matters for the
+    safety claim, not just an integration glitch.
     """
 
     n_cycles: int
@@ -123,6 +151,11 @@ class SmokeSummary:
     final_verdict: str | None
     mcap_path: Path
     mcap_sha256: str
+    baud_report: BAUDVerificationReport
+    erur_report: ERURVerificationReport
+    md_report: MDVerificationReport
+    rlb_report: RLBVerificationReport
+    fpb_report: FPBVerificationReport
 
 
 def _make_thresholds() -> AssessmentThresholds:
@@ -188,7 +221,8 @@ def run_closed_loop_smoke(
     decision_policy = UncertaintyAwareReferencePolicy()
     actuation_policy = AttitudeHoldReferencePolicy()
     feedback_policy = MahalanobisDowngradePolicy(
-        min_outcomes=4, downgrade_threshold=2
+        min_outcomes=_FEEDBACK_MIN_OUTCOMES,
+        downgrade_threshold=_FEEDBACK_DOWNGRADE_THRESHOLD,
     )
 
     predictions_by_cycle: list[_PredictionType] = []
@@ -240,7 +274,7 @@ def run_closed_loop_smoke(
                 raw_assessment,
                 outcomes_so_far,
                 feedback_policy,
-                max_history=32,
+                max_history=_FEEDBACK_MAX_HISTORY,
             )
             calibrated_records.append(calibrated)
             cal_adapter.publish(calibrated)
@@ -283,6 +317,10 @@ def run_closed_loop_smoke(
     mcap_bytes = output_path.read_bytes()
     mcap_sha = hashlib.sha256(mcap_bytes).hexdigest()
 
+    # ADR-0031 §3.2 + ADR-0032 §4.4 + ADR-0033 §4.4 — inline triple
+    # property verification of the just-written MCAP. Triple safety
+    # evidence per run: BAUD (drift→hold), ERUR (clean→proceed), MD
+    # (calibrator never invents confidence).
     return SmokeSummary(
         n_cycles=n_cycles,
         n_outcomes=len(outcomes_so_far),
@@ -292,6 +330,25 @@ def run_closed_loop_smoke(
         final_verdict=final_verdict,
         mcap_path=output_path,
         mcap_sha256=mcap_sha,
+        baud_report=verify_baud(
+            output_path,
+            min_outcomes=_FEEDBACK_MIN_OUTCOMES,
+            downgrade_threshold=_FEEDBACK_DOWNGRADE_THRESHOLD,
+        ),
+        erur_report=verify_erur(
+            output_path,
+            min_outcomes=_FEEDBACK_MIN_OUTCOMES,
+            downgrade_threshold=_FEEDBACK_DOWNGRADE_THRESHOLD,
+        ),
+        md_report=verify_md(output_path),
+        rlb_report=verify_rlb(
+            output_path, max_history=_FEEDBACK_MAX_HISTORY,
+        ),
+        fpb_report=verify_fpb(
+            output_path,
+            min_outcomes=_FEEDBACK_MIN_OUTCOMES,
+            downgrade_threshold=_FEEDBACK_DOWNGRADE_THRESHOLD,
+        ),
     )
 
 
@@ -309,6 +366,28 @@ def main() -> None:
         "Calibrated levels:  "
         + " -> ".join(summary.calibrated_levels_observed)
     )
+    # ADR-0031/0032/0033 — property trio self-verification, printed
+    # last so CI logs end on the citable veredicto trio.
+    for tag, report, params_str in (
+        ("BAUD-v1", summary.baud_report,
+            f"M={summary.baud_report.min_outcomes}, "
+            f"K={summary.baud_report.downgrade_threshold}, "),
+        ("ERUR-v1", summary.erur_report,
+            f"M={summary.erur_report.min_outcomes}, "
+            f"K={summary.erur_report.downgrade_threshold}, "),
+        ("MD-v1",   summary.md_report, ""),
+        ("RLB-v1",  summary.rlb_report,
+            f"W={summary.rlb_report.max_history}, "),
+        ("FPB-v1",  summary.fpb_report,
+            f"fire_fraction={summary.fpb_report.fire_fraction:.2f}, "),
+    ):
+        verdict = "HOLDS" if report.holds else "VIOLATED"
+        print(
+            f"{tag}:           {verdict}  "
+            f"({params_str}"
+            f"{report.cycles_precondition_held}/{report.cycles_total} "
+            "cycles evaluated)"
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -51,3 +51,8 @@ This directory holds the project's **significant architectural decisions**.
 | [ADR-0028](0028-sensor-to-belief-fusion-contract-v1.md) | Sensor-to-Belief Fusion Contract v1 | Accepted |
 | [ADR-0029](0029-trajectory-controller-reference-v1.md) | Trajectory Controller Reference v1 | Accepted |
 | [ADR-0030](0030-replay-verification-v1.md) | Replay Verification v1 | Accepted |
+| [ADR-0031](0031-bounded-action-under-drift-property-v1.md) | Bounded Action Under Drift Property v1 (BAUD) | Accepted |
+| [ADR-0032](0032-eventual-reactivation-under-recovery-property-v1.md) | Eventual Reactivation Under Recovery Property v1 (ERUR) | Accepted |
+| [ADR-0033](0033-monotonic-degradation-property-v1.md) | Monotonic Degradation Property v1 (MD) | Accepted |
+| [ADR-0034](0034-recovery-latency-bound-property-v1.md) | Recovery Latency Bound Property v1 (RLB) | Accepted |
+| [ADR-0035](0035-false-positive-bound-property-v1.md) | False Positive Bound Property v1 (FPB) | Accepted |
