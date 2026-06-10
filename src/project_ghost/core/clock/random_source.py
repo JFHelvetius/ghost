@@ -65,7 +65,11 @@ class RandomSourceImpl:
             )
         self.seed = seed
         self.label = label
-        self._rng: np.random.Generator = np.random.default_rng(seed)
+        # This IS the centralised RandomSource; the
+        # check_no_global_random.py guard is precisely about preventing
+        # other call-sites from calling default_rng directly. Suppressing
+        # here is the one legitimate exception.
+        self._rng: np.random.Generator = np.random.default_rng(seed)  # noqa: PG-RNG
 
     def child(self, label: str) -> RandomSourceImpl:
         """Deriva una sub-fuente con seed determinista del label.
