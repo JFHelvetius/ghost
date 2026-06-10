@@ -176,6 +176,42 @@ project-ghost/
 
 Phase 0 is closed-circle work; no formal external contribution flow yet. Issues with questions or criticism are welcome. Before proposing major changes, read `docs/architecture.md` and the active ADRs.
 
+## Release process
+
+Releases are automated via GitHub Actions and OIDC trusted publishing
+— no PyPI tokens stored anywhere.
+
+**One-time PyPI setup** (maintainer-only):
+
+1. Register the project name `project-ghost` on https://pypi.org
+2. Go to https://pypi.org/manage/account/publishing/
+3. Add a *Pending publisher* with:
+   - PyPI project name: `project-ghost`
+   - Owner: `JFHelvetius`
+   - Repository: `ghost`
+   - Workflow filename: `release.yml`
+   - Environment name: `pypi`
+
+**Per-release workflow**:
+
+```bash
+# Bump the version in pyproject.toml
+git commit -am "release: v0.1.1"
+git tag -a v0.1.1 -m "release notes here"
+git push origin main v0.1.1
+```
+
+The push of a `v*.*.*` tag triggers
+[`.github/workflows/release.yml`](.github/workflows/release.yml), which:
+
+1. Builds the wheel + sdist
+2. Installs the wheel in a fresh venv and runs `ghost verify-properties`
+   against the reference smoke MCAP — the property set must hold on the
+   exact artifact about to ship, not just on the repo's HEAD
+3. Publishes to PyPI via OIDC (no token)
+4. Creates a GitHub Release pinned to the tag, with the dist artifacts
+   attached
+
 ## License
 
 [Apache License 2.0](LICENSE). No additional clauses.

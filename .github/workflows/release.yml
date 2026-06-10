@@ -1,0 +1,136 @@
+name: Release to PyPI
+
+# Fires on tag push matching v0.x.y or v0.x.y-suffix. Builds the wheel,
+# verifies the property set holds on the freshly-built artifact, and
+# publishes to PyPI via OIDC trusted publishing (no API tokens).
+#
+# One-time setup required on PyPI side, see docs in README/CONTRIBUTING:
+#
+#   1. Register the project name "project-ghost" on https://pypi.org
+#   2. Go to https://pypi.org/manage/account/publishing/
+#   3. Add a "Pending publisher" with:
+#        - PyPI project name : project-ghost
+#        - Owner             : JFHelvetius
+#        - Repository        : ghost
+#        - Workflow filename : release.yml
+#        - Environment name  : pypi
+#   4. Push a v* tag — the workflow does the rest.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  # Manual fallback for verifying the build pipeline without a real
+  # release (skips the publish step via the `release` input gate).
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Set to true to actually publish to PyPI"
+        required: false
+        default: "false"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build wheel + sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+      - name: Build distributions
+        run: python -m build
+      - name: List artifacts
+        run: ls -la dist/
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 14
+
+  verify:
+    # Release-gate: install the freshly-built wheel, run the reference
+    # closed-loop smoke against it, and verify the five-property set
+    # via the same ``ghost verify-properties`` command third parties
+    # will use after install. If any property fails on the artifact
+    # we're about to publish, the release is blocked.
+    name: Smoke-verify the built wheel
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Install the freshly-built wheel
+        run: pip install dist/*.whl
+      - name: Run reference closed-loop smoke
+        run: python -m project_ghost.examples.closed_loop_smoke
+      - name: Verify property set against the wheel-installed CLI
+        run: ghost verify-properties --mcap closed_loop_smoke.mcap
+
+  publish-pypi:
+    # Trusted publishing: no token, no secret. The OIDC token is
+    # exchanged at the PyPI side for an upload credential scoped to
+    # this exact workflow file under this exact repository.
+    name: Publish to PyPI
+    needs: verify
+    runs-on: ubuntu-latest
+    # Skip publish on manual runs unless explicitly opted-in.
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.event.inputs.release == 'true')
+    environment:
+      name: pypi
+      url: https://pypi.org/p/project-ghost
+    permissions:
+      id-token: write   # OIDC for trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    # Side-effect of a successful PyPI publish: create a GitHub Release
+    # pinned to the tag, with the tag's annotated message as the body
+    # and the dist artifacts attached. Provides the third
+    # citation surface (alongside the PyPI page and the git tag).
+    name: Create GitHub Release
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
