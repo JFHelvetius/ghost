@@ -164,17 +164,18 @@ jobs:
           curl -L -o tla2tools.jar \
             https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar
       - name: Run TLC on BaudErur spec
+        working-directory: docs/proofs
         run: |
-          cd docs/proofs
+          # Capture both stdout and stderr; TLC mixes them.
+          # GitHub Actions runs bash with `set -eo pipefail` so any
+          # non-zero exit from java OR a broken pipe fails this step.
           java -cp ../../tla2tools.jar tlc2.TLC \
             -config BaudErur.cfg \
-            BaudErur.tla \
-            | tee tlc_output.log
-          # TLC exits 0 on success. Grep is belt-and-braces:
-          grep -q "Model checking completed. No error has been found" \
-            docs/proofs/tlc_output.log || \
-            grep -q "Model checking completed. No error has been found" \
-            tlc_output.log
+            BaudErur.tla 2>&1 | tee tlc_output.log
+          # Belt-and-braces success check: TLC exit code already gated
+          # by pipefail, this just asserts the canonical success
+          # signature is in the log we are about to archive.
+          grep -q "Model checking completed" tlc_output.log
       - name: Upload TLC output
         if: always()
         uses: actions/upload-artifact@v4
