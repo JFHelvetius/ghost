@@ -35,6 +35,15 @@ Five properties, five citable claims, exit code `0` iff every property holds. Ea
 
 The honest part: the individual ideas (uncertainty calibration, action gating on confidence, fault detection) are decades-old robotics research. The contribution of Ghost is not new theory — it's **the specific combination, end-to-end, with byte-exact replay verification and a CLI-grade external surface**. See [ADR-0031 §Context](docs/adr/0031-bounded-action-under-drift-property-v1.md) for the honest framing.
 
+## Try it without installing anything
+
+**[→ Open the live dashboard](https://project-ghost.streamlit.app/)** —
+runs the reference closed-loop smoke and shows the five property
+veredictos in the browser.
+
+**[→ Browse the docs site](https://JFHelvetius.github.io/ghost/)** —
+MkDocs Material site with per-property pages.
+
 ## Try it in 60 seconds
 
 ```bash

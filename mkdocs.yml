@@ -1,0 +1,116 @@
+site_name: Project Ghost
+site_description: >-
+  Autonomy under uncertainty — open-source reference implementation of
+  five formal safety properties verifiable byte-exact from any MCAP.
+site_url: https://JFHelvetius.github.io/ghost/
+site_author: J. M. Mateos
+copyright: Copyright &copy; Project Ghost contributors · Apache-2.0
+
+repo_url: https://github.com/JFHelvetius/ghost
+repo_name: JFHelvetius/ghost
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.tracking
+    - navigation.indexes
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+
+nav:
+  - Home: index.md
+  - Properties:
+    - properties/index.md
+    - BAUD-v1 — Bounded Action Under Drift: properties/baud.md
+    - ERUR-v1 — Eventual Reactivation Under Recovery: properties/erur.md
+    - MD-v1 — Monotonic Degradation: properties/md.md
+    - RLB-v1 — Recovery Latency Bound: properties/rlb.md
+    - FPB-v1 — False Positive Bound: properties/fpb.md
+  - Architecture: architecture.md
+  - ADRs:
+    - adr/README.md
+  - Specs:
+    - specs/README.md
+  - Roadmaps:
+    - Phase 1: roadmaps/phase1.md
+    - Uncertainty research track: roadmaps/research_track_uncertainty.md
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: "¶"
+      permalink_title: Permalink
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/JFHelvetius/ghost
+      name: Project Ghost on GitHub
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/project-ghost/
+      name: project-ghost on PyPI
+  generator: false
