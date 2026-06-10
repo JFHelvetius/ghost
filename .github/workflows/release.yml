@@ -33,6 +33,13 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+# Opt-in to Node.js 24 for the currently-pinned actions. GitHub will
+# default to Node 24 on 2026-06-16; setting this now silences the
+# deprecation warnings without waiting for action releases to bump
+# their runtime.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 permissions:
   contents: read
 

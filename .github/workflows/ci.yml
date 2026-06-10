@@ -9,6 +9,12 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Forward-compatibility: GitHub Actions deprecates Node.js 20 on
+# 2026-06-16. Opt in to Node 24 now so the currently-pinned actions
+# (checkout, setup-python, upload-artifact) run on the new runtime.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   lint:
     name: Lint + types
