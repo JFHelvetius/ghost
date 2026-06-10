@@ -76,16 +76,29 @@ assert report.holds
 
 ## Example output
 
-On the reference 10-cycle smoke with sustained drift (no recovery):
+On the reference sustained-drift smoke (10 cycles, drift never stops):
 
 ```
 RLB-v1: HOLDS  (W=32, 0/10 cycles evaluated)
 ```
 
-RLB applies **vacuously** to the smoke — there is no recovery
-transition to verify. The strong coverage lives in the Hypothesis
-property test which generates synthetic drift-then-recovery scenarios
-of varying lengths.
+RLB applies **vacuously** to that smoke — there is no recovery
+transition to verify. To exercise the property with a real witness,
+the `closed_loop_smoke_with_recovery` scenario (8 drift cycles + 42
+clean cycles) is engineered to fire exactly one recovery transition:
+
+```
+RLB-v1: HOLDS  (W=32, 1/50 cycles evaluated)
+```
+
+with `L(t) = 38`, `peak = 7`, and the bound `peak + W - 1 = 38` met
+**exactly** — proving the bound is tight. Both smokes run on every
+push to `main` through CI's `verify-properties` job; the recovery
+smoke is the strong witness for RLB.
+
+The Hypothesis property test (`tests/properties/test_rlb_property.py`)
+generates additional synthetic drift-then-recovery scenarios of
+varying lengths to extend coverage.
 
 ## Bug found during implementation
 

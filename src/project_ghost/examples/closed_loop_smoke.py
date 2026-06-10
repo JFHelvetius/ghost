@@ -98,6 +98,8 @@ from project_ghost.telemetry import (
 from project_ghost.telemetry.channels import CHANNEL_STATE_NAV
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from project_ghost.core.feedback import CalibratedSelfAssessment
     from project_ghost.core.prediction import (
         BeliefForwardPrediction,
@@ -109,6 +111,7 @@ if TYPE_CHECKING:
     _PredictionType = BeliefForwardPrediction
     _OutcomeType = PredictionOutcome
     _CalibratedType = CalibratedSelfAssessment
+    _GroundTruthFn = Callable[[int], Pose]
 
 
 # Scenario parameters. Picked to force feedback to fire by ~cycle 4.
@@ -195,12 +198,18 @@ def run_closed_loop_smoke(
     output_path: Path,
     *,
     n_cycles: int = 10,
+    _ground_truth_fn: _GroundTruthFn = _ground_truth_pose,
 ) -> SmokeSummary:
     """Run the N-cycle smoke and write a complete MCAP to ``output_path``.
 
-    Pure modulo I/O: same ``n_cycles`` and same ``output_path``
-    produce byte-identical MCAP across runs (cross-process
-    determinism inherited from T4).
+    Pure modulo I/O: same ``n_cycles`` and same ``output_path`` (and the
+    same ``_ground_truth_fn``) produce byte-identical MCAP across runs
+    (cross-process determinism inherited from T4).
+
+    ``_ground_truth_fn`` is a private escape hatch used by
+    ``run_closed_loop_smoke_with_recovery``; external callers should not
+    set it. The default reproduces the original sustained-drift smoke
+    behaviour exactly, byte-for-byte.
 
     Returns ``SmokeSummary`` for the integration test to assert on.
     """
@@ -247,7 +256,7 @@ def run_closed_loop_smoke(
             # belief so feedback can use it.)
             if k > 0:
                 prior_prediction = predictions_by_cycle[k - 1]
-                actual_pose = _ground_truth_pose(t_k)
+                actual_pose = _ground_truth_fn(t_k)
                 outcome = compute_divergence(
                     prior_prediction, actual_pose, t_k
                 )

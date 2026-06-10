@@ -84,22 +84,46 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-      - name: Run reference closed-loop smoke
+      # ---- Sustained-drift smoke ---------------------------------
+      - name: Run sustained-drift smoke
         run: python -m project_ghost.examples.closed_loop_smoke
-      - name: Verify property set (text)
+      - name: Verify properties (sustained-drift)
         run: ghost verify-properties --mcap closed_loop_smoke.mcap
-      - name: Verify property set (JSON for archival)
+      - name: Verify properties (sustained-drift, JSON)
         run: |
-          ghost verify-properties --mcap closed_loop_smoke.mcap --json \
-            > property_report.json
-          cat property_report.json
-      - name: Upload property report
+          ghost verify-properties \
+            --mcap closed_loop_smoke.mcap --json \
+            > property_report_drift.json
+          cat property_report_drift.json
+
+      # ---- Drift-then-recovery smoke -----------------------------
+      # The sustained-drift scenario leaves RLB-v1 vacuously satisfied
+      # (no recovery transitions). This second smoke is engineered to
+      # fire exactly one recovery transition with L = peak + W - 1,
+      # giving RLB a strong witness in CI rather than only in the
+      # Hypothesis property test. ADR-0034 §4.4.
+      - name: Run drift-then-recovery smoke
+        run: python -m project_ghost.examples.closed_loop_smoke_with_recovery
+      - name: Verify properties (drift-then-recovery)
+        run: ghost verify-properties --mcap closed_loop_smoke_with_recovery.mcap
+      - name: Verify properties (drift-then-recovery, JSON)
+        run: |
+          ghost verify-properties \
+            --mcap closed_loop_smoke_with_recovery.mcap --json \
+            > property_report_recovery.json
+          cat property_report_recovery.json
+
+      - name: Upload property reports
         uses: actions/upload-artifact@v4
         with:
-          name: property-report
-          path: property_report.json
-      - name: Upload reference MCAP
+          name: property-reports
+          path: |
+            property_report_drift.json
+            property_report_recovery.json
+      - name: Upload reference MCAPs
         uses: actions/upload-artifact@v4
         with:
-          name: reference-mcap
-          path: closed_loop_smoke.mcap
+          name: reference-mcaps
+          path: |
+            closed_loop_smoke.mcap
+            closed_loop_smoke_with_recovery.mcap
