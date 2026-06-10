@@ -62,7 +62,22 @@ jobs:
       - name: Unit tests
         run: pytest -m "not slow and not scenario" --cov=project_ghost --cov-report=xml
       - name: Conformance tests
-        run: pytest -m conformance
+        shell: bash
+        run: |
+          # pytest exits 5 ("no tests collected") when the conformance
+          # marker matches nothing. The marker is reserved for HAL
+          # backend conformance suites that will be added per-backend;
+          # treat empty selection as success so the step is
+          # forward-compatible without falsely failing the build today.
+          set +e
+          pytest -m conformance
+          rc=$?
+          set -e
+          if [ "$rc" = "5" ]; then
+            echo "::notice::No tests matched the 'conformance' marker (reserved for HAL backends)."
+            exit 0
+          fi
+          exit "$rc"
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
         uses: actions/upload-artifact@v4
