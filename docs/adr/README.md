@@ -56,3 +56,4 @@ This directory holds the project's **significant architectural decisions**.
 | [ADR-0033](0033-monotonic-degradation-property-v1.md) | Monotonic Degradation Property v1 (MD) | Accepted |
 | [ADR-0034](0034-recovery-latency-bound-property-v1.md) | Recovery Latency Bound Property v1 (RLB) | Accepted |
 | [ADR-0035](0035-false-positive-bound-property-v1.md) | False Positive Bound Property v1 (FPB) | Accepted |
+| [ADR-0036](0036-tla-plus-mechanical-verification-of-baud-erur.md) | TLA+ Mechanical Verification of BAUD-v1 / ERUR-v1 / Partition | Proposed |

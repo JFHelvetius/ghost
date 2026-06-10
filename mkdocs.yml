@@ -63,6 +63,7 @@ nav:
     - MD-v1 — Monotonic Degradation: properties/md.md
     - RLB-v1 — Recovery Latency Bound: properties/rlb.md
     - FPB-v1 — False Positive Bound: properties/fpb.md
+    - Mechanical verification (TLA+): properties/proofs.md
   - Architecture: architecture.md
   - ADRs:
     - adr/README.md

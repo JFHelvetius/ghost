@@ -27,6 +27,9 @@ claim**: conditional behaviour in both directions of the drift signal
 (MD), a quantitative temporal bound (RLB), and an empirical observer
 for regression gating (FPB).
 
+[BAUD-v1 / ERUR-v1 / MD-v1 are additionally **mechanically verified**
+by TLA+ / TLC — see the proofs page :material-arrow-right:](proofs.md){ .md-button }
+
 ## How they fit together
 
 ```mermaid

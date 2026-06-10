@@ -133,3 +133,51 @@ jobs:
           path: |
             closed_loop_smoke.mcap
             closed_loop_smoke_with_recovery.mcap
+
+  tla-plus:
+    # ADR-0036 self-enforcement: every push must keep the TLA+
+    # specification's invariants satisfiable. TLC enumerates the full
+    # reachable state space (bounded by M=2, K=1, W=3) and asserts
+    # INV_BAUD, INV_ERUR, INV_PARTITION, INV_NO_INVENTED_CONFIDENCE
+    # and INV_HISTORY_BOUND all hold. Any violation indicates a bug
+    # in the spec, the policy encoding, or the property statements
+    # themselves — release-blocking.
+    name: TLA+ mechanical verification (ADR-0036)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Cache tla2tools.jar
+        id: cache-tla
+        uses: actions/cache@v4
+        with:
+          path: tla2tools.jar
+          key: tla2tools-jar-v1.8.0
+      - name: Download tla2tools.jar
+        if: steps.cache-tla.outputs.cache-hit != 'true'
+        run: |
+          curl -L -o tla2tools.jar \
+            https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar
+      - name: Run TLC on BaudErur spec
+        run: |
+          cd docs/proofs
+          java -cp ../../tla2tools.jar tlc2.TLC \
+            -config BaudErur.cfg \
+            BaudErur.tla \
+            | tee tlc_output.log
+          # TLC exits 0 on success. Grep is belt-and-braces:
+          grep -q "Model checking completed. No error has been found" \
+            docs/proofs/tlc_output.log || \
+            grep -q "Model checking completed. No error has been found" \
+            tlc_output.log
+      - name: Upload TLC output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tlc-output
+          path: docs/proofs/tlc_output.log
