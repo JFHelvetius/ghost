@@ -1,0 +1,101 @@
+cff-version: 1.2.0
+message: >-
+  If you use Project Ghost or any of its formal safety properties
+  (BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1) in academic, industrial,
+  or other work, please cite the project as below.
+title: "Project Ghost: Autonomy under uncertainty"
+abstract: >-
+  Open-source reference implementation of five formal safety
+  properties for autonomy under uncertainty, verifiable byte-exact
+  from any MCAP via the `ghost verify-properties` CLI. The property
+  set comprises: Bounded Action Under Drift (BAUD-v1, ADR-0031),
+  Eventual Reactivation Under Recovery (ERUR-v1, ADR-0032),
+  Monotonic Degradation (MD-v1, ADR-0033), Recovery Latency Bound
+  (RLB-v1, ADR-0034), and the False Positive Bound observer
+  (FPB-v1, ADR-0035). Each property is stated in a binding ADR,
+  verified by a pure function over the captured run, exposed via
+  the CLI, witnessed inline in every reference closed-loop smoke,
+  and self-enforced on every push by CI.
+type: software
+authors:
+  - family-names: Mateos
+    given-names: J. M.
+    email: jfhelvetius@gmail.com
+    affiliation: Independent
+version: 0.1.1
+date-released: 2026-06-09
+url: "https://github.com/JFHelvetius/ghost"
+repository-code: "https://github.com/JFHelvetius/ghost"
+repository-artifact: "https://pypi.org/project/project-ghost/"
+license: Apache-2.0
+keywords:
+  - autonomy under uncertainty
+  - formal safety properties
+  - verifiable autonomy
+  - calibrated confidence
+  - closed-loop feedback
+  - byte-exact replay verification
+  - robotics
+  - safety-critical
+identifiers:
+  - type: url
+    value: "https://JFHelvetius.github.io/ghost/"
+    description: Documentation site
+preferred-citation:
+  type: software
+  title: "Project Ghost: Autonomy under uncertainty"
+  authors:
+    - family-names: Mateos
+      given-names: J. M.
+      email: jfhelvetius@gmail.com
+  version: 0.1.1
+  date-released: 2026-06-09
+  url: "https://github.com/JFHelvetius/ghost"
+  license: Apache-2.0
+references:
+  - type: software
+    title: "ADR-0031 — Bounded Action Under Drift Property v1 (BAUD)"
+    authors:
+      - family-names: Mateos
+        given-names: J. M.
+    url: "https://github.com/JFHelvetius/ghost/blob/main/docs/adr/0031-bounded-action-under-drift-property-v1.md"
+    notes: >-
+      Formal statement of the BAUD-v1 property: when prediction
+      error signals drift, the agent emits no non-conservative
+      actuator command.
+  - type: software
+    title: "ADR-0032 — Eventual Reactivation Under Recovery Property v1 (ERUR)"
+    authors:
+      - family-names: Mateos
+        given-names: J. M.
+    url: "https://github.com/JFHelvetius/ghost/blob/main/docs/adr/0032-eventual-reactivation-under-recovery-property-v1.md"
+    notes: >-
+      Formal statement of the ERUR-v1 property: when drift is
+      absent and belief is KNOWN, the agent reactivates PROCEED.
+  - type: software
+    title: "ADR-0033 — Monotonic Degradation Property v1 (MD)"
+    authors:
+      - family-names: Mateos
+        given-names: J. M.
+    url: "https://github.com/JFHelvetius/ghost/blob/main/docs/adr/0033-monotonic-degradation-property-v1.md"
+    notes: >-
+      Formal statement of the MD-v1 property: the reference
+      calibration policy never invents confidence.
+  - type: software
+    title: "ADR-0034 — Recovery Latency Bound Property v1 (RLB)"
+    authors:
+      - family-names: Mateos
+        given-names: J. M.
+    url: "https://github.com/JFHelvetius/ghost/blob/main/docs/adr/0034-recovery-latency-bound-property-v1.md"
+    notes: >-
+      Formal statement of the RLB-v1 property: dirty-run length
+      is bounded by peak + W - 1.
+  - type: software
+    title: "ADR-0035 — False Positive Bound Property v1 (FPB)"
+    authors:
+      - family-names: Mateos
+        given-names: J. M.
+    url: "https://github.com/JFHelvetius/ghost/blob/main/docs/adr/0035-false-positive-bound-property-v1.md"
+    notes: >-
+      Formal statement of the FPB-v1 property: empirical BAUD
+      fire rate is exposed and bounded for regression gating.
