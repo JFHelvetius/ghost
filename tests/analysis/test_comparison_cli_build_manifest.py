@@ -59,14 +59,10 @@ def test_cli_build_manifest_writes_to_output_file(tmp_path: Path) -> None:
     assert data["schema_version"] == RUN_MANIFEST_SCHEMA_VERSION
     assert data["manifest"]["run_id"] == "test_run"
     assert len(data["manifest"]["inputs"]) == 1
-    assert data["manifest"]["inputs"][0]["sha256"] == hashlib.sha256(
-        b"AAA"
-    ).hexdigest()
+    assert data["manifest"]["inputs"][0]["sha256"] == hashlib.sha256(b"AAA").hexdigest()
     assert data["manifest"]["inputs"][0]["kind"] == "mcap_truth"
     assert len(data["manifest"]["outputs"]) == 1
-    assert data["manifest"]["outputs"][0]["sha256"] == hashlib.sha256(
-        b"BBB"
-    ).hexdigest()
+    assert data["manifest"]["outputs"][0]["sha256"] == hashlib.sha256(b"BBB").hexdigest()
 
 
 def test_cli_build_manifest_writes_to_stdout_when_no_output(

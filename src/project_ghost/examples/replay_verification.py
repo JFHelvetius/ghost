@@ -172,17 +172,13 @@ def _collect_source_bytes(
 ) -> tuple[list[FusionResult], dict[str, list[bytes]]]:
     """Read source MCAP: collect FusionResult objects and per-channel bytes."""
     fusion_results: list[FusionResult] = []
-    source_bytes: dict[str, list[bytes]] = {
-        ch: [] for ch in _DOWNSTREAM_CHANNELS
-    }
+    source_bytes: dict[str, list[bytes]] = {ch: [] for ch in _DOWNSTREAM_CHANNELS}
     with MCAPReplayReader(source_path) as reader:
         for msg in reader.iter_messages():
             if msg.channel == CHANNEL_FUSION_RESULTS:
                 fusion_results.append(decode_message(msg))
             elif msg.channel in _DOWNSTREAM_CHANNELS:
-                source_bytes[msg.channel].append(
-                    encode_to_bytes(decode_message(msg))
-                )
+                source_bytes[msg.channel].append(encode_to_bytes(decode_message(msg)))
     return fusion_results, source_bytes
 
 
@@ -200,9 +196,7 @@ def _execute_replay(
     thresholds = _make_thresholds()
     decision_policy = UncertaintyAwareReferencePolicy()
     actuation_policy = AttitudeHoldReferencePolicy()
-    feedback_policy = MahalanobisDowngradePolicy(
-        min_outcomes=4, downgrade_threshold=2
-    )
+    feedback_policy = MahalanobisDowngradePolicy(min_outcomes=4, downgrade_threshold=2)
     predictor = ConstantVelocityForwardPredictor()
 
     outcomes_so_far: list[PredictionOutcome] = []
@@ -229,9 +223,7 @@ def _execute_replay(
             raw = assess_belief(state, thresholds)
             sa_adapter.publish(raw)
 
-            calibrated = assess_with_feedback(
-                raw, outcomes_so_far, feedback_policy, max_history=32
-            )
+            calibrated = assess_with_feedback(raw, outcomes_so_far, feedback_policy, max_history=32)
             cal_adapter.publish(calibrated)
 
             ctx = DecisionContext(
@@ -259,15 +251,11 @@ def _execute_replay(
 
 def _collect_replay_bytes(replay_path: Path) -> dict[str, list[bytes]]:
     """Read replay MCAP: collect per-channel encoded bytes."""
-    replay_bytes: dict[str, list[bytes]] = {
-        ch: [] for ch in _DOWNSTREAM_CHANNELS
-    }
+    replay_bytes: dict[str, list[bytes]] = {ch: [] for ch in _DOWNSTREAM_CHANNELS}
     with MCAPReplayReader(replay_path) as reader:
         for msg in reader.iter_messages():
             if msg.channel in _DOWNSTREAM_CHANNELS:
-                replay_bytes[msg.channel].append(
-                    encode_to_bytes(decode_message(msg))
-                )
+                replay_bytes[msg.channel].append(encode_to_bytes(decode_message(msg)))
     return replay_bytes
 
 
@@ -345,11 +333,7 @@ def replay_downstream_from_fusion(
     Returns ``ReplayVerificationSummary`` with per-channel
     ``ChannelVerification`` records and ``all_channels_byte_equal``.
     """
-    gt_fn = (
-        ground_truth_fn
-        if ground_truth_fn is not None
-        else _default_ground_truth
-    )
+    gt_fn = ground_truth_fn if ground_truth_fn is not None else _default_ground_truth
 
     fusion_results, source_bytes = _collect_source_bytes(source_path)
     _execute_replay(fusion_results, replay_path, gt_fn)

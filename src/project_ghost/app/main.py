@@ -36,14 +36,14 @@ from project_ghost.telemetry import (
 # ─────────────────────────────────────────────────────────────────────────────
 
 _KIND_COLOR: dict[str, str] = {
-    "proceed":     "#0f766e",
-    "hold":        "#b45309",
+    "proceed": "#0f766e",
+    "hold": "#b45309",
     "engage_kill": "#b91c1c",
 }
 _LEVEL_COLOR: dict[str, str] = {
-    "known":     "#0f766e",
+    "known": "#0f766e",
     "uncertain": "#b45309",
-    "unknown":   "#b91c1c",
+    "unknown": "#b91c1c",
 }
 _VERDICT_COLOR: dict[str, str] = {
     "within_1_std": "#0f766e",
@@ -53,13 +53,13 @@ _VERDICT_COLOR: dict[str, str] = {
 }
 _LEVEL_NUM: dict[str, int] = {"known": 0, "uncertain": 1, "unknown": 2}
 
-_INK       = "#0f172a"
-_INK_SOFT  = "#475569"
+_INK = "#0f172a"
+_INK_SOFT = "#475569"
 _INK_MUTED = "#94a3b8"
-_BORDER    = "#e2e8f0"
-_GRID      = "#eef2f6"
-_SURFACE   = "#ffffff"
-_BLUE      = "#1d4ed8"
+_BORDER = "#e2e8f0"
+_GRID = "#eef2f6"
+_SURFACE = "#ffffff"
+_BLUE = "#1d4ed8"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # i18n
@@ -69,7 +69,6 @@ _LANG: dict[str, dict[str, str]] = {
     "en": {
         # Language picker
         "lang_label": "Language",
-
         # Hero
         "hero_eyebrow": "Research platform · Autonomy under uncertainty",
         "hero_h1": "Project Ghost",
@@ -80,9 +79,8 @@ _LANG: dict[str, dict[str, str]] = {
             "autonomous systems that <strong>notice when their own model "
             "has drifted</strong>, and stop before they cause harm."
         ),
-
         # Concept cards
-        "c1_num":  "01 · THE PROBLEM",
+        "c1_num": "01 · THE PROBLEM",
         "c1_title": "Robots fail in silence",
         "c1_body": (
             "An autonomous system carries an internal picture of where it "
@@ -114,7 +112,6 @@ _LANG: dict[str, dict[str, str]] = {
             "from the cryptographic log, so investigators can rebuild "
             "what happened later."
         ),
-
         # About expander
         "about_label": "About this work — is this original?",
         "about_body": """
@@ -152,7 +149,6 @@ more often than it is implemented* — useful if you want to build
 safety-critical autonomy where "I'm not sure" is a legitimate output of
 the agent.
 """,
-
         # Pipeline
         "pipeline_eyebrow": "The 8-step closed loop",
         "phase_perception": "Perception",
@@ -181,11 +177,9 @@ the agent.
             "decisions until the model recovers. Without it, the agent "
             "would silently act on a stale belief."
         ),
-
         # Tabs
         "tab_run": "Try the simulation",
         "tab_inspect": "Inspect a run",
-
         # Run tab
         "run_intro": (
             "Every click of <strong>Run</strong> executes the complete "
@@ -211,13 +205,11 @@ the agent.
         "run_button": "Run simulation",
         "spinner_run": "Running {n}-cycle closed loop…",
         "results_eyebrow": "Results",
-
         # Stats
         "stat_cycles": "Cycles",
         "stat_decisions": "Decisions",
         "stat_outcomes": "Outcomes",
         "stat_quality": "Prediction quality",
-
         # Sections
         "sec_decisions": "Decisions",
         "sec_calibration": "Calibration over time",
@@ -231,20 +223,13 @@ the agent.
         ),
         "verdict_holds": "HOLDS",
         "verdict_violated": "VIOLATED",
-
         # Banners
         "banner_downgrade": (
             "<strong>Confidence downgraded at cycle {n}</strong> — "
             "prediction errors exceeded threshold"
         ),
-        "banner_held": (
-            "<strong>Confidence held</strong> — model stayed accurate "
-            "throughout"
-        ),
-        "banner_held_known": (
-            "<strong>Confidence stayed KNOWN</strong> throughout"
-        ),
-
+        "banner_held": ("<strong>Confidence held</strong> — model stayed accurate throughout"),
+        "banner_held_known": ("<strong>Confidence stayed KNOWN</strong> throughout"),
         # Provenance
         "provenance_caption": (
             "SHA-256 content address of this MCAP. Same inputs produce "
@@ -252,7 +237,6 @@ the agent.
             "tampered with."
         ),
         "download_button": "Download MCAP",
-
         # Inspect tab
         "upload_title": "Upload an MCAP telemetry file",
         "upload_body": (
@@ -261,21 +245,13 @@ the agent.
             "layer of the pipeline."
         ),
         "upload_label": "Choose MCAP file",
-        "upload_help": (
-            "Files produced by ghost-app, the ghost CLI, or "
-            "run_closed_loop_smoke()."
-        ),
+        "upload_help": ("Files produced by ghost-app, the ghost CLI, or run_closed_loop_smoke()."),
         "decoding_spinner": "Decoding MCAP…",
-        "no_messages_error": (
-            "No decodeable messages found. Is this a valid Project Ghost "
-            "MCAP?"
-        ),
+        "no_messages_error": ("No decodeable messages found. Is this a valid Project Ghost MCAP?"),
         "loaded_msg": (
-            "Loaded <strong>{n_channels} channels</strong> · "
-            "<strong>{n_msgs} messages</strong>"
+            "Loaded <strong>{n_channels} channels</strong> · <strong>{n_msgs} messages</strong>"
         ),
         "channel_overview_label": "Channel overview",
-
         # Inspect sections
         "ins_dec_title": "Decisions",
         "ins_dec_desc": (
@@ -320,7 +296,6 @@ the agent.
             "Oracle always reports x ≈ 0 m — ground truth drifts at 5 m/s. "
             "That gap drives the Mahalanobis divergence."
         ),
-
         # Replay
         "replay_label": "Replay verification",
         "replay_intro": (
@@ -345,7 +320,6 @@ the agent.
         "replay_col_result": "Result",
         "replay_byte_equal": "byte-equal",
         "replay_differs": "differs",
-
         # Narrative
         "narr_cycles": "The agent ran <strong>{n} full cycles</strong>.",
         "narr_downgrade": (
@@ -370,16 +344,11 @@ the agent.
             "stationary vehicle while ground truth drifts at 5 m/s. The "
             "calibration loop is the only mechanism that can catch this."
         ),
-
         # Verdicts
-        "verdict_5": (
-            "consistently <strong>way off</strong> (&gt;5-sigma) — severe "
-            "model failure"
-        ),
+        "verdict_5": ("consistently <strong>way off</strong> (&gt;5-sigma) — severe model failure"),
         "verdict_3": "significantly off (&gt;3-sigma) — model unreliable",
         "verdict_1": "moderately off (&gt;1-sigma) — mild drift detected",
         "verdict_in": "accurate (within 1-sigma) — model held",
-
         # Chart titles & axes
         "chart_dec_dist": "Decision distribution",
         "chart_calib_title": "Confidence level over cycles",
@@ -392,7 +361,6 @@ the agent.
     },
     "es": {
         "lang_label": "Idioma",
-
         "hero_eyebrow": "Plataforma de investigación · Autonomía bajo incertidumbre",
         "hero_h1": "Project Ghost",
         "hero_tagline": (
@@ -403,7 +371,6 @@ the agent.
             "<strong>detectan cuándo su propio modelo se ha "
             "desincronizado</strong> y se detienen antes de causar daño."
         ),
-
         "c1_num": "01 · EL PROBLEMA",
         "c1_title": "Los robots fallan en silencio",
         "c1_body": (
@@ -436,7 +403,6 @@ the agent.
             "byte desde el log criptográfico, así que se puede reconstruir "
             "qué pasó después."
         ),
-
         "about_label": "Sobre este trabajo — ¿es algo original?",
         "about_body": """
 **Respuesta honesta: como teoría, no. Como referencia construida, sí.**
@@ -475,7 +441,6 @@ se discute más de lo que se implementa* — útil si quieres construir
 autonomía safety-critical donde "no estoy seguro" sea una salida
 legítima del agente.
 """,
-
         "pipeline_eyebrow": "El ciclo cerrado de 8 pasos",
         "phase_perception": "Percepción",
         "phase_action": "Acción",
@@ -504,10 +469,8 @@ legítima del agente.
             "Sin él, el agente actuaría en silencio sobre una creencia "
             "obsoleta."
         ),
-
         "tab_run": "Probar la simulación",
         "tab_inspect": "Inspeccionar una ejecución",
-
         "run_intro": (
             "Cada clic en <strong>Ejecutar</strong> corre el pipeline "
             "completo de 8 pasos en tu navegador: fusión del oráculo → "
@@ -532,12 +495,10 @@ legítima del agente.
         "run_button": "Ejecutar simulación",
         "spinner_run": "Ejecutando ciclo cerrado de {n} ciclos…",
         "results_eyebrow": "Resultados",
-
         "stat_cycles": "Ciclos",
         "stat_decisions": "Decisiones",
         "stat_outcomes": "Outcomes",
         "stat_quality": "Calidad de predicción",
-
         "sec_decisions": "Decisiones",
         "sec_calibration": "Calibración en el tiempo",
         "sec_provenance": "Procedencia",
@@ -550,7 +511,6 @@ legítima del agente.
         ),
         "verdict_holds": "HOLDS",
         "verdict_violated": "VIOLATED",
-
         "banner_downgrade": (
             "<strong>Confianza degradada en el ciclo {n}</strong> — los "
             "errores de predicción superaron el umbral"
@@ -560,17 +520,14 @@ legítima del agente.
             "preciso durante toda la ejecución"
         ),
         "banner_held_known": (
-            "<strong>La confianza se mantuvo KNOWN</strong> durante todo "
-            "el recorrido"
+            "<strong>La confianza se mantuvo KNOWN</strong> durante todo el recorrido"
         ),
-
         "provenance_caption": (
             "Dirección de contenido SHA-256 de este MCAP. Los mismos "
             "inputs producen el mismo hash. Úsalo para demostrar que esta "
             "ejecución exacta no fue manipulada."
         ),
         "download_button": "Descargar MCAP",
-
         "upload_title": "Sube un fichero de telemetría MCAP",
         "upload_body": (
             "Ejecuta la simulación en la pestaña <strong>Probar la "
@@ -579,20 +536,16 @@ legítima del agente.
         ),
         "upload_label": "Elegir fichero MCAP",
         "upload_help": (
-            "Ficheros producidos por ghost-app, el CLI ghost, o "
-            "run_closed_loop_smoke()."
+            "Ficheros producidos por ghost-app, el CLI ghost, o run_closed_loop_smoke()."
         ),
         "decoding_spinner": "Decodificando MCAP…",
         "no_messages_error": (
-            "No se encontraron mensajes decodificables. ¿Es un MCAP "
-            "válido de Project Ghost?"
+            "No se encontraron mensajes decodificables. ¿Es un MCAP válido de Project Ghost?"
         ),
         "loaded_msg": (
-            "Cargados <strong>{n_channels} canales</strong> · "
-            "<strong>{n_msgs} mensajes</strong>"
+            "Cargados <strong>{n_channels} canales</strong> · <strong>{n_msgs} mensajes</strong>"
         ),
         "channel_overview_label": "Resumen de canales",
-
         "ins_dec_title": "Decisiones",
         "ins_dec_desc": (
             "En cada ciclo el agente eligió una acción según su confianza "
@@ -639,7 +592,6 @@ legítima del agente.
             "deriva a 5 m/s. Ese gap provoca la divergencia de "
             "Mahalanobis."
         ),
-
         "replay_label": "Verificación de replay",
         "replay_intro": (
             "Re-ejecuta el pipeline downstream desde el canal almacenado "
@@ -664,7 +616,6 @@ legítima del agente.
         "replay_col_result": "Resultado",
         "replay_byte_equal": "byte-iguales",
         "replay_differs": "difieren",
-
         "narr_cycles": "El agente corrió <strong>{n} ciclos completos</strong>.",
         "narr_downgrade": (
             "Ciclos 1–{prev}: plena confianza (<em>known</em>), la "
@@ -691,19 +642,12 @@ legítima del agente.
             "deriva a 5 m/s. El lazo de calibración es el único mecanismo "
             "que puede detectarlo."
         ),
-
         "verdict_5": (
-            "consistentemente <strong>muy lejos</strong> (&gt;5-sigma) — "
-            "fallo severo del modelo"
+            "consistentemente <strong>muy lejos</strong> (&gt;5-sigma) — fallo severo del modelo"
         ),
-        "verdict_3": (
-            "significativamente lejos (&gt;3-sigma) — modelo no fiable"
-        ),
-        "verdict_1": (
-            "moderadamente lejos (&gt;1-sigma) — deriva leve detectada"
-        ),
+        "verdict_3": ("significativamente lejos (&gt;3-sigma) — modelo no fiable"),
+        "verdict_1": ("moderadamente lejos (&gt;1-sigma) — deriva leve detectada"),
         "verdict_in": "precisa (dentro de 1-sigma) — el modelo se mantuvo",
-
         "chart_dec_dist": "Distribución de decisiones",
         "chart_calib_title": "Nivel de confianza por ciclo",
         "chart_div_title": "Distancia de Mahalanobis (posición)",
@@ -962,14 +906,15 @@ hr { border-color: #e2e8f0 !important; }
 # Plotly helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _base_layout(**kw: Any) -> dict[str, Any]:
-    base: dict[str, Any] = dict(
-        paper_bgcolor=_SURFACE,
-        plot_bgcolor=_SURFACE,
-        font=dict(color=_INK, family="-apple-system, Inter, Segoe UI, sans-serif", size=12),
-        margin=dict(l=44, r=18, t=34, b=42),
-        showlegend=False,
-    )
+    base: dict[str, Any] = {
+        "paper_bgcolor": _SURFACE,
+        "plot_bgcolor": _SURFACE,
+        "font": {"color": _INK, "family": "-apple-system, Inter, Segoe UI, sans-serif", "size": 12},
+        "margin": {"l": 44, "r": 18, "t": 34, "b": 42},
+        "showlegend": False,
+    }
     base.update(kw)
     return base
 
@@ -980,8 +925,8 @@ def _axis_style(**kw: Any) -> dict[str, Any]:
         gridcolor=_GRID,
         zerolinecolor=_BORDER,
         linecolor=_BORDER,
-        tickfont=dict(size=11, color=_INK_MUTED),
-        title_font=dict(size=11, color=_INK_SOFT),
+        tickfont={"size": 11, "color": _INK_MUTED},
+        title_font={"size": 11, "color": _INK_SOFT},
         **kw,
     )
 
@@ -989,6 +934,7 @@ def _axis_style(**kw: Any) -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # MCAP decode cache
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @st.cache_data(show_spinner=False)
 def _decode_mcap(file_bytes: bytes) -> dict[str, list[tuple[int, Any]]]:
@@ -1001,9 +947,7 @@ def _decode_mcap(file_bytes: bytes) -> dict[str, list[tuple[int, Any]]]:
             for msg in reader.iter_messages():
                 try:
                     obj = decode_message(msg)
-                    result.setdefault(msg.channel, []).append(
-                        (msg.log_time_sim_ns, obj)
-                    )
+                    result.setdefault(msg.channel, []).append((msg.log_time_sim_ns, obj))
                 except (KeyError, ValueError):
                     pass
     finally:
@@ -1018,6 +962,7 @@ def _ms(ns: int) -> float:
 # ─────────────────────────────────────────────────────────────────────────────
 # Language picker
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _language_picker() -> None:
     if "lang" not in st.session_state:
@@ -1044,32 +989,39 @@ def _language_picker() -> None:
 # Hero & concept cards
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _hero() -> None:
-    st.markdown(f"""
-<div class="ghost-hero">
-  <div class="eyebrow">{t('hero_eyebrow')}</div>
-  <h1>{t('hero_h1')}</h1>
-  <p class="tagline">{t('hero_tagline')}</p>
-</div>""", unsafe_allow_html=True)
 
-    st.markdown(f"""
+def _hero() -> None:
+    st.markdown(
+        f"""
+<div class="ghost-hero">
+  <div class="eyebrow">{t("hero_eyebrow")}</div>
+  <h1>{t("hero_h1")}</h1>
+  <p class="tagline">{t("hero_tagline")}</p>
+</div>""",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f"""
 <div class="concept-grid">
   <div class="concept-card">
-    <div class="cc-num">{t('c1_num')}</div>
-    <div class="cc-title">{t('c1_title')}</div>
-    <div class="cc-body">{t('c1_body')}</div>
+    <div class="cc-num">{t("c1_num")}</div>
+    <div class="cc-title">{t("c1_title")}</div>
+    <div class="cc-body">{t("c1_body")}</div>
   </div>
   <div class="concept-card">
-    <div class="cc-num">{t('c2_num')}</div>
-    <div class="cc-title">{t('c2_title')}</div>
-    <div class="cc-body">{t('c2_body')}</div>
+    <div class="cc-num">{t("c2_num")}</div>
+    <div class="cc-title">{t("c2_title")}</div>
+    <div class="cc-body">{t("c2_body")}</div>
   </div>
   <div class="concept-card">
-    <div class="cc-num">{t('c3_num')}</div>
-    <div class="cc-title">{t('c3_title')}</div>
-    <div class="cc-body">{t('c3_body')}</div>
+    <div class="cc-num">{t("c3_num")}</div>
+    <div class="cc-title">{t("c3_title")}</div>
+    <div class="cc-body">{t("c3_body")}</div>
   </div>
-</div>""", unsafe_allow_html=True)
+</div>""",
+        unsafe_allow_html=True,
+    )
 
     with st.expander(t("about_label"), expanded=False):
         st.markdown(t("about_body"))
@@ -1080,20 +1032,32 @@ def _hero() -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _PHASE_LAYOUT: list[tuple[str, str, list[tuple[str, str, str]]]] = [
-    ("phase_perception", "#1d4ed8", [
-        ("🔭", "step_fusion_name", "step_fusion_desc"),
-        ("🧠", "step_assess_name", "step_assess_desc"),
-        ("⚖️", "step_calib_name",  "step_calib_desc"),
-    ]),
-    ("phase_action", "#b45309", [
-        ("🎯", "step_dec_name", "step_dec_desc"),
-        ("⚙️", "step_act_name", "step_act_desc"),
-    ]),
-    ("phase_learning", "#0f766e", [
-        ("🔮", "step_pred_name", "step_pred_desc"),
-        ("📊", "step_out_name",  "step_out_desc"),
-        ("🔄", "step_fb_name",   "step_fb_desc"),
-    ]),
+    (
+        "phase_perception",
+        "#1d4ed8",
+        [
+            ("🔭", "step_fusion_name", "step_fusion_desc"),
+            ("🧠", "step_assess_name", "step_assess_desc"),
+            ("⚖️", "step_calib_name", "step_calib_desc"),
+        ],
+    ),
+    (
+        "phase_action",
+        "#b45309",
+        [
+            ("🎯", "step_dec_name", "step_dec_desc"),
+            ("⚙️", "step_act_name", "step_act_desc"),
+        ],
+    ),
+    (
+        "phase_learning",
+        "#0f766e",
+        [
+            ("🔮", "step_pred_name", "step_pred_desc"),
+            ("📊", "step_out_name", "step_out_desc"),
+            ("🔄", "step_fb_name", "step_fb_desc"),
+        ],
+    ),
 ]
 
 
@@ -1118,14 +1082,17 @@ def _pipeline_diagram() -> None:
     for pi, (phase_key, phase_color, steps) in enumerate(_PHASE_LAYOUT):
         for si, (icon, name_key, desc_key) in enumerate(steps):
             with cols[ci]:
-                phase_label = t(phase_key) if si == 0 else ''
-                st.markdown(f"""
+                phase_label = t(phase_key) if si == 0 else ""
+                st.markdown(
+                    f"""
 <div class="pipe-phase" style="color:{phase_color}">{phase_label}</div>
 <div class="pipe-step">
   <div class="ps-icon">{icon}</div>
   <div class="ps-name">{t(name_key)}</div>
   <div class="ps-desc">{t(desc_key)}</div>
-</div>""", unsafe_allow_html=True)
+</div>""",
+                    unsafe_allow_html=True,
+                )
             ci += 1
             if si < len(steps) - 1:
                 with cols[ci]:
@@ -1160,9 +1127,7 @@ _VERDICT_KEYS = {
 
 def _run_narrative(summary: SmokeSummary) -> str:
     levels = summary.calibrated_levels_observed
-    first_change = next(
-        (i + 1 for i, lv in enumerate(levels) if lv != "known"), None
-    )
+    first_change = next((i + 1 for i, lv in enumerate(levels) if lv != "known"), None)
     verdict = summary.final_verdict or ""
     vkey = _VERDICT_KEYS.get(verdict)
     verdict_human = t(vkey) if vkey else verdict.replace("_", " ")
@@ -1184,60 +1149,72 @@ def _run_narrative(summary: SmokeSummary) -> str:
 # Plotly chart helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _chart_decision_dist(decisions_by_kind: dict[str, int]) -> go.Figure:
-    kinds  = list(decisions_by_kind.keys())
+    kinds = list(decisions_by_kind.keys())
     counts = list(decisions_by_kind.values())
     colors = [_KIND_COLOR.get(k, "#64748b") for k in kinds]
     labels = [k.replace("_", " ").upper() for k in kinds]
 
-    fig = go.Figure(go.Bar(
-        x=counts, y=labels, orientation="h",
-        marker=dict(color=colors, line=dict(color=_BORDER, width=0.5)),
-        text=counts, textposition="outside",
-        textfont=dict(color=_INK, size=12),
-        hovertemplate="<b>%{y}</b>: %{x}<extra></extra>",
-    ))
+    fig = go.Figure(
+        go.Bar(
+            x=counts,
+            y=labels,
+            orientation="h",
+            marker={"color": colors, "line": {"color": _BORDER, "width": 0.5}},
+            text=counts,
+            textposition="outside",
+            textfont={"color": _INK, "size": 12},
+            hovertemplate="<b>%{y}</b>: %{x}<extra></extra>",
+        )
+    )
     fig.update_layout(
-        **_base_layout(height=170, margin=dict(l=12, r=40, t=30, b=30)),
-        title=dict(text=t("chart_dec_dist"), font=dict(size=11, color=_INK_SOFT), x=0),
+        **_base_layout(height=170, margin={"l": 12, "r": 40, "t": 30, "b": 30}),
+        title={"text": t("chart_dec_dist"), "font": {"size": 11, "color": _INK_SOFT}, "x": 0},
         xaxis=_axis_style(title="", showgrid=True),
-        yaxis=_axis_style(showgrid=False, tickfont=dict(size=11, color=_INK)),
+        yaxis=_axis_style(showgrid=False, tickfont={"size": 11, "color": _INK}),
     )
     return fig
 
 
 def _chart_calibration(levels: list[str]) -> go.Figure:
     cycles = list(range(1, len(levels) + 1))
-    nums   = [_LEVEL_NUM.get(lv, -1) for lv in levels]
+    nums = [_LEVEL_NUM.get(lv, -1) for lv in levels]
 
     fig = go.Figure()
     fig.add_hrect(y0=-0.3, y1=0.5, fillcolor="rgba(15,118,110,0.06)", line_width=0)
-    fig.add_hrect(y0=0.5,  y1=1.5, fillcolor="rgba(180,83,9,0.06)",   line_width=0)
-    fig.add_hrect(y0=1.5,  y1=2.3, fillcolor="rgba(185,28,28,0.06)",  line_width=0)
+    fig.add_hrect(y0=0.5, y1=1.5, fillcolor="rgba(180,83,9,0.06)", line_width=0)
+    fig.add_hrect(y0=1.5, y1=2.3, fillcolor="rgba(185,28,28,0.06)", line_width=0)
 
-    fig.add_trace(go.Scatter(
-        x=cycles, y=nums, mode="lines+markers",
-        line=dict(color=_BLUE, width=2.2, shape="hv"),
-        marker=dict(
-            size=7,
-            color=[_LEVEL_COLOR.get(lv, "#64748b") for lv in levels],
-            line=dict(color="#ffffff", width=1.3),
-        ),
-        hovertemplate=f"{t('axis_cycle')} %{{x}}<br>Level: %{{y}}<extra></extra>",
-    ))
-    downgrade = next((c for c, n in zip(cycles, nums) if n > 0), None)
+    fig.add_trace(
+        go.Scatter(
+            x=cycles,
+            y=nums,
+            mode="lines+markers",
+            line={"color": _BLUE, "width": 2.2, "shape": "hv"},
+            marker={
+                "size": 7,
+                "color": [_LEVEL_COLOR.get(lv, "#64748b") for lv in levels],
+                "line": {"color": "#ffffff", "width": 1.3},
+            },
+            hovertemplate=f"{t('axis_cycle')} %{{x}}<br>Level: %{{y}}<extra></extra>",
+        )
+    )
+    downgrade = next((c for c, n in zip(cycles, nums, strict=False) if n > 0), None)
     if downgrade:
         fig.add_vline(
-            x=downgrade, line_dash="dash",
-            line_color="#b45309", line_width=1.4,
+            x=downgrade,
+            line_dash="dash",
+            line_color="#b45309",
+            line_width=1.4,
             annotation_text=t("label_downgrade_at", n=downgrade),
             annotation_font_color="#b45309",
             annotation_font_size=10,
             annotation_position="top right",
         )
     fig.update_layout(
-        **_base_layout(height=220, margin=dict(l=86, r=20, t=32, b=42)),
-        title=dict(text=t("chart_calib_title"), font=dict(size=11, color=_INK_SOFT), x=0),
+        **_base_layout(height=220, margin={"l": 86, "r": 20, "t": 32, "b": 42}),
+        title={"text": t("chart_calib_title"), "font": {"size": 11, "color": _INK_SOFT}, "x": 0},
         xaxis=_axis_style(title=t("axis_cycle")),
         yaxis=_axis_style(
             title="",
@@ -1245,7 +1222,7 @@ def _chart_calibration(levels: list[str]) -> go.Figure:
             tickvals=[0, 1, 2],
             ticktext=["KNOWN", "UNCERTAIN", "UNKNOWN"],
             range=[-0.3, 2.3],
-            tickfont=dict(size=10, color=_INK_SOFT),
+            tickfont={"size": 10, "color": _INK_SOFT},
         ),
     )
     return fig
@@ -1253,32 +1230,38 @@ def _chart_calibration(levels: list[str]) -> go.Figure:
 
 def _chart_divergence(rows: list[dict[str, Any]]) -> go.Figure:
     outcomes = [r["Outcome"] for r in rows]
-    maha     = [r["Pos Mahalanobis"] for r in rows]
+    maha = [r["Pos Mahalanobis"] for r in rows]
     verdicts = [r["Verdict"] for r in rows]
 
     fig = go.Figure()
     for sigma, color in ((5, "#6d28d9"), (3, "#b91c1c"), (1, "#b45309")):
         fig.add_hline(
-            y=sigma, line_dash="dot",
-            line_color=color, opacity=0.4,
+            y=sigma,
+            line_dash="dot",
+            line_color=color,
+            opacity=0.4,
             annotation_text=f"{sigma}σ",
             annotation_font_size=10,
             annotation_font_color=color,
             annotation_position="right",
         )
-    fig.add_trace(go.Scatter(
-        x=outcomes, y=maha, mode="lines+markers",
-        line=dict(color=_INK_SOFT, width=1.5),
-        marker=dict(
-            size=8,
-            color=[_VERDICT_COLOR.get(v, "#64748b") for v in verdicts],
-            line=dict(color="#ffffff", width=1.2),
-        ),
-        hovertemplate=f"{t('axis_outcome')} %{{x}}<br>Mahalanobis: %{{y:.2f}}<extra></extra>",
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=outcomes,
+            y=maha,
+            mode="lines+markers",
+            line={"color": _INK_SOFT, "width": 1.5},
+            marker={
+                "size": 8,
+                "color": [_VERDICT_COLOR.get(v, "#64748b") for v in verdicts],
+                "line": {"color": "#ffffff", "width": 1.2},
+            },
+            hovertemplate=f"{t('axis_outcome')} %{{x}}<br>Mahalanobis: %{{y:.2f}}<extra></extra>",
+        )
+    )
     fig.update_layout(
-        **_base_layout(height=200, margin=dict(l=42, r=60, t=30, b=42)),
-        title=dict(text=t("chart_div_title"), font=dict(size=11, color=_INK_SOFT), x=0),
+        **_base_layout(height=200, margin={"l": 42, "r": 60, "t": 30, "b": 42}),
+        title={"text": t("chart_div_title"), "font": {"size": 11, "color": _INK_SOFT}, "x": 0},
         xaxis=_axis_style(title=t("axis_outcome")),
         yaxis=_axis_style(title=t("axis_stddevs")),
     )
@@ -1286,18 +1269,21 @@ def _chart_divergence(rows: list[dict[str, Any]]) -> go.Figure:
 
 
 def _chart_fusion_x(df: pd.DataFrame) -> go.Figure:
-    fig = go.Figure(go.Scatter(
-        x=df["Cycle"], y=df["x (m)"],
-        mode="lines+markers",
-        line=dict(color=_BLUE, width=2),
-        marker=dict(size=5, color=_BLUE),
-        fill="tozeroy",
-        fillcolor="rgba(29,78,216,0.05)",
-        hovertemplate=f"{t('axis_cycle')} %{{x}}<br>x = %{{y:.4f}} m<extra></extra>",
-    ))
+    fig = go.Figure(
+        go.Scatter(
+            x=df["Cycle"],
+            y=df["x (m)"],
+            mode="lines+markers",
+            line={"color": _BLUE, "width": 2},
+            marker={"size": 5, "color": _BLUE},
+            fill="tozeroy",
+            fillcolor="rgba(29,78,216,0.05)",
+            hovertemplate=f"{t('axis_cycle')} %{{x}}<br>x = %{{y:.4f}} m<extra></extra>",
+        )
+    )
     fig.update_layout(
-        **_base_layout(height=180, margin=dict(l=44, r=18, t=30, b=42)),
-        title=dict(text=t("chart_fusion_title"), font=dict(size=11, color=_INK_SOFT), x=0),
+        **_base_layout(height=180, margin={"l": 44, "r": 18, "t": 30, "b": 42}),
+        title={"text": t("chart_fusion_title"), "font": {"size": 11, "color": _INK_SOFT}, "x": 0},
         xaxis=_axis_style(title=t("axis_cycle")),
         yaxis=_axis_style(title="x (m)"),
     )
@@ -1307,6 +1293,7 @@ def _chart_fusion_x(df: pd.DataFrame) -> go.Figure:
 # ─────────────────────────────────────────────────────────────────────────────
 # Badges
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _badge(label: str, color: str) -> str:
     return f'<span class="pg-badge" style="background:{color}">{label}</span>'
@@ -1324,6 +1311,7 @@ def _badges(mapping: dict[str, int], color_map: dict[str, str]) -> None:
 # Run tab
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _property_panel(summary: SmokeSummary) -> str:
     """Render the 5-property panel as an HTML grid for ``_show_run_results``.
 
@@ -1334,26 +1322,40 @@ def _property_panel(summary: SmokeSummary) -> str:
     """
     cards: list[str] = []
     for tag, report, stat in (
-        ("BAUD-v1", summary.baud_report,
+        (
+            "BAUD-v1",
+            summary.baud_report,
             f"M={summary.baud_report.min_outcomes}, "
             f"K={summary.baud_report.downgrade_threshold} · "
             f"{summary.baud_report.cycles_precondition_held}/"
-            f"{summary.baud_report.cycles_total} cycles"),
-        ("ERUR-v1", summary.erur_report,
+            f"{summary.baud_report.cycles_total} cycles",
+        ),
+        (
+            "ERUR-v1",
+            summary.erur_report,
             f"M={summary.erur_report.min_outcomes}, "
             f"K={summary.erur_report.downgrade_threshold} · "
             f"{summary.erur_report.cycles_precondition_held}/"
-            f"{summary.erur_report.cycles_total} cycles"),
-        ("MD-v1", summary.md_report,
-            f"{summary.md_report.cycles_precondition_held}/"
-            f"{summary.md_report.cycles_total} cycles"),
-        ("RLB-v1", summary.rlb_report,
+            f"{summary.erur_report.cycles_total} cycles",
+        ),
+        (
+            "MD-v1",
+            summary.md_report,
+            f"{summary.md_report.cycles_precondition_held}/{summary.md_report.cycles_total} cycles",
+        ),
+        (
+            "RLB-v1",
+            summary.rlb_report,
             f"W={summary.rlb_report.max_history} · "
             f"{summary.rlb_report.cycles_precondition_held}/"
-            f"{summary.rlb_report.cycles_total} recoveries"),
-        ("FPB-v1", summary.fpb_report,
+            f"{summary.rlb_report.cycles_total} recoveries",
+        ),
+        (
+            "FPB-v1",
+            summary.fpb_report,
             f"fire_fraction={summary.fpb_report.fire_fraction:.2f} · "
-            f"bound={summary.fpb_report.max_fire_fraction:.2f}"),
+            f"bound={summary.fpb_report.max_fire_fraction:.2f}",
+        ),
     ):
         klass = "holds" if report.holds else "violated"
         verdict = t("verdict_holds") if report.holds else t("verdict_violated")
@@ -1362,7 +1364,7 @@ def _property_panel(summary: SmokeSummary) -> str:
             f'<div class="pc-name">{tag}</div>'
             f'<div class="pc-verdict">{verdict}</div>'
             f'<div class="pc-stat">{stat}</div>'
-            f'</div>'
+            f"</div>"
         )
     return f'<div class="property-grid">{"".join(cards)}</div>'
 
@@ -1375,25 +1377,28 @@ def _show_run_results(summary: SmokeSummary, mcap_bytes: bytes) -> None:
 
     verdict_str = (summary.final_verdict or "—").replace("_", " ")
     verdict_color = _VERDICT_COLOR.get(summary.final_verdict or "", _INK)
-    st.markdown(f"""
+    st.markdown(
+        f"""
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="sc-lab">{t('stat_cycles')}</div>
+    <div class="sc-lab">{t("stat_cycles")}</div>
     <div class="sc-val">{summary.n_cycles}</div>
   </div>
   <div class="stat-card">
-    <div class="sc-lab">{t('stat_decisions')}</div>
+    <div class="sc-lab">{t("stat_decisions")}</div>
     <div class="sc-val">{summary.n_decisions}</div>
   </div>
   <div class="stat-card">
-    <div class="sc-lab">{t('stat_outcomes')}</div>
+    <div class="sc-lab">{t("stat_outcomes")}</div>
     <div class="sc-val">{summary.n_outcomes}</div>
   </div>
   <div class="stat-card">
-    <div class="sc-lab">{t('stat_quality')}</div>
+    <div class="sc-lab">{t("stat_quality")}</div>
     <div class="sc-val small" style="color:{verdict_color}">{verdict_str}</div>
   </div>
-</div>""", unsafe_allow_html=True)
+</div>""",
+        unsafe_allow_html=True,
+    )
 
     col_a, col_b = st.columns(2)
     with col_a:
@@ -1404,7 +1409,8 @@ def _show_run_results(summary: SmokeSummary, mcap_bytes: bytes) -> None:
         _badges(summary.decisions_by_kind, _KIND_COLOR)
         st.plotly_chart(
             _chart_decision_dist(summary.decisions_by_kind),
-            use_container_width=True, config={"displayModeBar": False},
+            use_container_width=True,
+            config={"displayModeBar": False},
         )
     with col_b:
         st.markdown(
@@ -1425,7 +1431,8 @@ def _show_run_results(summary: SmokeSummary, mcap_bytes: bytes) -> None:
             )
         st.plotly_chart(
             _chart_calibration(levels),
-            use_container_width=True, config={"displayModeBar": False},
+            use_container_width=True,
+            config={"displayModeBar": False},
         )
 
     st.markdown(
@@ -1482,7 +1489,9 @@ def _run_tab() -> None:
     )
     n_cycles = st.slider(
         t("slider_label"),
-        min_value=2, max_value=50, value=10,
+        min_value=2,
+        max_value=50,
+        value=10,
         help=t("slider_help"),
     )
     st.markdown(
@@ -1512,6 +1521,7 @@ def _run_tab() -> None:
 # Inspect tab — section renderers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _show_overview(messages: dict[str, list[tuple[int, Any]]]) -> None:
     rows = [{"Channel": ch, "Messages": len(msgs)} for ch, msgs in sorted(messages.items())]
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
@@ -1521,10 +1531,14 @@ def _show_decisions(entries: list[tuple[int, Any]]) -> None:
     rows = []
     for i, (tns, obj) in enumerate(entries):
         if isinstance(obj, DecisionRationale):
-            rows.append({
-                "Cycle": i + 1, "Stamp (ms)": _ms(tns),
-                "Kind": obj.decision.kind.value, "Policy": obj.policy_id,
-            })
+            rows.append(
+                {
+                    "Cycle": i + 1,
+                    "Stamp (ms)": _ms(tns),
+                    "Kind": obj.decision.kind.value,
+                    "Policy": obj.policy_id,
+                }
+            )
     if not rows:
         st.info("No DecisionRationale records.")
         return
@@ -1533,8 +1547,9 @@ def _show_decisions(entries: list[tuple[int, Any]]) -> None:
     _badges(counts, _KIND_COLOR)
     col_a, col_b = st.columns([1, 2])
     with col_a:
-        st.plotly_chart(_chart_decision_dist(counts), use_container_width=True,
-                        config={"displayModeBar": False})
+        st.plotly_chart(
+            _chart_decision_dist(counts), use_container_width=True, config={"displayModeBar": False}
+        )
     with col_b:
         st.dataframe(df, hide_index=True, use_container_width=True)
 
@@ -1544,15 +1559,23 @@ def _show_calibration(entries: list[tuple[int, Any]]) -> None:
     for i, (tns, obj) in enumerate(entries):
         if isinstance(obj, CalibratedSelfAssessment):
             lvl = obj.adjusted_overall_level.value
-            rows.append({
-                "Cycle": i + 1, "Stamp (ms)": _ms(tns),
-                "Adjusted level": lvl, "_num": _LEVEL_NUM.get(lvl, -1),
-            })
+            rows.append(
+                {
+                    "Cycle": i + 1,
+                    "Stamp (ms)": _ms(tns),
+                    "Adjusted level": lvl,
+                    "_num": _LEVEL_NUM.get(lvl, -1),
+                }
+            )
     if not rows:
         st.info("No CalibratedSelfAssessment records.")
         return
     df = pd.DataFrame(rows)
-    downgrade_cycle = next((r["Cycle"] for r in rows if r["_num"] > 0), None)
+    rows_typed: list[dict[str, Any]] = rows
+    downgrade_cycle = next(
+        (r["Cycle"] for r in rows_typed if r["_num"] > 0),
+        None,
+    )
     if downgrade_cycle:
         st.markdown(
             f'<div class="banner-warn">{t("banner_downgrade", n=downgrade_cycle)}</div>',
@@ -1565,8 +1588,11 @@ def _show_calibration(entries: list[tuple[int, Any]]) -> None:
         )
     col_a, col_b = st.columns([1, 2])
     with col_a:
-        st.plotly_chart(_chart_calibration(list(df["Adjusted level"])),
-                        use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(
+            _chart_calibration(list(df["Adjusted level"])),
+            use_container_width=True,
+            config={"displayModeBar": False},
+        )
     with col_b:
         st.dataframe(df.drop(columns=["_num"]), hide_index=True, use_container_width=True)
 
@@ -1575,13 +1601,16 @@ def _show_divergence(entries: list[tuple[int, Any]]) -> None:
     rows = []
     for i, (tns, obj) in enumerate(entries):
         if isinstance(obj, PredictionOutcome):
-            rows.append({
-                "Outcome": i + 1, "Stamp (ms)": _ms(tns),
-                "Verdict": obj.verdict.value,
-                "Pos Mahalanobis": round(obj.position_mahalanobis_max, 2),
-                "Ori Mahalanobis": round(obj.orientation_mahalanobis_max, 2),
-                "Pos error (m)": round(float(obj.position_error_norm_m), 3),
-            })
+            rows.append(
+                {
+                    "Outcome": i + 1,
+                    "Stamp (ms)": _ms(tns),
+                    "Verdict": obj.verdict.value,
+                    "Pos Mahalanobis": round(obj.position_mahalanobis_max, 2),
+                    "Ori Mahalanobis": round(obj.orientation_mahalanobis_max, 2),
+                    "Pos error (m)": round(float(obj.position_error_norm_m), 3),
+                }
+            )
     if not rows:
         st.info("No PredictionOutcome records.")
         return
@@ -1589,8 +1618,9 @@ def _show_divergence(entries: list[tuple[int, Any]]) -> None:
     _badges(df["Verdict"].value_counts().to_dict(), _VERDICT_COLOR)
     col_a, col_b = st.columns([1, 2])
     with col_a:
-        st.plotly_chart(_chart_divergence(rows), use_container_width=True,
-                        config={"displayModeBar": False})
+        st.plotly_chart(
+            _chart_divergence(rows), use_container_width=True, config={"displayModeBar": False}
+        )
     with col_b:
         st.dataframe(df, hide_index=True, use_container_width=True)
 
@@ -1600,11 +1630,15 @@ def _show_actuations(entries: list[tuple[int, Any]]) -> None:
     for i, (tns, obj) in enumerate(entries):
         if isinstance(obj, ActuationDirective):
             cmd = obj.actuator_command
-            rows.append({
-                "Cycle": i + 1, "Stamp (ms)": _ms(tns),
-                "Command type": type(cmd).__name__ if cmd is not None else "—",
-                "Reason": obj.reason, "Policy": obj.policy_id,
-            })
+            rows.append(
+                {
+                    "Cycle": i + 1,
+                    "Stamp (ms)": _ms(tns),
+                    "Command type": type(cmd).__name__ if cmd is not None else "—",
+                    "Reason": obj.reason,
+                    "Policy": obj.policy_id,
+                }
+            )
     if not rows:
         st.info("No ActuationDirective records.")
         return
@@ -1615,14 +1649,17 @@ def _show_self_assessment(entries: list[tuple[int, Any]]) -> None:
     rows = []
     for i, (tns, obj) in enumerate(entries):
         if isinstance(obj, BeliefSelfAssessment):
-            rows.append({
-                "Cycle": i + 1, "Stamp (ms)": _ms(tns),
-                "Overall": obj.overall_level.value,
-                "Position": obj.position_overall_level.value,
-                "Velocity": obj.velocity_overall_level.value,
-                "Orientation": obj.orientation_overall_level.value,
-                "Cov present": obj.covariance_present,
-            })
+            rows.append(
+                {
+                    "Cycle": i + 1,
+                    "Stamp (ms)": _ms(tns),
+                    "Overall": obj.overall_level.value,
+                    "Position": obj.position_overall_level.value,
+                    "Velocity": obj.velocity_overall_level.value,
+                    "Orientation": obj.orientation_overall_level.value,
+                    "Cov present": obj.covariance_available,
+                }
+            )
     if not rows:
         st.info("No BeliefSelfAssessment records.")
         return
@@ -1634,13 +1671,16 @@ def _show_fusion(entries: list[tuple[int, Any]]) -> None:
     for i, (tns, obj) in enumerate(entries):
         if isinstance(obj, FusionResult):
             pos = obj.belief.nav.pose.position_enu_m
-            rows.append({
-                "Cycle": i + 1, "Stamp (ms)": _ms(tns),
-                "Policy": obj.fusion_policy_id,
-                "x (m)": round(float(pos[0]), 4),
-                "y (m)": round(float(pos[1]), 4),
-                "z (m)": round(float(pos[2]), 4),
-            })
+            rows.append(
+                {
+                    "Cycle": i + 1,
+                    "Stamp (ms)": _ms(tns),
+                    "Policy": obj.fusion_policy_id,
+                    "x (m)": round(float(pos[0]), 4),
+                    "y (m)": round(float(pos[1]), 4),
+                    "z (m)": round(float(pos[2]), 4),
+                }
+            )
     if not rows:
         st.info("No FusionResult records.")
         return
@@ -1652,8 +1692,9 @@ def _show_fusion(entries: list[tuple[int, Any]]) -> None:
             f"{t('fus_belief_caption')}</p>",
             unsafe_allow_html=True,
         )
-        st.plotly_chart(_chart_fusion_x(df), use_container_width=True,
-                        config={"displayModeBar": False})
+        st.plotly_chart(
+            _chart_fusion_x(df), use_container_width=True, config={"displayModeBar": False}
+        )
     with col_b:
         st.dataframe(df, hide_index=True, use_container_width=True)
 
@@ -1693,7 +1734,9 @@ def _show_replay_verification(file_bytes: bytes) -> None:
             t("replay_col_channel"): cv.channel,
             t("replay_col_orig"): cv.source_count,
             t("replay_col_rep"): cv.replay_count,
-            t("replay_col_result"): (t("replay_byte_equal") if cv.byte_equal else t("replay_differs")),
+            t("replay_col_result"): (
+                t("replay_byte_equal") if cv.byte_equal else t("replay_differs")
+            ),
         }
         for cv in vsummary.channels
     ]
@@ -1703,6 +1746,7 @@ def _show_replay_verification(file_bytes: bytes) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 # Inspect tab
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _inspect_sections() -> list[tuple[str, str, str, str]]:
     return [
@@ -1726,12 +1770,15 @@ _SECTION_FN = {
 
 
 def _inspect_tab() -> None:
-    st.markdown(f"""
+    st.markdown(
+        f"""
 <div class="upload-hint">
   <div class="uh-icon">📂</div>
-  <div class="uh-title">{t('upload_title')}</div>
-  <div class="uh-body">{t('upload_body')}</div>
-</div>""", unsafe_allow_html=True)
+  <div class="uh-title">{t("upload_title")}</div>
+  <div class="uh-body">{t("upload_body")}</div>
+</div>""",
+        unsafe_allow_html=True,
+    )
 
     uploaded = st.file_uploader(
         t("upload_label"),

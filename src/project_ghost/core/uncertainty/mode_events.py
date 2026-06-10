@@ -60,13 +60,11 @@ class PerceptionModeChanged:
             raise ValueError("PerceptionModeChanged.reason no puede ser vacío")
         if self.stamp_sim_ns < 0:
             raise ValueError(
-                f"PerceptionModeChanged.stamp_sim_ns debe ser ≥ 0; "
-                f"recibido {self.stamp_sim_ns}"
+                f"PerceptionModeChanged.stamp_sim_ns debe ser ≥ 0; recibido {self.stamp_sim_ns}"
             )
         if self.schema_version < 1:
             raise ValueError(
-                f"PerceptionModeChanged.schema_version debe ser ≥ 1; "
-                f"recibido {self.schema_version}"
+                f"PerceptionModeChanged.schema_version debe ser ≥ 1; recibido {self.schema_version}"
             )
 
 

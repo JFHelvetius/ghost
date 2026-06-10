@@ -73,24 +73,14 @@ class MahalanobisDowngradePolicy:
 
     POLICY_ID_BASE: ClassVar[str] = "mahalanobis_downgrade_v1"
 
-    def __init__(
-        self, *, min_outcomes: int = 4, downgrade_threshold: int = 2
-    ) -> None:
+    def __init__(self, *, min_outcomes: int = 4, downgrade_threshold: int = 2) -> None:
         if min_outcomes < 0:
-            raise ValueError(
-                f"min_outcomes must be >= 0; got {min_outcomes}"
-            )
+            raise ValueError(f"min_outcomes must be >= 0; got {min_outcomes}")
         if downgrade_threshold < 1:
-            raise ValueError(
-                f"downgrade_threshold must be >= 1; got "
-                f"{downgrade_threshold}"
-            )
+            raise ValueError(f"downgrade_threshold must be >= 1; got {downgrade_threshold}")
         self._min_outcomes: int = min_outcomes
         self._downgrade_threshold: int = downgrade_threshold
-        self._policy_id: str = (
-            f"{self.POLICY_ID_BASE}_min{min_outcomes}"
-            f"_thr{downgrade_threshold}"
-        )
+        self._policy_id: str = f"{self.POLICY_ID_BASE}_min{min_outcomes}_thr{downgrade_threshold}"
 
     @property
     def policy_id(self) -> str:
@@ -117,9 +107,7 @@ class MahalanobisDowngradePolicy:
                 adjustment_policy_id=self._policy_id,
                 adjustment_reason=_REASON_NO_OUTCOMES,
             )
-        beyond_3_or_worse = (
-            history.count_beyond_3_std + history.count_beyond_5_std
-        )
+        beyond_3_or_worse = history.count_beyond_3_std + history.count_beyond_5_std
         should_downgrade = (
             history.outcomes_considered >= self._min_outcomes
             and beyond_3_or_worse >= self._downgrade_threshold

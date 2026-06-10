@@ -28,7 +28,8 @@ def smoke_mcap(tmp_path: Path) -> Path:
 
 
 def test_verify_properties_exit_zero_when_all_hold(
-    smoke_mcap: Path, capsys: pytest.CaptureFixture[str],
+    smoke_mcap: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     rc = main(["verify-properties", "--mcap", str(smoke_mcap)])
     assert rc == 0
@@ -40,16 +41,21 @@ def test_verify_properties_exit_zero_when_all_hold(
 
 
 def test_verify_properties_exit_one_when_any_violates(
-    smoke_mcap: Path, capsys: pytest.CaptureFixture[str],
+    smoke_mcap: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """A tight ``--max-fire-fraction`` turns FPB into a failing
     regression gate. The CLI must return 1 for any-property-violation
     (CI-friendly exit policy)."""
-    rc = main([
-        "verify-properties",
-        "--mcap", str(smoke_mcap),
-        "--max-fire-fraction", "0.5",
-    ])
+    rc = main(
+        [
+            "verify-properties",
+            "--mcap",
+            str(smoke_mcap),
+            "--max-fire-fraction",
+            "0.5",
+        ]
+    )
     assert rc == 1
     captured = capsys.readouterr()
     assert "FPB-v1: VIOLATED" in captured.out
@@ -58,7 +64,8 @@ def test_verify_properties_exit_one_when_any_violates(
 
 
 def test_verify_properties_json_mode_is_structured(
-    smoke_mcap: Path, capsys: pytest.CaptureFixture[str],
+    smoke_mcap: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """``--json`` emits a parseable JSON document with all five
     properties under ``.properties.*`` and an ``.all_properties_hold``
@@ -69,7 +76,11 @@ def test_verify_properties_json_mode_is_structured(
     doc = json.loads(captured.out)
     assert doc["all_properties_hold"] is True
     assert set(doc["properties"].keys()) == {
-        "BAUD-v1", "ERUR-v1", "MD-v1", "RLB-v1", "FPB-v1",
+        "BAUD-v1",
+        "ERUR-v1",
+        "MD-v1",
+        "RLB-v1",
+        "FPB-v1",
     }
     # SHA-256 is the same across all reports (same MCAP).
     sha = doc["properties"]["BAUD-v1"]["mcap_sha256"]
@@ -80,7 +91,8 @@ def test_verify_properties_json_mode_is_structured(
 
 
 def test_verify_properties_json_carries_property_specific_fields(
-    smoke_mcap: Path, capsys: pytest.CaptureFixture[str],
+    smoke_mcap: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     main(["verify-properties", "--mcap", str(smoke_mcap), "--json"])
     doc = json.loads(capsys.readouterr().out)
@@ -99,19 +111,24 @@ def test_verify_properties_json_carries_property_specific_fields(
 
 
 def test_verify_properties_missing_mcap_returns_one(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    rc = main([
-        "verify-properties",
-        "--mcap", str(tmp_path / "does_not_exist.mcap"),
-    ])
+    rc = main(
+        [
+            "verify-properties",
+            "--mcap",
+            str(tmp_path / "does_not_exist.mcap"),
+        ]
+    )
     assert rc == 1
     err = capsys.readouterr().err
     assert "does not exist" in err
 
 
 def test_verify_properties_custom_m_and_k_propagate_to_report(
-    smoke_mcap: Path, capsys: pytest.CaptureFixture[str],
+    smoke_mcap: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Passing ``--min-outcomes`` and ``--downgrade-threshold`` reaches
     the BAUD/ERUR/FPB verifiers and is echoed in the JSON report.
@@ -124,13 +141,18 @@ def test_verify_properties_custom_m_and_k_propagate_to_report(
     would have emitted). Either way, the parameters must propagate
     into the report — that's all we test here.
     """
-    main([
-        "verify-properties",
-        "--mcap", str(smoke_mcap),
-        "--min-outcomes", "8",
-        "--downgrade-threshold", "5",
-        "--json",
-    ])
+    main(
+        [
+            "verify-properties",
+            "--mcap",
+            str(smoke_mcap),
+            "--min-outcomes",
+            "8",
+            "--downgrade-threshold",
+            "5",
+            "--json",
+        ]
+    )
     doc = json.loads(capsys.readouterr().out)
     for tag in ("BAUD-v1", "ERUR-v1", "FPB-v1"):
         assert doc["properties"][tag]["min_outcomes"] == 8
@@ -138,21 +160,27 @@ def test_verify_properties_custom_m_and_k_propagate_to_report(
 
 
 def test_verify_properties_custom_max_history_propagates_to_report(
-    smoke_mcap: Path, capsys: pytest.CaptureFixture[str],
+    smoke_mcap: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """``--max-history`` reaches verify_rlb and is echoed in JSON."""
-    main([
-        "verify-properties",
-        "--mcap", str(smoke_mcap),
-        "--max-history", "64",
-        "--json",
-    ])
+    main(
+        [
+            "verify-properties",
+            "--mcap",
+            str(smoke_mcap),
+            "--max-history",
+            "64",
+            "--json",
+        ]
+    )
     doc = json.loads(capsys.readouterr().out)
     assert doc["properties"]["RLB-v1"]["max_history"] == 64
 
 
 def test_verify_properties_json_is_deterministic(
-    smoke_mcap: Path, capsys: pytest.CaptureFixture[str],
+    smoke_mcap: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Same MCAP + same params produce byte-identical JSON output (the
     verifier is pure and ``json.dumps(sort_keys=True)`` is stable)."""

@@ -58,42 +58,27 @@ _QUAT_NORM_TOLERANCE: Final[float] = 1e-3
 
 def _validate_vec3(arr: Any, *, name: str) -> None:
     if not isinstance(arr, np.ndarray):
-        raise TypeError(
-            f"{name} debe ser np.ndarray; recibido {type(arr).__name__}"
-        )
+        raise TypeError(f"{name} debe ser np.ndarray; recibido {type(arr).__name__}")
     if arr.shape != (_VEC3_LEN,):
-        raise TypeError(
-            f"{name} debe tener shape ({_VEC3_LEN},); recibido {arr.shape}"
-        )
+        raise TypeError(f"{name} debe tener shape ({_VEC3_LEN},); recibido {arr.shape}")
     if arr.dtype != np.float64:
-        raise TypeError(
-            f"{name} debe tener dtype float64; recibido {arr.dtype}"
-        )
+        raise TypeError(f"{name} debe tener dtype float64; recibido {arr.dtype}")
     if not bool(np.all(np.isfinite(arr))):
         raise ValueError(f"{name} contiene NaN o Inf")
 
 
 def _validate_quat(q: Any, *, name: str = "q") -> None:
     if not isinstance(q, np.ndarray):
-        raise TypeError(
-            f"{name} debe ser np.ndarray; recibido {type(q).__name__}"
-        )
+        raise TypeError(f"{name} debe ser np.ndarray; recibido {type(q).__name__}")
     if q.shape != (_QUAT_LEN,):
-        raise TypeError(
-            f"{name} debe tener shape ({_QUAT_LEN},); recibido {q.shape}"
-        )
+        raise TypeError(f"{name} debe tener shape ({_QUAT_LEN},); recibido {q.shape}")
     if q.dtype != np.float64:
-        raise TypeError(
-            f"{name} debe tener dtype float64; recibido {q.dtype}"
-        )
+        raise TypeError(f"{name} debe tener dtype float64; recibido {q.dtype}")
     if not bool(np.all(np.isfinite(q))):
         raise ValueError(f"{name} contiene NaN o Inf")
     norm = float(np.linalg.norm(q))
     if abs(norm - 1.0) > _QUAT_NORM_TOLERANCE:
-        raise ValueError(
-            f"{name} debe ser unit (tolerancia {_QUAT_NORM_TOLERANCE}); "
-            f"norm={norm}"
-        )
+        raise ValueError(f"{name} debe ser unit (tolerancia {_QUAT_NORM_TOLERANCE}); norm={norm}")
 
 
 def _seal(arr: np.ndarray) -> np.ndarray:

@@ -330,9 +330,7 @@ def test_position_command_seals_array() -> None:
 
 def test_trajectory_command_valid_construction() -> None:
     times = np.array([0, 1_000_000, 2_000_000], dtype=np.int64)
-    positions = np.array(
-        [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0]], dtype=np.float64
-    )
+    positions = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0]], dtype=np.float64)
     cmd = TrajectoryCommand(sample_times_ns=times, positions_enu_m=positions)
     assert cmd.level == ActuatorLevel.TRAJECTORY
     assert cmd.yaws_rad is None
@@ -342,9 +340,7 @@ def test_trajectory_command_with_yaws() -> None:
     times = np.array([0, 1_000_000], dtype=np.int64)
     positions = np.zeros((2, 3), dtype=np.float64)
     yaws = np.array([0.0, 1.57], dtype=np.float64)
-    cmd = TrajectoryCommand(
-        sample_times_ns=times, positions_enu_m=positions, yaws_rad=yaws
-    )
+    cmd = TrajectoryCommand(sample_times_ns=times, positions_enu_m=positions, yaws_rad=yaws)
     assert cmd.yaws_rad is not None
     assert cmd.yaws_rad.shape == (2,)
 
@@ -385,9 +381,7 @@ def test_trajectory_command_seals_all_arrays() -> None:
     times = np.array([0, 1_000], dtype=np.int64)
     positions = np.zeros((2, 3), dtype=np.float64)
     yaws = np.zeros(2, dtype=np.float64)
-    cmd = TrajectoryCommand(
-        sample_times_ns=times, positions_enu_m=positions, yaws_rad=yaws
-    )
+    cmd = TrajectoryCommand(sample_times_ns=times, positions_enu_m=positions, yaws_rad=yaws)
     assert not cmd.sample_times_ns.flags.writeable
     assert not cmd.positions_enu_m.flags.writeable
     assert cmd.yaws_rad is not None

@@ -34,9 +34,7 @@ from tests.estimation.conftest import (
 )
 
 
-def _run_n_estimates(
-    estimator: NoisyGroundTruthEstimator, n: int
-) -> list[bytes]:
+def _run_n_estimates(estimator: NoisyGroundTruthEstimator, n: int) -> list[bytes]:
     """Corre ``n`` estimates con inputs idénticos y devuelve sus
     encodings byte-deterministas."""
     out: list[bytes] = []
@@ -69,9 +67,7 @@ def test_same_seed_and_label_produce_byte_identical_outputs() -> None:
 def test_different_parent_seeds_produce_different_outputs() -> None:
     cfg = make_config()
     est_a = NoisyGroundTruthEstimator(config=cfg, random_source=make_rs(seed=1))
-    est_b = NoisyGroundTruthEstimator(
-        config=cfg, random_source=make_rs(seed=99999)
-    )
+    est_b = NoisyGroundTruthEstimator(config=cfg, random_source=make_rs(seed=99999))
 
     outs_a = _run_n_estimates(est_a, 3)
     outs_b = _run_n_estimates(est_b, 3)
@@ -82,12 +78,8 @@ def test_different_parent_seeds_produce_different_outputs() -> None:
 def test_different_labels_produce_different_outputs() -> None:
     cfg_a = make_config(random_source_label="/a")
     cfg_b = make_config(random_source_label="/b")
-    est_a = NoisyGroundTruthEstimator(
-        config=cfg_a, random_source=make_rs(seed=42)
-    )
-    est_b = NoisyGroundTruthEstimator(
-        config=cfg_b, random_source=make_rs(seed=42)
-    )
+    est_a = NoisyGroundTruthEstimator(config=cfg_a, random_source=make_rs(seed=42))
+    est_b = NoisyGroundTruthEstimator(config=cfg_b, random_source=make_rs(seed=42))
 
     outs_a = _run_n_estimates(est_a, 3)
     outs_b = _run_n_estimates(est_b, 3)
@@ -130,12 +122,8 @@ def test_position_values_are_bit_identical_across_runs() -> None:
     """No solo el byte-encoded JSON, sino las floats crudas deben
     coincidir bit-a-bit."""
     cfg = make_config()
-    est_a = NoisyGroundTruthEstimator(
-        config=cfg, random_source=make_rs(seed=7)
-    )
-    est_b = NoisyGroundTruthEstimator(
-        config=cfg, random_source=make_rs(seed=7)
-    )
+    est_a = NoisyGroundTruthEstimator(config=cfg, random_source=make_rs(seed=7))
+    est_b = NoisyGroundTruthEstimator(config=cfg, random_source=make_rs(seed=7))
 
     for i in range(3):
         gt = make_gt(stamp_sim_ns=i * 100)
@@ -153,19 +141,13 @@ def test_position_values_are_bit_identical_across_runs() -> None:
             mission=make_mission(),
             stamp_wall_ns=0,
         )
-        np.testing.assert_array_equal(
-            vs_a.nav.pose.position_enu_m, vs_b.nav.pose.position_enu_m
-        )
-        np.testing.assert_array_equal(
-            vs_a.nav.pose.orientation_q, vs_b.nav.pose.orientation_q
-        )
+        np.testing.assert_array_equal(vs_a.nav.pose.position_enu_m, vs_b.nav.pose.position_enu_m)
+        np.testing.assert_array_equal(vs_a.nav.pose.orientation_q, vs_b.nav.pose.orientation_q)
         np.testing.assert_array_equal(
             vs_a.nav.twist_world.linear_mps,
             vs_b.nav.twist_world.linear_mps,
         )
-        np.testing.assert_array_equal(
-            vs_a.nav.accel_body_mps2, vs_b.nav.accel_body_mps2
-        )
+        np.testing.assert_array_equal(vs_a.nav.accel_body_mps2, vs_b.nav.accel_body_mps2)
 
 
 def test_zero_noise_does_not_advance_generator() -> None:
@@ -181,9 +163,7 @@ def test_zero_noise_does_not_advance_generator() -> None:
         position_noise_std_m=0.0,
         # los otros >0 para que sí consuman del rng.
     )
-    est = NoisyGroundTruthEstimator(
-        config=cfg_zero_pos, random_source=make_rs(seed=123)
-    )
+    est = NoisyGroundTruthEstimator(config=cfg_zero_pos, random_source=make_rs(seed=123))
     vs = est.estimate(
         gt=make_gt(),
         sensors_health=make_health(),
@@ -203,12 +183,8 @@ def test_replay_with_byte_encoded_output_is_stable() -> None:
     entre llamadas separadas, la línea de telemetry T4 se rompería.
     Verificamos directamente."""
     cfg = make_config()
-    est_a = NoisyGroundTruthEstimator(
-        config=cfg, random_source=make_rs(seed=2026)
-    )
-    est_b = NoisyGroundTruthEstimator(
-        config=cfg, random_source=make_rs(seed=2026)
-    )
+    est_a = NoisyGroundTruthEstimator(config=cfg, random_source=make_rs(seed=2026))
+    est_b = NoisyGroundTruthEstimator(config=cfg, random_source=make_rs(seed=2026))
 
     gt = make_gt(stamp_sim_ns=1)
     vs_a = est_a.estimate(

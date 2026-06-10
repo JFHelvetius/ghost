@@ -74,17 +74,11 @@ def _verdict_from_max_mahalanobis(value: float) -> DivergenceVerdict:
 
 def _validate_finite_vec3(arr: np.ndarray, *, field: str) -> None:
     if not isinstance(arr, np.ndarray):
-        raise TypeError(
-            f"{field} must be np.ndarray; got {type(arr).__name__}"
-        )
+        raise TypeError(f"{field} must be np.ndarray; got {type(arr).__name__}")
     if arr.shape != (_VEC3_LEN,):
-        raise ValueError(
-            f"{field} must have shape ({_VEC3_LEN},); got shape={arr.shape}"
-        )
+        raise ValueError(f"{field} must have shape ({_VEC3_LEN},); got shape={arr.shape}")
     if arr.dtype != np.float64:
-        raise ValueError(
-            f"{field} must have dtype float64; got dtype={arr.dtype}"
-        )
+        raise ValueError(f"{field} must have dtype float64; got dtype={arr.dtype}")
     if not np.all(np.isfinite(arr)):
         raise ValueError(f"{field} must be finite; got {arr!r}")
 
@@ -153,14 +147,10 @@ class PredictionOutcome:
     def __post_init__(self) -> None:
         if not isinstance(self.prediction, BeliefForwardPrediction):
             raise TypeError(
-                f"prediction must be BeliefForwardPrediction; got "
-                f"{type(self.prediction).__name__}"
+                f"prediction must be BeliefForwardPrediction; got {type(self.prediction).__name__}"
             )
         if not isinstance(self.actual_pose, Pose):
-            raise TypeError(
-                f"actual_pose must be Pose; got "
-                f"{type(self.actual_pose).__name__}"
-            )
+            raise TypeError(f"actual_pose must be Pose; got {type(self.actual_pose).__name__}")
         expected_stamp = self.prediction.predicted_observation_stamp_sim_ns
         if self.actual_belief_stamp_sim_ns != expected_stamp:
             raise ValueError(
@@ -169,15 +159,9 @@ class PredictionOutcome:
                 f"prediction.predicted_observation_stamp_sim_ns "
                 f"({expected_stamp})"
             )
-        _validate_finite_vec3(
-            self.position_error_enu_m, field="position_error_enu_m"
-        )
-        _validate_finite_vec3(
-            self.orientation_error_rad, field="orientation_error_rad"
-        )
-        _validate_finite_nonneg(
-            self.position_error_norm_m, field="position_error_norm_m"
-        )
+        _validate_finite_vec3(self.position_error_enu_m, field="position_error_enu_m")
+        _validate_finite_vec3(self.orientation_error_rad, field="orientation_error_rad")
+        _validate_finite_nonneg(self.position_error_norm_m, field="position_error_norm_m")
         _validate_finite_nonneg(
             self.orientation_error_norm_rad,
             field="orientation_error_norm_rad",
@@ -191,10 +175,7 @@ class PredictionOutcome:
             field="orientation_mahalanobis_max",
         )
         if not isinstance(self.verdict, DivergenceVerdict):
-            raise TypeError(
-                f"verdict must be DivergenceVerdict; got "
-                f"{type(self.verdict).__name__}"
-            )
+            raise TypeError(f"verdict must be DivergenceVerdict; got {type(self.verdict).__name__}")
         expected_verdict = _verdict_from_max_mahalanobis(
             max(
                 self.position_mahalanobis_max,
@@ -210,16 +191,13 @@ class PredictionOutcome:
             )
         if self.schema_version != DIVERGENCE_PROTOCOL_VERSION:
             raise ValueError(
-                f"schema_version must be {DIVERGENCE_PROTOCOL_VERSION}; "
-                f"got {self.schema_version}"
+                f"schema_version must be {DIVERGENCE_PROTOCOL_VERSION}; got {self.schema_version}"
             )
         self.position_error_enu_m.setflags(write=False)
         self.orientation_error_rad.setflags(write=False)
 
 
-def _quaternion_error_axis_angle(
-    q_predicted: np.ndarray, q_actual: np.ndarray
-) -> np.ndarray:
+def _quaternion_error_axis_angle(q_predicted: np.ndarray, q_actual: np.ndarray) -> np.ndarray:
     """Compute axis-angle rotation vector from ``q_predicted`` to
     ``q_actual``.
 
@@ -249,9 +227,7 @@ def _quaternion_error_axis_angle(
     return axis_unit * angle
 
 
-def _per_axis_mahalanobis_max(
-    error: np.ndarray, std: np.ndarray
-) -> float:
+def _per_axis_mahalanobis_max(error: np.ndarray, std: np.ndarray) -> float:
     """Compute ``max_i(|error_i| / std_i)`` with the convention
     ``0/0 = 0`` and ``!0/0 = +inf``.
 
@@ -284,13 +260,10 @@ def compute_divergence(
     """
     if not isinstance(prediction, BeliefForwardPrediction):
         raise TypeError(
-            f"prediction must be BeliefForwardPrediction; got "
-            f"{type(prediction).__name__}"
+            f"prediction must be BeliefForwardPrediction; got {type(prediction).__name__}"
         )
     if not isinstance(actual_pose, Pose):
-        raise TypeError(
-            f"actual_pose must be Pose; got {type(actual_pose).__name__}"
-        )
+        raise TypeError(f"actual_pose must be Pose; got {type(actual_pose).__name__}")
     expected_stamp = prediction.predicted_observation_stamp_sim_ns
     if actual_belief_stamp_sim_ns != expected_stamp:
         raise ValueError(
@@ -302,9 +275,9 @@ def compute_divergence(
     predicted_pose = prediction.predicted_pose
     predicted_std = prediction.predicted_pose_std
 
-    position_error = (
-        actual_pose.position_enu_m - predicted_pose.position_enu_m
-    ).astype(np.float64, copy=True)
+    position_error = (actual_pose.position_enu_m - predicted_pose.position_enu_m).astype(
+        np.float64, copy=True
+    )
     position_error_norm = float(np.linalg.norm(position_error))
 
     orientation_error = _quaternion_error_axis_angle(
@@ -312,16 +285,12 @@ def compute_divergence(
     )
     orientation_error_norm = float(np.linalg.norm(orientation_error))
 
-    position_mahal = _per_axis_mahalanobis_max(
-        position_error, predicted_std.position_std_enu_m
-    )
+    position_mahal = _per_axis_mahalanobis_max(position_error, predicted_std.position_std_enu_m)
     orientation_mahal = _per_axis_mahalanobis_max(
         orientation_error, predicted_std.orientation_std_rad
     )
 
-    verdict = _verdict_from_max_mahalanobis(
-        max(position_mahal, orientation_mahal)
-    )
+    verdict = _verdict_from_max_mahalanobis(max(position_mahal, orientation_mahal))
 
     return PredictionOutcome(
         prediction=prediction,

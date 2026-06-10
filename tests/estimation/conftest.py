@@ -45,13 +45,9 @@ def make_gt(
     return GroundTruth(
         stamp_sim_ns=stamp_sim_ns,
         position_enu_m=(
-            position_enu_m
-            if position_enu_m is not None
-            else np.zeros(3, dtype=np.float64)
+            position_enu_m if position_enu_m is not None else np.zeros(3, dtype=np.float64)
         ),
-        orientation_q=(
-            orientation_q if orientation_q is not None else Q_IDENTITY.copy()
-        ),
+        orientation_q=(orientation_q if orientation_q is not None else Q_IDENTITY.copy()),
         linear_velocity_world_mps=(
             linear_velocity_world_mps
             if linear_velocity_world_mps is not None
@@ -63,9 +59,7 @@ def make_gt(
             else np.zeros(3, dtype=np.float64)
         ),
         accel_body_mps2=(
-            accel_body_mps2
-            if accel_body_mps2 is not None
-            else np.zeros(3, dtype=np.float64)
+            accel_body_mps2 if accel_body_mps2 is not None else np.zeros(3, dtype=np.float64)
         ),
     )
 

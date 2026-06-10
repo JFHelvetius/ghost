@@ -117,23 +117,17 @@ def test_schema_version_constant_is_one() -> None:
 
 def test_analyze_rejects_short_sha() -> None:
     with pytest.raises(ValueError, match="hex chars"):
-        analyze_belief_calibration(
-            _report(), source_belief_report_sha256="abc"
-        )
+        analyze_belief_calibration(_report(), source_belief_report_sha256="abc")
 
 
 def test_analyze_rejects_uppercase_sha() -> None:
     with pytest.raises(ValueError, match="lowercase"):
-        analyze_belief_calibration(
-            _report(), source_belief_report_sha256="A" * 64
-        )
+        analyze_belief_calibration(_report(), source_belief_report_sha256="A" * 64)
 
 
 def test_analyze_rejects_non_hex_sha() -> None:
     with pytest.raises(ValueError, match="lowercase"):
-        analyze_belief_calibration(
-            _report(), source_belief_report_sha256="g" * 64
-        )
+        analyze_belief_calibration(_report(), source_belief_report_sha256="g" * 64)
 
 
 def test_analyze_rejects_non_string_sha() -> None:
@@ -156,9 +150,7 @@ def test_record_with_covariance_available_and_positive_trace_is_usable() -> None
         covariance_trace=0.04,
         covariance_available=True,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.records[0].usable_for_calibration is True
 
 
@@ -167,9 +159,7 @@ def test_record_without_covariance_is_not_usable() -> None:
         position_error_norm_m=0.5,
         covariance_available=False,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     rec_out = cal.records[0]
     assert rec_out.usable_for_calibration is False
     assert rec_out.covariance_sqrt_trace is None
@@ -184,9 +174,7 @@ def test_record_with_covariance_available_but_trace_none_is_not_usable() -> None
         covariance_available=True,
         covariance_trace=None,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.records[0].usable_for_calibration is False
     assert cal.records[0].position_error_to_uncertainty_ratio is None
 
@@ -196,9 +184,7 @@ def test_record_with_zero_trace_is_not_usable() -> None:
         covariance_available=True,
         covariance_trace=0.0,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.records[0].usable_for_calibration is False
 
 
@@ -209,9 +195,7 @@ def test_record_with_negative_trace_is_not_usable() -> None:
         covariance_available=True,
         covariance_trace=-1.0,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.records[0].usable_for_calibration is False
 
 
@@ -221,12 +205,8 @@ def test_record_with_negative_trace_is_not_usable() -> None:
 
 
 def test_sqrt_trace_is_sqrt_of_trace() -> None:
-    rec = _record(
-        covariance_trace=0.25, covariance_available=True
-    )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    rec = _record(covariance_trace=0.25, covariance_available=True)
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.records[0].covariance_sqrt_trace == 0.5
 
 
@@ -236,9 +216,7 @@ def test_position_ratio_is_error_div_sqrt_trace() -> None:
         covariance_trace=0.04,  # sqrt = 0.2
         covariance_available=True,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     ratio = cal.records[0].position_error_to_uncertainty_ratio
     assert ratio is not None
     assert abs(ratio - 5.0) < 1e-12
@@ -250,9 +228,7 @@ def test_orientation_ratio_is_error_div_sqrt_trace() -> None:
         covariance_trace=0.04,  # sqrt = 0.2
         covariance_available=True,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     ratio = cal.records[0].orientation_error_to_uncertainty_ratio
     assert ratio is not None
     assert abs(ratio - 3.0) < 1e-12
@@ -265,9 +241,7 @@ def test_zero_error_yields_zero_ratio() -> None:
         covariance_trace=1.0,
         covariance_available=True,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.records[0].position_error_to_uncertainty_ratio == 0.0
     assert cal.records[0].orientation_error_to_uncertainty_ratio == 0.0
 
@@ -279,9 +253,7 @@ def test_passthrough_position_error_and_orientation_error_and_trace() -> None:
         covariance_trace=0.01,
         covariance_available=True,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     out = cal.records[0]
     assert out.position_error_norm_m == 0.42
     assert out.orientation_error_rad == 0.123
@@ -294,9 +266,7 @@ def test_passthrough_trace_when_unusable() -> None:
         covariance_trace=None,
         covariance_available=True,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.records[0].covariance_trace is None
 
 
@@ -306,9 +276,7 @@ def test_passthrough_trace_when_unusable() -> None:
 
 
 def test_empty_report_has_zero_counts_and_none_aggregates() -> None:
-    cal = analyze_belief_calibration(
-        _report(), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.total_records == 0
     assert cal.records_usable_for_calibration == 0
     assert cal.records_not_usable == 0
@@ -326,9 +294,7 @@ def test_all_unusable_records_aggregates_are_none() -> None:
         _record(covariance_available=True, covariance_trace=None),
         _record(covariance_available=True, covariance_trace=0.0),
     )
-    cal = analyze_belief_calibration(
-        _report(recs), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(recs), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.total_records == 3
     assert cal.records_usable_for_calibration == 0
     assert cal.records_not_usable == 3
@@ -352,9 +318,7 @@ def test_ratio_aggregates_correct_for_usable_records() -> None:
             covariance_available=True,
         ),
     )
-    cal = analyze_belief_calibration(
-        _report(recs), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(recs), source_belief_report_sha256=_DUMMY_SHA)
     # Ratios: pos = (2.0, 6.0); ori = (0.4, 1.2)
     assert cal.position_error_to_uncertainty_ratio_min == 2.0
     assert cal.position_error_to_uncertainty_ratio_max == 6.0
@@ -379,9 +343,7 @@ def test_mixed_records_count_correctly() -> None:
         ),
         _record(covariance_available=True, covariance_trace=None),
     )
-    cal = analyze_belief_calibration(
-        _report(recs), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(recs), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.total_records == 4
     assert cal.records_usable_for_calibration == 2
     assert cal.records_not_usable == 2
@@ -402,9 +364,7 @@ def test_aggregates_ignore_unusable_records() -> None:
             covariance_available=False,
         ),
     )
-    cal = analyze_belief_calibration(
-        _report(recs), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(recs), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.position_error_to_uncertainty_ratio_min == 50.0
     assert cal.position_error_to_uncertainty_ratio_max == 50.0
     assert cal.position_error_to_uncertainty_ratio_mean == 50.0
@@ -416,9 +376,7 @@ def test_aggregates_ignore_unusable_records() -> None:
 
 
 def test_calibration_report_total_records_matches_records_length() -> None:
-    cal = analyze_belief_calibration(
-        _report((_record(),)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((_record(),)), source_belief_report_sha256=_DUMMY_SHA)
     assert cal.total_records == len(cal.records)
 
 
@@ -427,19 +385,12 @@ def test_calibration_report_counts_sum_to_total() -> None:
         _record(covariance_trace=0.04, covariance_available=True),
         _record(covariance_available=False),
     )
-    cal = analyze_belief_calibration(
-        _report(recs), source_belief_report_sha256=_DUMMY_SHA
-    )
-    assert (
-        cal.records_usable_for_calibration + cal.records_not_usable
-        == cal.total_records
-    )
+    cal = analyze_belief_calibration(_report(recs), source_belief_report_sha256=_DUMMY_SHA)
+    assert cal.records_usable_for_calibration + cal.records_not_usable == cal.total_records
 
 
 def test_calibration_report_is_frozen() -> None:
-    cal = analyze_belief_calibration(
-        _report(), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(), source_belief_report_sha256=_DUMMY_SHA)
     with pytest.raises(FrozenInstanceError):
         cal.total_records = 99  # type: ignore[misc]
 
@@ -544,24 +495,18 @@ def test_calibration_report_rejects_non_tuple_records() -> None:
 
 
 def test_encoded_report_has_trailing_newline() -> None:
-    cal = analyze_belief_calibration(
-        _report(), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(), source_belief_report_sha256=_DUMMY_SHA)
     assert encode_calibration_report_to_bytes(cal).endswith(b"\n")
 
 
 def test_encoded_report_uses_indent_2() -> None:
-    cal = analyze_belief_calibration(
-        _report(), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(), source_belief_report_sha256=_DUMMY_SHA)
     encoded = encode_calibration_report_to_bytes(cal)
     assert encoded.count(b"\n") > 1
 
 
 def test_encoded_report_keys_sorted() -> None:
-    cal = analyze_belief_calibration(
-        _report(), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(), source_belief_report_sha256=_DUMMY_SHA)
     encoded = encode_calibration_report_to_bytes(cal).decode("utf-8")
     # Top level keys: "calibration" precedes "schema_version" alphabetically
     idx_cal = encoded.index('"calibration"')
@@ -570,22 +515,12 @@ def test_encoded_report_keys_sorted() -> None:
 
 
 def test_encoded_report_envelope_structure() -> None:
-    rec = _record(
-        covariance_trace=0.04, covariance_available=True
-    )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
-    parsed = json.loads(
-        encode_calibration_report_to_bytes(cal).decode("utf-8")
-    )
-    assert (
-        parsed["schema_version"] == BELIEF_CALIBRATION_REPORT_SCHEMA_VERSION
-    )
+    rec = _record(covariance_trace=0.04, covariance_available=True)
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
+    parsed = json.loads(encode_calibration_report_to_bytes(cal).decode("utf-8"))
+    assert parsed["schema_version"] == BELIEF_CALIBRATION_REPORT_SCHEMA_VERSION
     assert parsed["calibration"]["total_records"] == 1
-    assert (
-        parsed["calibration"]["source_belief_report_sha256"] == _DUMMY_SHA
-    )
+    assert parsed["calibration"]["source_belief_report_sha256"] == _DUMMY_SHA
 
 
 # ---------------------------------------------------------------------------
@@ -602,9 +537,7 @@ def test_two_encodings_are_byte_identical() -> None:
         ),
         _record(covariance_available=False),
     )
-    cal = analyze_belief_calibration(
-        _report(recs), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(recs), source_belief_report_sha256=_DUMMY_SHA)
     a = encode_calibration_report_to_bytes(cal)
     b = encode_calibration_report_to_bytes(cal)
     assert a == b
@@ -617,12 +550,8 @@ def test_two_analyses_yield_equal_reports() -> None:
         covariance_available=True,
     )
     report = _report((rec,))
-    a = analyze_belief_calibration(
-        report, source_belief_report_sha256=_DUMMY_SHA
-    )
-    b = analyze_belief_calibration(
-        report, source_belief_report_sha256=_DUMMY_SHA
-    )
+    a = analyze_belief_calibration(report, source_belief_report_sha256=_DUMMY_SHA)
+    b = analyze_belief_calibration(report, source_belief_report_sha256=_DUMMY_SHA)
     assert a == b
 
 
@@ -637,13 +566,8 @@ def test_sha256_stable_across_repeated_encodings() -> None:
         )
         for i in range(5)
     )
-    cal = analyze_belief_calibration(
-        _report(recs), source_belief_report_sha256=_DUMMY_SHA
-    )
-    hashes = {
-        hashlib.sha256(encode_calibration_report_to_bytes(cal)).hexdigest()
-        for _ in range(5)
-    }
+    cal = analyze_belief_calibration(_report(recs), source_belief_report_sha256=_DUMMY_SHA)
+    hashes = {hashlib.sha256(encode_calibration_report_to_bytes(cal)).hexdigest() for _ in range(5)}
     assert len(hashes) == 1
 
 
@@ -662,24 +586,16 @@ def test_round_trip_preserves_calibration_report() -> None:
         ),
         _record(covariance_available=False),
     )
-    original = analyze_belief_calibration(
-        _report(recs), source_belief_report_sha256=_DUMMY_SHA
-    )
+    original = analyze_belief_calibration(_report(recs), source_belief_report_sha256=_DUMMY_SHA)
     encoded = encode_calibration_report_to_bytes(original)
-    decoded = decode_calibration_report_from_json(
-        json.loads(encoded.decode("utf-8"))
-    )
+    decoded = decode_calibration_report_from_json(json.loads(encoded.decode("utf-8")))
     assert decoded == original
 
 
 def test_round_trip_preserves_source_sha() -> None:
-    original = analyze_belief_calibration(
-        _report(), source_belief_report_sha256=_DUMMY_SHA_B
-    )
+    original = analyze_belief_calibration(_report(), source_belief_report_sha256=_DUMMY_SHA_B)
     encoded = encode_calibration_report_to_bytes(original)
-    decoded = decode_calibration_report_from_json(
-        json.loads(encoded.decode("utf-8"))
-    )
+    decoded = decode_calibration_report_from_json(json.loads(encoded.decode("utf-8")))
     assert decoded.source_belief_report_sha256 == _DUMMY_SHA_B
 
 
@@ -743,18 +659,14 @@ def test_decode_analysis_version_mismatch_raises() -> None:
 
 
 def test_generate_writes_canonical_bytes(tmp_path: Path) -> None:
-    cal = analyze_belief_calibration(
-        _report(), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(), source_belief_report_sha256=_DUMMY_SHA)
     p = tmp_path / "cal.json"
     generate_calibration_report(cal, p)
     assert p.read_bytes() == encode_calibration_report_to_bytes(cal)
 
 
 def test_generate_two_writes_byte_identical(tmp_path: Path) -> None:
-    cal = analyze_belief_calibration(
-        _report(), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report(), source_belief_report_sha256=_DUMMY_SHA)
     a = tmp_path / "a.json"
     b = tmp_path / "b.json"
     generate_calibration_report(cal, a)
@@ -777,9 +689,7 @@ def test_overconfidence_signal_visible_in_ratio() -> None:
         covariance_trace=1e-12,  # sqrt = 1e-6
         covariance_available=True,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     ratio = cal.records[0].position_error_to_uncertainty_ratio
     assert ratio is not None
     # Just check the number is what algebra says — no verdict.
@@ -794,9 +704,7 @@ def test_well_scaled_signal_visible_in_ratio() -> None:
         covariance_trace=0.01,  # sqrt = 0.1
         covariance_available=True,
     )
-    cal = analyze_belief_calibration(
-        _report((rec,)), source_belief_report_sha256=_DUMMY_SHA
-    )
+    cal = analyze_belief_calibration(_report((rec,)), source_belief_report_sha256=_DUMMY_SHA)
     ratio = cal.records[0].position_error_to_uncertainty_ratio
     assert ratio is not None
     assert math.isclose(ratio, 1.0)

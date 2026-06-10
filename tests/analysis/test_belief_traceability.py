@@ -64,9 +64,7 @@ if TYPE_CHECKING:
 
 
 _Q_IDENTITY = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
-_Q_YAW_90 = np.array(
-    [np.sqrt(2.0) / 2.0, 0.0, 0.0, np.sqrt(2.0) / 2.0], dtype=np.float64
-)
+_Q_YAW_90 = np.array([np.sqrt(2.0) / 2.0, 0.0, 0.0, np.sqrt(2.0) / 2.0], dtype=np.float64)
 
 
 # ---------------------------------------------------------------------------
@@ -82,23 +80,15 @@ def _truth_state(
 ) -> VehicleState:
     gt = GroundTruth(
         stamp_sim_ns=stamp_sim_ns,
-        position_enu_m=(
-            position if position is not None else np.zeros(3, dtype=np.float64)
-        ),
-        orientation_q=(
-            orientation_q
-            if orientation_q is not None
-            else _Q_IDENTITY.copy()
-        ),
+        position_enu_m=(position if position is not None else np.zeros(3, dtype=np.float64)),
+        orientation_q=(orientation_q if orientation_q is not None else _Q_IDENTITY.copy()),
         linear_velocity_world_mps=np.zeros(3, dtype=np.float64),
         angular_velocity_body_rps=np.zeros(3, dtype=np.float64),
         accel_body_mps2=np.zeros(3, dtype=np.float64),
     )
     return vehicle_state_from_ground_truth(
         gt=gt,
-        sensors_health=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors_health=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -148,17 +138,13 @@ def _belief_state(
         twist_body=twist_body,
         accel_body_mps2=np.zeros(3, dtype=np.float64),
         imu_biases=biases,
-        covariance_15x15=(
-            covariance.copy() if covariance is not None else None
-        ),
+        covariance_15x15=(covariance.copy() if covariance is not None else None),
     )
     return VehicleState(
         stamp_sim_ns=stamp_sim_ns,
         stamp_wall_ns=stamp_sim_ns,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -348,19 +334,17 @@ def test_report_total_samples_matches_records() -> None:
 
 def test_report_mean_and_max_position_error() -> None:
     truth = [
-        _truth_state(
-            stamp_sim_ns=0, position=np.array([0.0, 0.0, 0.0])
-        ),
-        _truth_state(
-            stamp_sim_ns=1, position=np.array([0.0, 0.0, 0.0])
-        ),
+        _truth_state(stamp_sim_ns=0, position=np.array([0.0, 0.0, 0.0])),
+        _truth_state(stamp_sim_ns=1, position=np.array([0.0, 0.0, 0.0])),
     ]
     belief = [
         _belief_state(
-            stamp_sim_ns=0, position=np.array([3.0, 4.0, 0.0])  # err=5
+            stamp_sim_ns=0,
+            position=np.array([3.0, 4.0, 0.0]),  # err=5
         ),
         _belief_state(
-            stamp_sim_ns=1, position=np.array([0.0, 0.0, 0.0])  # err=0
+            stamp_sim_ns=1,
+            position=np.array([0.0, 0.0, 0.0]),  # err=0
         ),
     ]
     report = build_traceability_report(truth=truth, belief=belief)
@@ -400,9 +384,7 @@ def test_records_preserve_input_order() -> None:
 
 
 def test_encoded_report_has_trailing_newline() -> None:
-    report = build_traceability_report(
-        truth=[_truth_state()], belief=[_belief_state()]
-    )
+    report = build_traceability_report(truth=[_truth_state()], belief=[_belief_state()])
     encoded = encode_belief_report_to_bytes(report)
     assert encoded.endswith(b"\n")
 
@@ -448,9 +430,7 @@ def test_byte_identical_output_for_identical_inputs() -> None:
     ]
     report_a = build_traceability_report(truth=truth, belief=belief)
     report_b = build_traceability_report(truth=truth, belief=belief)
-    assert encode_belief_report_to_bytes(
-        report_a
-    ) == encode_belief_report_to_bytes(report_b)
+    assert encode_belief_report_to_bytes(report_a) == encode_belief_report_to_bytes(report_b)
 
 
 def test_two_builds_produce_field_equal_reports() -> None:
@@ -496,9 +476,7 @@ def test_zero_perturbation_yields_zero_errors() -> None:
     """truth == belief en pose -> errors zero."""
     pos = np.array([1.0, 2.0, 3.0], dtype=np.float64)
     truth = [_truth_state(stamp_sim_ns=0, position=pos.copy())]
-    belief = [
-        _belief_state(stamp_sim_ns=0, position=pos.copy(), covariance=_declared_cov())
-    ]
+    belief = [_belief_state(stamp_sim_ns=0, position=pos.copy(), covariance=_declared_cov())]
     report = build_traceability_report(truth=truth, belief=belief)
     assert report.records[0].position_error_norm_m == 0.0
     assert report.records[0].orientation_error_rad == 0.0
@@ -515,12 +493,8 @@ def test_quaternion_xyzw_order_at_record_boundary() -> None:
         float(q_hamilton[3]),
         float(q_hamilton[0]),
     )
-    truth = [
-        _truth_state(stamp_sim_ns=0, orientation_q=q_hamilton.copy())
-    ]
-    belief = [
-        _belief_state(stamp_sim_ns=0, orientation_q=q_hamilton.copy())
-    ]
+    truth = [_truth_state(stamp_sim_ns=0, orientation_q=q_hamilton.copy())]
+    belief = [_belief_state(stamp_sim_ns=0, orientation_q=q_hamilton.copy())]
     report = build_traceability_report(truth=truth, belief=belief)
     rec = report.records[0]
     assert rec.truth_orientation_xyzw == expected_xyzw
@@ -639,10 +613,7 @@ def test_record_carries_analysis_version() -> None:
     truth = [_truth_state(stamp_sim_ns=0)]
     belief = [_belief_state(stamp_sim_ns=0)]
     report = build_traceability_report(truth=truth, belief=belief)
-    assert (
-        report.records[0].analysis_version
-        == BELIEF_TRACEABILITY_ANALYSIS_VERSION
-    )
+    assert report.records[0].analysis_version == BELIEF_TRACEABILITY_ANALYSIS_VERSION
 
 
 def test_report_carries_analysis_version() -> None:

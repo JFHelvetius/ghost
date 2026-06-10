@@ -61,6 +61,7 @@ from project_ghost.telemetry import (
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from project_ghost.properties import BAUDVerificationReport
     from project_ghost.state.messages import FlightStatus, MissionStatus
 
 # ---------------------------------------------------------------------------
@@ -72,9 +73,7 @@ _COVARIANCE_DIAG = 1e-4
 
 
 @pytest.fixture(scope="module")
-def fixed_raw_assessment() -> tuple[
-    BeliefSelfAssessment, FlightStatus, MissionStatus
-]:
+def fixed_raw_assessment() -> tuple[BeliefSelfAssessment, FlightStatus, MissionStatus]:
     """Build the canonical KNOWN raw self-assessment used by every
     property-test example.
 
@@ -91,11 +90,13 @@ def fixed_raw_assessment() -> tuple[
         start_stamp_sim_ns=_T0_NS,
         covariance_diag=_COVARIANCE_DIAG,
     )
-    fusion_result = oracle.fuse(FusionInput(
-        sensor_samples=(),
-        prior_belief_stamp_sim_ns=None,
-        target_stamp_sim_ns=_T0_NS,
-    ))
+    fusion_result = oracle.fuse(
+        FusionInput(
+            sensor_samples=(),
+            prior_belief_stamp_sim_ns=None,
+            target_stamp_sim_ns=_T0_NS,
+        )
+    )
     state = fusion_result.belief
     thresholds = AssessmentThresholds(
         position_known_std_m=0.05,
@@ -159,14 +160,22 @@ def _calibration_histories(draw: st.DrawFn) -> CalibrationHistory:
             most_recent_observed_stamp_sim_ns=None,
         )
 
-    worst_pos = draw(st.floats(
-        min_value=0.0, max_value=_MAX_MAHALANOBIS,
-        allow_nan=False, allow_infinity=False,
-    ))
-    worst_ori = draw(st.floats(
-        min_value=0.0, max_value=_MAX_MAHALANOBIS,
-        allow_nan=False, allow_infinity=False,
-    ))
+    worst_pos = draw(
+        st.floats(
+            min_value=0.0,
+            max_value=_MAX_MAHALANOBIS,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    worst_ori = draw(
+        st.floats(
+            min_value=0.0,
+            max_value=_MAX_MAHALANOBIS,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
     stamp = draw(st.integers(min_value=0, max_value=10**15))
     return CalibrationHistory(
         outcomes_considered=total,
@@ -243,9 +252,7 @@ def _run_single_cycle(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
 )
 def test_baud_v1_holds_for_synthetic_single_cycle_runs(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path_factory: pytest.TempPathFactory,
     min_outcomes: int,
     downgrade_threshold: int,
@@ -263,11 +270,12 @@ def test_baud_v1_holds_for_synthetic_single_cycle_runs(
     """
     raw, flight, mission = fixed_raw_assessment
 
-    mcap_path = (
-        tmp_path_factory.mktemp("baud_property") / "synthetic.mcap"
-    )
+    mcap_path = tmp_path_factory.mktemp("baud_property") / "synthetic.mcap"
     _run_single_cycle(
-        raw, flight, mission, history,
+        raw,
+        flight,
+        mission,
+        history,
         min_outcomes=min_outcomes,
         downgrade_threshold=downgrade_threshold,
         mcap_path=mcap_path,
@@ -310,8 +318,10 @@ def _history(
     if total == 0:
         return CalibrationHistory(
             outcomes_considered=0,
-            count_within_1_std=0, count_beyond_1_std=0,
-            count_beyond_3_std=0, count_beyond_5_std=0,
+            count_within_1_std=0,
+            count_beyond_1_std=0,
+            count_beyond_3_std=0,
+            count_beyond_5_std=0,
             worst_position_mahalanobis=0.0,
             worst_orientation_mahalanobis=0.0,
             most_recent_observed_stamp_sim_ns=None,
@@ -337,10 +347,13 @@ def _verify_one(
     *,
     min_outcomes: int = 4,
     downgrade_threshold: int = 2,
-):
+) -> BAUDVerificationReport:
     mcap_path = tmp_path / "scenario.mcap"
     _run_single_cycle(
-        raw, flight, mission, history,
+        raw,
+        flight,
+        mission,
+        history,
         min_outcomes=min_outcomes,
         downgrade_threshold=downgrade_threshold,
         mcap_path=mcap_path,
@@ -353,9 +366,7 @@ def _verify_one(
 
 
 def test_adversarial_outcome_storm_holds(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path: Path,
 ) -> None:
     """All outcomes BEYOND_5_STD, enough to fire the precondition. The
@@ -369,9 +380,7 @@ def test_adversarial_outcome_storm_holds(
 
 
 def test_adversarial_border_just_below_threshold_holds(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path: Path,
 ) -> None:
     """K=2 with only one beyond_3 outcome — precondition does NOT fire.
@@ -385,9 +394,7 @@ def test_adversarial_border_just_below_threshold_holds(
 
 
 def test_adversarial_border_exactly_at_threshold_holds(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path: Path,
 ) -> None:
     """K=2 with exactly 2 beyond_3 outcomes — precondition fires. The
@@ -401,9 +408,7 @@ def test_adversarial_border_exactly_at_threshold_holds(
 
 
 def test_adversarial_interleaved_sigma_bands_only_3_and_5_count(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path: Path,
 ) -> None:
     """Many beyond_1 outcomes but zero beyond_3/5 — precondition must
@@ -418,9 +423,7 @@ def test_adversarial_interleaved_sigma_bands_only_3_and_5_count(
 
 
 def test_adversarial_below_min_outcomes_holds(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path: Path,
 ) -> None:
     """K threshold met but ``outcomes_considered < M`` — precondition

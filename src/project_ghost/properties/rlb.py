@@ -55,42 +55,27 @@ class RLBViolationKind(StrEnum):
 class RLBViolation:
     """One recovery transition where ``L(t) > peak + W - 1``."""
 
-    cycle_stamp_sim_ns: int            # the clean cycle (recovery)
-    cycle_index: int                   # its 0-based ordinal
+    cycle_stamp_sim_ns: int  # the clean cycle (recovery)
+    cycle_index: int  # its 0-based ordinal
     kind: RLBViolationKind
-    dirty_run_length: int              # observed L(t)
-    peak_count: int                    # peak(t) observed during the run
-    max_history: int                   # the W parameter
-    bound: int                         # the bound that was violated
+    dirty_run_length: int  # observed L(t)
+    peak_count: int  # peak(t) observed during the run
+    max_history: int  # the W parameter
+    bound: int  # the bound that was violated
 
     def __post_init__(self) -> None:
         if self.cycle_stamp_sim_ns < 0:
-            raise ValueError(
-                f"cycle_stamp_sim_ns must be >= 0; got "
-                f"{self.cycle_stamp_sim_ns}"
-            )
+            raise ValueError(f"cycle_stamp_sim_ns must be >= 0; got {self.cycle_stamp_sim_ns}")
         if self.cycle_index < 0:
-            raise ValueError(
-                f"cycle_index must be >= 0; got {self.cycle_index}"
-            )
+            raise ValueError(f"cycle_index must be >= 0; got {self.cycle_index}")
         if not isinstance(self.kind, RLBViolationKind):
-            raise TypeError(
-                f"kind must be RLBViolationKind; got "
-                f"{type(self.kind).__name__}"
-            )
+            raise TypeError(f"kind must be RLBViolationKind; got {type(self.kind).__name__}")
         if self.dirty_run_length <= 0:
-            raise ValueError(
-                f"dirty_run_length must be > 0; got "
-                f"{self.dirty_run_length}"
-            )
+            raise ValueError(f"dirty_run_length must be > 0; got {self.dirty_run_length}")
         if self.peak_count <= 0:
-            raise ValueError(
-                f"peak_count must be > 0; got {self.peak_count}"
-            )
+            raise ValueError(f"peak_count must be > 0; got {self.peak_count}")
         if self.max_history < 0:
-            raise ValueError(
-                f"max_history must be >= 0; got {self.max_history}"
-            )
+            raise ValueError(f"max_history must be >= 0; got {self.max_history}")
 
 
 @dataclass(frozen=True)
@@ -119,13 +104,9 @@ class RLBVerificationReport:
                 f"chars; got {self.mcap_sha256!r}"
             )
         if self.max_history < 0:
-            raise ValueError(
-                f"max_history must be >= 0; got {self.max_history}"
-            )
+            raise ValueError(f"max_history must be >= 0; got {self.max_history}")
         if self.cycles_total < 0:
-            raise ValueError(
-                f"cycles_total must be >= 0; got {self.cycles_total}"
-            )
+            raise ValueError(f"cycles_total must be >= 0; got {self.cycles_total}")
         if not 0 <= self.cycles_precondition_held <= self.cycles_total:
             raise ValueError(
                 "cycles_precondition_held must be in "
@@ -153,14 +134,10 @@ class RLBVerificationReport:
                 "when cycles_precondition_held > 0"
             )
         if not isinstance(self.violations, tuple):
-            raise TypeError(
-                f"violations must be tuple; got "
-                f"{type(self.violations).__name__}"
-            )
+            raise TypeError(f"violations must be tuple; got {type(self.violations).__name__}")
         if self.property_version != RLB_PROPERTY_VERSION:
             raise ValueError(
-                f"property_version must be {RLB_PROPERTY_VERSION!r}; "
-                f"got {self.property_version!r}"
+                f"property_version must be {RLB_PROPERTY_VERSION!r}; got {self.property_version!r}"
             )
 
     @property
@@ -219,9 +196,7 @@ def verify_rlb(
         If ``mcap_path`` does not exist or is unreadable.
     """
     if max_history < 0:
-        raise ValueError(
-            f"max_history must be >= 0; got {max_history}"
-        )
+        raise ValueError(f"max_history must be >= 0; got {max_history}")
 
     mcap_sha = hashlib.sha256(mcap_path.read_bytes()).hexdigest()
 
@@ -262,15 +237,17 @@ def verify_rlb(
                 first_recovery_stamp = stamp
             bound = peak_during_run + max_history - 1
             if dirty_run > bound:
-                violations.append(RLBViolation(
-                    cycle_stamp_sim_ns=stamp,
-                    cycle_index=cycle_index,
-                    kind=RLBViolationKind.DIRTY_RUN_EXCEEDS_WINDOW,
-                    dirty_run_length=dirty_run,
-                    peak_count=peak_during_run,
-                    max_history=max_history,
-                    bound=bound,
-                ))
+                violations.append(
+                    RLBViolation(
+                        cycle_stamp_sim_ns=stamp,
+                        cycle_index=cycle_index,
+                        kind=RLBViolationKind.DIRTY_RUN_EXCEEDS_WINDOW,
+                        dirty_run_length=dirty_run,
+                        peak_count=peak_during_run,
+                        max_history=max_history,
+                        bound=bound,
+                    )
+                )
         dirty_run = 0
         peak_during_run = 0
 

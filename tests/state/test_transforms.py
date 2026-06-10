@@ -36,17 +36,11 @@ from project_ghost.state.transforms import (
 
 _Q_IDENTITY = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
 # Rotación 90° alrededor de Z (yaw positivo)
-_Q_YAW_90 = np.array(
-    [np.sqrt(2.0) / 2.0, 0.0, 0.0, np.sqrt(2.0) / 2.0], dtype=np.float64
-)
+_Q_YAW_90 = np.array([np.sqrt(2.0) / 2.0, 0.0, 0.0, np.sqrt(2.0) / 2.0], dtype=np.float64)
 # Rotación 90° alrededor de X
-_Q_ROLL_90 = np.array(
-    [np.sqrt(2.0) / 2.0, np.sqrt(2.0) / 2.0, 0.0, 0.0], dtype=np.float64
-)
+_Q_ROLL_90 = np.array([np.sqrt(2.0) / 2.0, np.sqrt(2.0) / 2.0, 0.0, 0.0], dtype=np.float64)
 # Rotación 90° alrededor de Y
-_Q_PITCH_90 = np.array(
-    [np.sqrt(2.0) / 2.0, 0.0, np.sqrt(2.0) / 2.0, 0.0], dtype=np.float64
-)
+_Q_PITCH_90 = np.array([np.sqrt(2.0) / 2.0, 0.0, np.sqrt(2.0) / 2.0, 0.0], dtype=np.float64)
 
 
 # ---------------------------------------------------------------------------
@@ -304,15 +298,9 @@ def test_all_transforms_are_deterministic_bitwise_under_repeated_calls() -> None
     q = _Q_YAW_90.copy()
     v = np.array([1.5, -2.7, 0.3], dtype=np.float64)
 
-    _assert_arr_equal_bitwise(
-        quat_hamilton_to_scipy(q.copy()), quat_hamilton_to_scipy(q.copy())
-    )
-    _assert_arr_equal_bitwise(
-        R_body_to_world(q.copy()), R_body_to_world(q.copy())
-    )
-    _assert_arr_equal_bitwise(
-        R_world_to_body(q.copy()), R_world_to_body(q.copy())
-    )
+    _assert_arr_equal_bitwise(quat_hamilton_to_scipy(q.copy()), quat_hamilton_to_scipy(q.copy()))
+    _assert_arr_equal_bitwise(R_body_to_world(q.copy()), R_body_to_world(q.copy()))
+    _assert_arr_equal_bitwise(R_world_to_body(q.copy()), R_world_to_body(q.copy()))
     _assert_arr_equal_bitwise(enu_to_ned(v.copy()), enu_to_ned(v.copy()))
     _assert_arr_equal_bitwise(ned_to_enu(v.copy()), ned_to_enu(v.copy()))
     _assert_arr_equal_bitwise(flu_to_frd(v.copy()), flu_to_frd(v.copy()))

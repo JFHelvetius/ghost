@@ -63,15 +63,11 @@ def _summary(total_samples: int = 0) -> BeliefConsistencySummary:
 
 
 def _write_summary(path: Path, total_samples: int) -> None:
-    path.write_bytes(
-        encode_consistency_summary_to_bytes(_summary(total_samples))
-    )
+    path.write_bytes(encode_consistency_summary_to_bytes(_summary(total_samples)))
 
 
 def _write_manifest(path: Path, run_id: str) -> None:
-    m = RunManifest(
-        run_id=run_id, config_descriptor={"k": run_id}, inputs=(), outputs=()
-    )
+    m = RunManifest(run_id=run_id, config_descriptor={"k": run_id}, inputs=(), outputs=())
     path.write_bytes(encode_run_manifest_to_bytes(m))
 
 
@@ -96,15 +92,10 @@ def test_cli_compare_belief_two_summaries(tmp_path: Path) -> None:
 
     assert rc == 0
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert (
-        data["schema_version"] == BELIEF_COMPARISON_REPORT_SCHEMA_VERSION
-    )
+    assert data["schema_version"] == BELIEF_COMPARISON_REPORT_SCHEMA_VERSION
     assert data["comparison"]["baseline_label"] == "A"
     assert data["comparison"]["labels"] == ["A", "B"]
-    assert (
-        data["comparison"]["metrics"]["total_samples"]["deltas"]["B"]
-        == 10
-    )
+    assert data["comparison"]["metrics"]["total_samples"]["deltas"]["B"] == 10
 
 
 def test_cli_compare_belief_three_summaries(tmp_path: Path) -> None:

@@ -29,10 +29,7 @@ _COV_PSD_EPS: Final[float] = 1e-12
 
 def _validate_non_negative_std(value: Any, *, name: str) -> None:
     if not isinstance(value, (int, float)):
-        raise TypeError(
-            f"{name} debe ser numérico (int|float); recibido "
-            f"{type(value).__name__}"
-        )
+        raise TypeError(f"{name} debe ser numérico (int|float); recibido {type(value).__name__}")
     fvalue = float(value)
     if not np.isfinite(fvalue):
         raise ValueError(f"{name} debe ser finito; recibido {value}")
@@ -42,32 +39,22 @@ def _validate_non_negative_std(value: Any, *, name: str) -> None:
 
 def _validate_declared_covariance(c: Any, *, name: str) -> None:
     if not isinstance(c, np.ndarray):
-        raise TypeError(
-            f"{name} debe ser np.ndarray; recibido {type(c).__name__}"
-        )
+        raise TypeError(f"{name} debe ser np.ndarray; recibido {type(c).__name__}")
     if c.shape != (_COV_DIM, _COV_DIM):
-        raise TypeError(
-            f"{name} debe tener shape ({_COV_DIM}, {_COV_DIM}); "
-            f"recibido {c.shape}"
-        )
+        raise TypeError(f"{name} debe tener shape ({_COV_DIM}, {_COV_DIM}); recibido {c.shape}")
     if c.dtype != np.float64:
-        raise TypeError(
-            f"{name} debe tener dtype float64; recibido {c.dtype}"
-        )
+        raise TypeError(f"{name} debe tener dtype float64; recibido {c.dtype}")
     if not bool(np.all(np.isfinite(c))):
         raise ValueError(f"{name} contiene NaN o Inf")
     asymmetry = float(np.max(np.abs(c - c.T)))
     if asymmetry > _COV_SYMMETRY_TOL:
         raise ValueError(
-            f"{name} no es simétrica (max asimetría {asymmetry}, tolerancia "
-            f"{_COV_SYMMETRY_TOL})"
+            f"{name} no es simétrica (max asimetría {asymmetry}, tolerancia {_COV_SYMMETRY_TOL})"
         )
     eigvals = np.linalg.eigvalsh((c + c.T) / 2.0)
     min_eig = float(eigvals.min())
     if min_eig < -_COV_PSD_EPS:
-        raise ValueError(
-            f"{name} no es PSD (eigenvalor mínimo {min_eig}, eps {_COV_PSD_EPS})"
-        )
+        raise ValueError(f"{name} no es PSD (eigenvalor mínimo {min_eig}, eps {_COV_PSD_EPS})")
 
 
 @dataclass(frozen=True)
@@ -100,12 +87,8 @@ class NoisyGroundTruthConfig:
     random_source_label: str = "/estimation/noisy_gt"
 
     def __post_init__(self) -> None:
-        _validate_non_negative_std(
-            self.position_noise_std_m, name="position_noise_std_m"
-        )
-        _validate_non_negative_std(
-            self.orientation_noise_std_rad, name="orientation_noise_std_rad"
-        )
+        _validate_non_negative_std(self.position_noise_std_m, name="position_noise_std_m")
+        _validate_non_negative_std(self.orientation_noise_std_rad, name="orientation_noise_std_rad")
         _validate_non_negative_std(
             self.linear_velocity_noise_std_mps,
             name="linear_velocity_noise_std_mps",
@@ -114,9 +97,7 @@ class NoisyGroundTruthConfig:
             self.angular_velocity_noise_std_rps,
             name="angular_velocity_noise_std_rps",
         )
-        _validate_non_negative_std(
-            self.accel_body_noise_std_mps2, name="accel_body_noise_std_mps2"
-        )
+        _validate_non_negative_std(self.accel_body_noise_std_mps2, name="accel_body_noise_std_mps2")
         _validate_declared_covariance(
             self.declared_covariance_15x15, name="declared_covariance_15x15"
         )
@@ -127,8 +108,7 @@ class NoisyGroundTruthConfig:
             )
         if not self.random_source_label.startswith("/"):
             raise ValueError(
-                "random_source_label debe empezar con '/'; recibido "
-                f"{self.random_source_label!r}"
+                f"random_source_label debe empezar con '/'; recibido {self.random_source_label!r}"
             )
         # Sellar la cov: caller no debe mutarla después de construir el
         # config (ADR-0015: la cov es parámetro declarado, no estado

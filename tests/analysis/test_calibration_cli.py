@@ -99,18 +99,12 @@ def test_cli_analyze_calibration_writes_to_output_file(
     assert rc == 0
     assert out_path.exists()
     data = json.loads(out_path.read_text(encoding="utf-8"))
-    assert (
-        data["schema_version"]
-        == BELIEF_CALIBRATION_REPORT_SCHEMA_VERSION
-    )
+    assert data["schema_version"] == BELIEF_CALIBRATION_REPORT_SCHEMA_VERSION
     assert data["calibration"]["total_records"] == 2
     assert data["calibration"]["records_usable_for_calibration"] == 1
     assert data["calibration"]["records_not_usable"] == 1
     # Provenance: SHA matches hashlib of the input file bytes.
-    assert (
-        data["calibration"]["source_belief_report_sha256"]
-        == expected_sha
-    )
+    assert data["calibration"]["source_belief_report_sha256"] == expected_sha
 
 
 def test_cli_analyze_calibration_writes_to_stdout_when_no_output(
@@ -129,10 +123,7 @@ def test_cli_analyze_calibration_writes_to_stdout_when_no_output(
 
     assert rc == 0
     parsed = json.loads(capsys.readouterr().out)
-    assert (
-        parsed["schema_version"]
-        == BELIEF_CALIBRATION_REPORT_SCHEMA_VERSION
-    )
+    assert parsed["schema_version"] == BELIEF_CALIBRATION_REPORT_SCHEMA_VERSION
     assert parsed["calibration"]["total_records"] == 2
 
 
@@ -260,10 +251,7 @@ def test_cli_pipeline_belief_to_calibration_completes(
     # expected ratio: 0.5 / sqrt(0.04) = 0.5 / 0.2 = 2.5.
     usable_record = cal["records"][0]
     assert usable_record["usable_for_calibration"] is True
-    assert (
-        abs(usable_record["position_error_to_uncertainty_ratio"] - 2.5)
-        < 1e-12
-    )
+    assert abs(usable_record["position_error_to_uncertainty_ratio"] - 2.5) < 1e-12
 
 
 def test_cli_analyze_calibration_writes_provenance_sha_correctly(
@@ -287,6 +275,4 @@ def test_cli_analyze_calibration_writes_provenance_sha_correctly(
     )
     assert rc == 0
     parsed = json.loads(out_path.read_text(encoding="utf-8"))
-    assert (
-        parsed["calibration"]["source_belief_report_sha256"] == expected
-    )
+    assert parsed["calibration"]["source_belief_report_sha256"] == expected

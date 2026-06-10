@@ -119,16 +119,11 @@ def test_adapter_multiple_publishes_preserve_order() -> None:
     sink = InMemorySink()
     adapter = ModeEventToTelemetryAdapter(sink)
 
-    events = [
-        _event(reason=f"reason_{i}", stamp_sim_ns=i * 100)
-        for i in range(5)
-    ]
+    events = [_event(reason=f"reason_{i}", stamp_sim_ns=i * 100) for i in range(5)]
     for ev in events:
         adapter.publish(ev)
 
-    assert [m.message.reason for m in sink.captured] == [
-        f"reason_{i}" for i in range(5)
-    ]
+    assert [m.message.reason for m in sink.captured] == [f"reason_{i}" for i in range(5)]
 
 
 def test_adapter_with_custom_channel_publishes_to_that_channel() -> None:
@@ -280,6 +275,7 @@ def test_detector_emits_through_adapter_to_telemetry_sink() -> None:
 def test_adapter_yields_byte_deterministic_mcap(tmp_path: Path) -> None:
     """Mismo evento publicado en dos MCAPs idénticos produce bytes
     idénticos (regla T4 + adapter es puro forwarding)."""
+
     def write(p: Path) -> None:
         with MCAPFileSink(p) as mcap:
             ModeEventToTelemetryAdapter(mcap).publish(

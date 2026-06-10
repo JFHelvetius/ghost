@@ -39,16 +39,12 @@ def _write_mixed_mcap(path: Path) -> None:
     """Reproducible MCAP with all message types."""
     with MCAPFileSink(path) as sink:
         sink.publish(CHANNEL_EVENTS, 0, make_event(type_=EventType.ARMED))
-        sink.publish(
-            CHANNEL_STATE_NAV, 100, make_vehicle_state(flight_mode=FlightMode.OFFBOARD)
-        )
+        sink.publish(CHANNEL_STATE_NAV, 100, make_vehicle_state(flight_mode=FlightMode.OFFBOARD))
         sink.publish(channel_for_sensor("imu0"), 200, make_imu_sample(seq=0))
         sink.publish(channel_for_sensor("imu0"), 300, make_imu_sample(seq=1))
         write_actuator_channel(sink, 400)
         sink.publish(CHANNEL_EVENTS, 500, make_event(type_=EventType.TAKEOFF))
-        sink.publish(
-            CHANNEL_STATE_NAV, 600, make_vehicle_state(mission_mode=MissionMode.NAVIGATE)
-        )
+        sink.publish(CHANNEL_STATE_NAV, 600, make_vehicle_state(mission_mode=MissionMode.NAVIGATE))
 
 
 # ---------------------------------------------------------------------------

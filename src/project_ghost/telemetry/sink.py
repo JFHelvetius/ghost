@@ -59,13 +59,9 @@ class InMemorySink:
         if self._closed:
             raise RuntimeError("InMemorySink is closed; cannot publish")
         if not channel.startswith("/"):
-            raise ValueError(
-                f"channel must start with '/'; got {channel!r}"
-            )
+            raise ValueError(f"channel must start with '/'; got {channel!r}")
         if stamp_sim_ns < 0:
-            raise ValueError(
-                f"stamp_sim_ns must be >= 0; got {stamp_sim_ns}"
-            )
+            raise ValueError(f"stamp_sim_ns must be >= 0; got {stamp_sim_ns}")
         self.captured.append(
             CapturedMessage(
                 channel=channel,

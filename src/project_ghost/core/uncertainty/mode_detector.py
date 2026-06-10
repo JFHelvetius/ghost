@@ -176,9 +176,7 @@ class PerceptionModeDetector:
         initial_stamp_ns: int = 0,
     ) -> None:
         if initial_stamp_ns < 0:
-            raise ValueError(
-                f"initial_stamp_ns debe ser ≥ 0; recibido {initial_stamp_ns}"
-            )
+            raise ValueError(f"initial_stamp_ns debe ser ≥ 0; recibido {initial_stamp_ns}")
         self._config: DetectorConfig = config if config is not None else DetectorConfig()
         self._sink: ModeEventSink = sink if sink is not None else NullModeEventSink()
         self._current_mode: PerceptionMode = initial_mode

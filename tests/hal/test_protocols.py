@@ -140,9 +140,11 @@ class _FakeImuProvider:
 
     def subscribe(self, cb: Any) -> Subscription:
         self._subscribers.append(cb)
+
         def _unsub() -> None:
             if cb in self._subscribers:
                 self._subscribers.remove(cb)
+
         return Subscription(unsubscribe=_unsub)
 
 

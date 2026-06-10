@@ -28,9 +28,7 @@ if TYPE_CHECKING:
 def _load_linter() -> ModuleType:
     repo_root = Path(__file__).resolve().parents[2]
     path = repo_root / "scripts" / "check_no_unstable_collections.py"
-    spec = importlib.util.spec_from_file_location(
-        "check_no_unstable_collections", path
-    )
+    spec = importlib.util.spec_from_file_location("check_no_unstable_collections", path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"no se pudo cargar linter desde {path}")
     mod = importlib.util.module_from_spec(spec)
@@ -90,9 +88,7 @@ def test_linter_detects_frozenset_call() -> None:
 
 
 def test_linter_detects_counter_call_qualified() -> None:
-    violations = _linter.check_text(
-        "import collections\nx = collections.Counter([1, 2])\n", "<t>"
-    )
+    violations = _linter.check_text("import collections\nx = collections.Counter([1, 2])\n", "<t>")
     assert violations
     assert any("Counter(...)" in m for _, m in violations)
 
@@ -143,9 +139,7 @@ def test_linter_dict_literal_is_allowed() -> None:
 
 def test_linter_dict_comprehension_is_allowed() -> None:
     """Diccionarios por comprensión están explícitamente fuera del scope §10."""
-    assert _linter.check_text(
-        "x = {k: v for k, v in items}\n", "<t>"
-    ) == []
+    assert _linter.check_text("x = {k: v for k, v in items}\n", "<t>") == []
 
 
 def test_linter_list_comprehension_is_allowed() -> None:

@@ -145,11 +145,11 @@ def test_bus_min_severity_filter_drops_below_threshold() -> None:
     bus = EventBus()
     cb, received = _recorder()
     bus.subscribe_all(cb, min_severity=EventSeverity.WARN)
-    bus.publish(_ev(severity=EventSeverity.DEBUG))    # filtrado
-    bus.publish(_ev(severity=EventSeverity.INFO))     # filtrado
-    bus.publish(_ev(severity=EventSeverity.WARN))     # pasa
-    bus.publish(_ev(severity=EventSeverity.ERROR))    # pasa
-    bus.publish(_ev(severity=EventSeverity.CRITICAL)) # pasa
+    bus.publish(_ev(severity=EventSeverity.DEBUG))  # filtrado
+    bus.publish(_ev(severity=EventSeverity.INFO))  # filtrado
+    bus.publish(_ev(severity=EventSeverity.WARN))  # pasa
+    bus.publish(_ev(severity=EventSeverity.ERROR))  # pasa
+    bus.publish(_ev(severity=EventSeverity.CRITICAL))  # pasa
     assert [ev.severity for ev in received] == [
         EventSeverity.WARN,
         EventSeverity.ERROR,
@@ -203,6 +203,7 @@ def test_bus_subscription_is_frozen() -> None:
     assert isinstance(sub, Subscription)
     # frozen dataclass: no asignación post-construcción
     from dataclasses import FrozenInstanceError  # noqa: PLC0415
+
     with pytest.raises(FrozenInstanceError):
         sub.unsubscribe = lambda: None  # type: ignore[misc]
 
@@ -239,6 +240,7 @@ def test_total_order_3_producers_5_subscribers() -> None:
     def make_observer(target: list[int]) -> Callable[[Event], None]:
         def _record(ev: Event) -> None:
             target.append(ev.sequence)
+
         return _record
 
     for obs in observers:

@@ -41,9 +41,7 @@ def test_end_to_end_capture_analyze_report(tmp_path: Path) -> None:
         sink.publish(
             CHANNEL_STATE_NAV,
             100,
-            make_vehicle_state(
-                flight_mode=FlightMode.OFFBOARD, mission_mode=MissionMode.IDLE
-            ),
+            make_vehicle_state(flight_mode=FlightMode.OFFBOARD, mission_mode=MissionMode.IDLE),
         )
         for i in range(5):
             sink.publish(

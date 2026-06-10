@@ -54,9 +54,7 @@ class MDViolationKind(StrEnum):
 
     # The only postcondition. Named to mirror BAUD/ERUR violation kinds
     # in structure: action verb at the end describes what was wrong.
-    ADJUSTED_LEVEL_MORE_CONFIDENT_THAN_RAW = (
-        "adjusted_level_more_confident_than_raw"
-    )
+    ADJUSTED_LEVEL_MORE_CONFIDENT_THAN_RAW = "adjusted_level_more_confident_than_raw"
 
 
 @dataclass(frozen=True)
@@ -76,28 +74,18 @@ class MDViolation:
 
     def __post_init__(self) -> None:
         if self.cycle_stamp_sim_ns < 0:
-            raise ValueError(
-                f"cycle_stamp_sim_ns must be >= 0; got "
-                f"{self.cycle_stamp_sim_ns}"
-            )
+            raise ValueError(f"cycle_stamp_sim_ns must be >= 0; got {self.cycle_stamp_sim_ns}")
         if self.cycle_index < 0:
-            raise ValueError(
-                f"cycle_index must be >= 0; got {self.cycle_index}"
-            )
+            raise ValueError(f"cycle_index must be >= 0; got {self.cycle_index}")
         if not isinstance(self.kind, MDViolationKind):
-            raise TypeError(
-                f"kind must be MDViolationKind; got "
-                f"{type(self.kind).__name__}"
-            )
+            raise TypeError(f"kind must be MDViolationKind; got {type(self.kind).__name__}")
         for f, name in (
             (self.raw_level, "raw_level"),
             (self.adjusted_level, "adjusted_level"),
             (self.adjustment_policy_id, "adjustment_policy_id"),
         ):
             if not isinstance(f, str):
-                raise TypeError(
-                    f"{name} must be str; got {type(f).__name__}"
-                )
+                raise TypeError(f"{name} must be str; got {type(f).__name__}")
 
 
 @dataclass(frozen=True)
@@ -126,9 +114,7 @@ class MDVerificationReport:
                 f"chars; got {self.mcap_sha256!r}"
             )
         if self.cycles_total < 0:
-            raise ValueError(
-                f"cycles_total must be >= 0; got {self.cycles_total}"
-            )
+            raise ValueError(f"cycles_total must be >= 0; got {self.cycles_total}")
         if self.cycles_precondition_held != self.cycles_total:
             raise ValueError(
                 "MD-v1 has no precondition: cycles_precondition_held "
@@ -147,23 +133,17 @@ class MDVerificationReport:
         if self.cycles_total == 0:
             if self.first_precondition_cycle_stamp_sim_ns is not None:
                 raise ValueError(
-                    "first_precondition_cycle_stamp_sim_ns must be None "
-                    "when cycles_total == 0"
+                    "first_precondition_cycle_stamp_sim_ns must be None when cycles_total == 0"
                 )
         elif self.first_precondition_cycle_stamp_sim_ns is None:
             raise ValueError(
-                "first_precondition_cycle_stamp_sim_ns must be set "
-                "when cycles_total > 0"
+                "first_precondition_cycle_stamp_sim_ns must be set when cycles_total > 0"
             )
         if not isinstance(self.violations, tuple):
-            raise TypeError(
-                f"violations must be tuple; got "
-                f"{type(self.violations).__name__}"
-            )
+            raise TypeError(f"violations must be tuple; got {type(self.violations).__name__}")
         if self.property_version != MD_PROPERTY_VERSION:
             raise ValueError(
-                f"property_version must be {MD_PROPERTY_VERSION!r}; "
-                f"got {self.property_version!r}"
+                f"property_version must be {MD_PROPERTY_VERSION!r}; got {self.property_version!r}"
             )
 
     @property
@@ -229,14 +209,16 @@ def verify_md(mcap_path: Path) -> MDVerificationReport:
         raw_num = _LEVEL_NUM[c.raw_assessment.overall_level]
         adj_num = _LEVEL_NUM[c.adjusted_overall_level]
         if adj_num < raw_num:
-            violations.append(MDViolation(
-                cycle_stamp_sim_ns=stamp,
-                cycle_index=cycle_index,
-                kind=MDViolationKind.ADJUSTED_LEVEL_MORE_CONFIDENT_THAN_RAW,
-                raw_level=c.raw_assessment.overall_level.value,
-                adjusted_level=c.adjusted_overall_level.value,
-                adjustment_policy_id=c.adjustment_policy_id,
-            ))
+            violations.append(
+                MDViolation(
+                    cycle_stamp_sim_ns=stamp,
+                    cycle_index=cycle_index,
+                    kind=MDViolationKind.ADJUSTED_LEVEL_MORE_CONFIDENT_THAN_RAW,
+                    raw_level=c.raw_assessment.overall_level.value,
+                    adjusted_level=c.adjusted_overall_level.value,
+                    adjustment_policy_id=c.adjustment_policy_id,
+                )
+            )
 
     return MDVerificationReport(
         mcap_sha256=mcap_sha,

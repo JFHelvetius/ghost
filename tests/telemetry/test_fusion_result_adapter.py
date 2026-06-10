@@ -50,9 +50,7 @@ def _make_oracle(
 ) -> LinearMotionOracleFusionPolicy:
     return LinearMotionOracleFusionPolicy(
         initial_position_enu_m=_ZERO3.copy(),
-        velocity_world_mps=(
-            velocity if velocity is not None else _ZERO3.copy()
-        ),
+        velocity_world_mps=(velocity if velocity is not None else _ZERO3.copy()),
         start_stamp_sim_ns=start_ns,
         covariance_diag=cov,
     )

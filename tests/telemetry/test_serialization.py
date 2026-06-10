@@ -269,12 +269,8 @@ def test_round_trip_sensor_sample_imu() -> None:
     assert decoded.sensor_id == original.sensor_id
     assert decoded.seq == original.seq
     assert decoded.health == original.health
-    np.testing.assert_array_equal(
-        decoded.payload.accel_mps2, original.payload.accel_mps2
-    )
-    np.testing.assert_array_equal(
-        decoded.payload.gyro_rps, original.payload.gyro_rps
-    )
+    np.testing.assert_array_equal(decoded.payload.accel_mps2, original.payload.accel_mps2)
+    np.testing.assert_array_equal(decoded.payload.gyro_rps, original.payload.gyro_rps)
     assert decoded.payload.temperature_c == original.payload.temperature_c
 
 
@@ -346,11 +342,7 @@ def test_round_trip_init_false_field_uses_default() -> None:
     passed to the constructor by the decoder."""
     from project_ghost.hal.messages import ActuatorLevel, DirectMotorCommand
 
-    cmd = DirectMotorCommand(
-        throttle=np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float64)
-    )
-    decoded = from_json_dict(
-        DirectMotorCommand, json.loads(encode_to_bytes(cmd))
-    )
+    cmd = DirectMotorCommand(throttle=np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float64))
+    decoded = from_json_dict(DirectMotorCommand, json.loads(encode_to_bytes(cmd)))
     assert decoded.level == ActuatorLevel.DIRECT_MOTOR
     np.testing.assert_array_equal(decoded.throttle, cmd.throttle)

@@ -82,25 +82,19 @@ def _decode_perception_mode_changed(
 def _decode_belief_self_assessment(
     d: Mapping[str, Any],
 ) -> BeliefSelfAssessment:
-    return cast(
-        "BeliefSelfAssessment", from_json_dict(BeliefSelfAssessment, d)
-    )
+    return cast("BeliefSelfAssessment", from_json_dict(BeliefSelfAssessment, d))
 
 
 def _decode_decision_rationale(
     d: Mapping[str, Any],
 ) -> DecisionRationale:
-    return cast(
-        "DecisionRationale", from_json_dict(DecisionRationale, d)
-    )
+    return cast("DecisionRationale", from_json_dict(DecisionRationale, d))
 
 
 def _decode_actuation_directive(
     d: Mapping[str, Any],
 ) -> ActuationDirective:
-    return cast(
-        "ActuationDirective", from_json_dict(ActuationDirective, d)
-    )
+    return cast("ActuationDirective", from_json_dict(ActuationDirective, d))
 
 
 def _decode_belief_forward_prediction(
@@ -115,9 +109,7 @@ def _decode_belief_forward_prediction(
 def _decode_prediction_outcome(
     d: Mapping[str, Any],
 ) -> PredictionOutcome:
-    return cast(
-        "PredictionOutcome", from_json_dict(PredictionOutcome, d)
-    )
+    return cast("PredictionOutcome", from_json_dict(PredictionOutcome, d))
 
 
 def _decode_calibrated_self_assessment(
@@ -171,36 +163,27 @@ def _build_decoder_table() -> dict[str, Callable[[Mapping[str, Any]], Any]]:
         f"{Event.__module__}.{Event.__name__}": _decode_event,
         f"{VehicleState.__module__}.{VehicleState.__name__}": _decode_vehicle_state,
         (
-            f"{PerceptionModeChanged.__module__}."
-            f"{PerceptionModeChanged.__name__}"
+            f"{PerceptionModeChanged.__module__}.{PerceptionModeChanged.__name__}"
         ): _decode_perception_mode_changed,
         (
-            f"{BeliefSelfAssessment.__module__}."
-            f"{BeliefSelfAssessment.__name__}"
+            f"{BeliefSelfAssessment.__module__}.{BeliefSelfAssessment.__name__}"
         ): _decode_belief_self_assessment,
         (
-            f"{DecisionRationale.__module__}."
-            f"{DecisionRationale.__name__}"
+            f"{DecisionRationale.__module__}.{DecisionRationale.__name__}"
         ): _decode_decision_rationale,
         (
-            f"{ActuationDirective.__module__}."
-            f"{ActuationDirective.__name__}"
+            f"{ActuationDirective.__module__}.{ActuationDirective.__name__}"
         ): _decode_actuation_directive,
         (
-            f"{BeliefForwardPrediction.__module__}."
-            f"{BeliefForwardPrediction.__name__}"
+            f"{BeliefForwardPrediction.__module__}.{BeliefForwardPrediction.__name__}"
         ): _decode_belief_forward_prediction,
         (
-            f"{PredictionOutcome.__module__}."
-            f"{PredictionOutcome.__name__}"
+            f"{PredictionOutcome.__module__}.{PredictionOutcome.__name__}"
         ): _decode_prediction_outcome,
         (
-            f"{CalibratedSelfAssessment.__module__}."
-            f"{CalibratedSelfAssessment.__name__}"
+            f"{CalibratedSelfAssessment.__module__}.{CalibratedSelfAssessment.__name__}"
         ): _decode_calibrated_self_assessment,
-        (
-            f"{FusionResult.__module__}.{FusionResult.__name__}"
-        ): _decode_fusion_result,
+        (f"{FusionResult.__module__}.{FusionResult.__name__}"): _decode_fusion_result,
     }
     for payload_cls in (
         IMUPayload,
@@ -209,10 +192,7 @@ def _build_decoder_table() -> dict[str, Callable[[Mapping[str, Any]], Any]]:
         GpsPayload,
         AltimeterPayload,
     ):
-        name = (
-            f"{SensorSample.__module__}.{SensorSample.__name__}."
-            f"{payload_cls.__name__}"
-        )
+        name = f"{SensorSample.__module__}.{SensorSample.__name__}.{payload_cls.__name__}"
         table[name] = make_sensor_sample_decoder(payload_cls)
     return table
 
@@ -291,10 +271,7 @@ class MCAPReplayReader:
 
     def iter_messages(self) -> Iterator[ReplayMessage]:
         if self._reader is None:
-            raise RuntimeError(
-                "MCAPReplayReader debe abrirse via context manager antes "
-                "de iterar"
-            )
+            raise RuntimeError("MCAPReplayReader debe abrirse via context manager antes de iterar")
         for schema, channel, message in self._reader.iter_messages():
             schema_name = schema.name if schema is not None else ""
             yield ReplayMessage(

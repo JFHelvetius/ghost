@@ -53,11 +53,13 @@ def fixed_raw_assessment() -> BeliefSelfAssessment:
         start_stamp_sim_ns=_T0_NS,
         covariance_diag=1e-4,
     )
-    state = oracle.fuse(FusionInput(
-        sensor_samples=(),
-        prior_belief_stamp_sim_ns=None,
-        target_stamp_sim_ns=_T0_NS,
-    )).belief
+    state = oracle.fuse(
+        FusionInput(
+            sensor_samples=(),
+            prior_belief_stamp_sim_ns=None,
+            target_stamp_sim_ns=_T0_NS,
+        )
+    ).belief
     thresholds = AssessmentThresholds(
         position_known_std_m=0.05,
         position_unknown_std_m=0.5,
@@ -85,8 +87,10 @@ def _calibration_histories(draw: st.DrawFn) -> CalibrationHistory:
     if total == 0:
         return CalibrationHistory(
             outcomes_considered=0,
-            count_within_1_std=0, count_beyond_1_std=0,
-            count_beyond_3_std=0, count_beyond_5_std=0,
+            count_within_1_std=0,
+            count_beyond_1_std=0,
+            count_beyond_3_std=0,
+            count_beyond_5_std=0,
             worst_position_mahalanobis=0.0,
             worst_orientation_mahalanobis=0.0,
             most_recent_observed_stamp_sim_ns=None,
@@ -97,12 +101,22 @@ def _calibration_histories(draw: st.DrawFn) -> CalibrationHistory:
         count_beyond_1_std=c_b1,
         count_beyond_3_std=c_b3,
         count_beyond_5_std=c_b5,
-        worst_position_mahalanobis=draw(st.floats(
-            0.0, _MAX_MAHALANOBIS, allow_nan=False, allow_infinity=False,
-        )),
-        worst_orientation_mahalanobis=draw(st.floats(
-            0.0, _MAX_MAHALANOBIS, allow_nan=False, allow_infinity=False,
-        )),
+        worst_position_mahalanobis=draw(
+            st.floats(
+                0.0,
+                _MAX_MAHALANOBIS,
+                allow_nan=False,
+                allow_infinity=False,
+            )
+        ),
+        worst_orientation_mahalanobis=draw(
+            st.floats(
+                0.0,
+                _MAX_MAHALANOBIS,
+                allow_nan=False,
+                allow_infinity=False,
+            )
+        ),
         most_recent_observed_stamp_sim_ns=draw(
             st.integers(0, 10**15),
         ),
@@ -146,7 +160,8 @@ def test_default_observer_never_fails(
     """With default ``max_fire_fraction=1.0``, FPB is a pure observer."""
     mcap_path = tmp_path_factory.mktemp("fpb_obs") / "synth.mcap"
     _materialise_single_cycle(
-        fixed_raw_assessment, history,
+        fixed_raw_assessment,
+        history,
         min_outcomes=min_outcomes,
         downgrade_threshold=downgrade_threshold,
         mcap_path=mcap_path,
@@ -182,7 +197,8 @@ def test_fire_fraction_matches_baud_precondition(
     BAUD precondition evaluated directly on the history."""
     mcap_path = tmp_path_factory.mktemp("fpb_match") / "synth.mcap"
     _materialise_single_cycle(
-        fixed_raw_assessment, history,
+        fixed_raw_assessment,
+        history,
         min_outcomes=min_outcomes,
         downgrade_threshold=downgrade_threshold,
         mcap_path=mcap_path,
@@ -193,12 +209,9 @@ def test_fire_fraction_matches_baud_precondition(
         downgrade_threshold=downgrade_threshold,
     )
     # Direct evaluation of the precondition.
-    beyond_3_or_worse = (
-        history.count_beyond_3_std + history.count_beyond_5_std
-    )
+    beyond_3_or_worse = history.count_beyond_3_std + history.count_beyond_5_std
     expected_fires = (
-        history.outcomes_considered >= min_outcomes
-        and beyond_3_or_worse >= downgrade_threshold
+        history.outcomes_considered >= min_outcomes and beyond_3_or_worse >= downgrade_threshold
     )
     assert report.fire_fraction == (1.0 if expected_fires else 0.0)
 
@@ -216,16 +229,20 @@ def test_adversarial_strict_zero_bound_fails_on_any_fire(
     # History that triggers BAUD precondition.
     history = CalibrationHistory(
         outcomes_considered=10,
-        count_within_1_std=0, count_beyond_1_std=0,
-        count_beyond_3_std=0, count_beyond_5_std=10,
+        count_within_1_std=0,
+        count_beyond_1_std=0,
+        count_beyond_3_std=0,
+        count_beyond_5_std=10,
         worst_position_mahalanobis=42.0,
         worst_orientation_mahalanobis=12.0,
         most_recent_observed_stamp_sim_ns=_T0_NS,
     )
     mcap_path = tmp_path / "fire.mcap"
     _materialise_single_cycle(
-        fixed_raw_assessment, history,
-        min_outcomes=4, downgrade_threshold=2,
+        fixed_raw_assessment,
+        history,
+        min_outcomes=4,
+        downgrade_threshold=2,
         mcap_path=mcap_path,
     )
     report = verify_fpb(mcap_path, max_fire_fraction=0.0)

@@ -69,40 +69,25 @@ class DecisionKind(StrEnum):
 
 def _validate_reason(reason: str, *, field: str = "reason") -> None:
     if not isinstance(reason, str):
-        raise TypeError(
-            f"{field} must be str; got {type(reason).__name__}"
-        )
+        raise TypeError(f"{field} must be str; got {type(reason).__name__}")
     if not reason:
         raise ValueError(f"{field} cannot be empty")
     if len(reason) > _REASON_MAX_LEN:
-        raise ValueError(
-            f"{field} must be <= {_REASON_MAX_LEN} chars; got "
-            f"len={len(reason)}"
-        )
+        raise ValueError(f"{field} must be <= {_REASON_MAX_LEN} chars; got len={len(reason)}")
     if not _REASON_PATTERN.match(reason):
-        raise ValueError(
-            f"{field} must match {_REASON_PATTERN.pattern!r}; got "
-            f"{reason!r}"
-        )
+        raise ValueError(f"{field} must match {_REASON_PATTERN.pattern!r}; got {reason!r}")
 
 
 def _validate_sha256(value: str | None, *, field: str) -> None:
     if value is None:
         return
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field} must be str or None; got {type(value).__name__}"
-        )
+        raise TypeError(f"{field} must be str or None; got {type(value).__name__}")
     if len(value) != _SHA256_HEX_LEN:
-        raise ValueError(
-            f"{field} must be {_SHA256_HEX_LEN} hex chars; got "
-            f"len={len(value)}"
-        )
+        raise ValueError(f"{field} must be {_SHA256_HEX_LEN} hex chars; got len={len(value)}")
     for c in value:
         if c not in _HEX_CHARS:
-            raise ValueError(
-                f"{field} must be lowercase hex; got {value!r}"
-            )
+            raise ValueError(f"{field} must be lowercase hex; got {value!r}")
 
 
 @dataclass(frozen=True)
@@ -139,23 +124,16 @@ class DecisionContext:
 
     def __post_init__(self) -> None:
         if self.belief_stamp_sim_ns < 0:
-            raise ValueError(
-                f"belief_stamp_sim_ns must be >= 0; got "
-                f"{self.belief_stamp_sim_ns}"
-            )
+            raise ValueError(f"belief_stamp_sim_ns must be >= 0; got {self.belief_stamp_sim_ns}")
         if self.calibrated_self_assessment is not None:
-            if not isinstance(
-                self.calibrated_self_assessment, CalibratedSelfAssessment
-            ):
+            if not isinstance(self.calibrated_self_assessment, CalibratedSelfAssessment):
                 raise TypeError(
                     f"calibrated_self_assessment must be "
                     f"CalibratedSelfAssessment; got "
                     f"{type(self.calibrated_self_assessment).__name__}"
                 )
             if self.self_assessment is not None:
-                cal_stamp = (
-                    self.calibrated_self_assessment.raw_assessment.belief_stamp_sim_ns
-                )
+                cal_stamp = self.calibrated_self_assessment.raw_assessment.belief_stamp_sim_ns
                 raw_stamp = self.self_assessment.belief_stamp_sim_ns
                 if cal_stamp != raw_stamp:
                     raise ValueError(
@@ -164,8 +142,7 @@ class DecisionContext:
                     )
         if self.schema_version != DECISION_PROTOCOL_VERSION:
             raise ValueError(
-                f"schema_version must be {DECISION_PROTOCOL_VERSION}; "
-                f"got {self.schema_version}"
+                f"schema_version must be {DECISION_PROTOCOL_VERSION}; got {self.schema_version}"
             )
 
     @property
@@ -178,9 +155,7 @@ class DecisionContext:
         ``None`` (caller should treat as no-assessment).
         """
         if self.calibrated_self_assessment is not None:
-            return (
-                self.calibrated_self_assessment.adjusted_overall_level
-            )
+            return self.calibrated_self_assessment.adjusted_overall_level
         if self.self_assessment is not None:
             return self.self_assessment.overall_level
         return None
@@ -207,19 +182,15 @@ class Decision:
 
     def __post_init__(self) -> None:
         if not isinstance(self.kind, DecisionKind):
-            raise TypeError(
-                f"kind must be DecisionKind; got {type(self.kind).__name__}"
-            )
+            raise TypeError(f"kind must be DecisionKind; got {type(self.kind).__name__}")
         if self.decision_stamp_sim_ns < 0:
             raise ValueError(
-                f"decision_stamp_sim_ns must be >= 0; got "
-                f"{self.decision_stamp_sim_ns}"
+                f"decision_stamp_sim_ns must be >= 0; got {self.decision_stamp_sim_ns}"
             )
         _validate_reason(self.reason)
         if self.schema_version != DECISION_PROTOCOL_VERSION:
             raise ValueError(
-                f"schema_version must be {DECISION_PROTOCOL_VERSION}; "
-                f"got {self.schema_version}"
+                f"schema_version must be {DECISION_PROTOCOL_VERSION}; got {self.schema_version}"
             )
 
 
@@ -250,15 +221,9 @@ class DecisionRationale:
 
     def __post_init__(self) -> None:
         if not isinstance(self.decision, Decision):
-            raise TypeError(
-                f"decision must be Decision; got "
-                f"{type(self.decision).__name__}"
-            )
+            raise TypeError(f"decision must be Decision; got {type(self.decision).__name__}")
         if self.belief_stamp_sim_ns < 0:
-            raise ValueError(
-                f"belief_stamp_sim_ns must be >= 0; got "
-                f"{self.belief_stamp_sim_ns}"
-            )
+            raise ValueError(f"belief_stamp_sim_ns must be >= 0; got {self.belief_stamp_sim_ns}")
         if self.belief_stamp_sim_ns != self.decision.decision_stamp_sim_ns:
             raise ValueError(
                 f"belief_stamp_sim_ns ({self.belief_stamp_sim_ns}) must "
@@ -266,14 +231,11 @@ class DecisionRationale:
                 f"({self.decision.decision_stamp_sim_ns}) — v1 enforces "
                 f"reactive synchronous decisions"
             )
-        _validate_sha256(
-            self.self_assessment_sha256, field="self_assessment_sha256"
-        )
+        _validate_sha256(self.self_assessment_sha256, field="self_assessment_sha256")
         _validate_reason(self.policy_id, field="policy_id")
         if self.schema_version != DECISION_PROTOCOL_VERSION:
             raise ValueError(
-                f"schema_version must be {DECISION_PROTOCOL_VERSION}; "
-                f"got {self.schema_version}"
+                f"schema_version must be {DECISION_PROTOCOL_VERSION}; got {self.schema_version}"
             )
 
 

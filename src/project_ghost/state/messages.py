@@ -88,23 +88,15 @@ def _validate_array(
     require_finite: bool = True,
 ) -> None:
     if not isinstance(arr, np.ndarray):
-        raise TypeError(
-            f"{name} debe ser np.ndarray; recibido {type(arr).__name__}"
-        )
+        raise TypeError(f"{name} debe ser np.ndarray; recibido {type(arr).__name__}")
     if shape is not None and arr.shape != shape:
-        raise TypeError(
-            f"{name} debe tener shape {shape}; recibido {arr.shape}"
-        )
+        raise TypeError(f"{name} debe tener shape {shape}; recibido {arr.shape}")
     if ndim is not None and arr.ndim != ndim:
-        raise TypeError(
-            f"{name} debe tener ndim {ndim}; recibido {arr.ndim}"
-        )
+        raise TypeError(f"{name} debe tener ndim {ndim}; recibido {arr.ndim}")
     if dtype is not None:
         expected = np.dtype(dtype)
         if arr.dtype != expected:
-            raise TypeError(
-                f"{name} debe tener dtype {expected}; recibido {arr.dtype}"
-            )
+            raise TypeError(f"{name} debe tener dtype {expected}; recibido {arr.dtype}")
     if require_finite and not bool(np.all(np.isfinite(arr))):
         raise ValueError(f"{name} contiene NaN o Inf")
 
@@ -117,10 +109,7 @@ def _validate_unit_quaternion(q: np.ndarray, *, name: str) -> None:
     _validate_array(q, name=name, shape=(_QUAT_LEN,), dtype=np.float64)
     norm = float(np.linalg.norm(q))
     if abs(norm - 1.0) > _QUAT_NORM_TOLERANCE:
-        raise ValueError(
-            f"{name} debe ser unit (tolerancia {_QUAT_NORM_TOLERANCE}); "
-            f"norm={norm}"
-        )
+        raise ValueError(f"{name} debe ser unit (tolerancia {_QUAT_NORM_TOLERANCE}); norm={norm}")
 
 
 def _validate_covariance(c: np.ndarray, *, name: str = "covariance_15x15") -> None:
@@ -128,17 +117,14 @@ def _validate_covariance(c: np.ndarray, *, name: str = "covariance_15x15") -> No
     asymmetry = float(np.max(np.abs(c - c.T)))
     if asymmetry > _COV_SYMMETRY_TOL:
         raise ValueError(
-            f"{name} no es simétrica (max asimetría {asymmetry}, tolerancia "
-            f"{_COV_SYMMETRY_TOL})"
+            f"{name} no es simétrica (max asimetría {asymmetry}, tolerancia {_COV_SYMMETRY_TOL})"
         )
     # PSD via eigvalsh sobre simétrica (tomada como (c + c.T) / 2 para reducir
     # ruido en la simetría tras pasar el chequeo).
     eigvals = np.linalg.eigvalsh((c + c.T) / 2.0)
     min_eig = float(eigvals.min())
     if min_eig < -_COV_PSD_EPS:
-        raise ValueError(
-            f"{name} no es PSD (eigenvalor mínimo {min_eig}, eps {_COV_PSD_EPS})"
-        )
+        raise ValueError(f"{name} no es PSD (eigenvalor mínimo {min_eig}, eps {_COV_PSD_EPS})")
 
 
 # ---------------------------------------------------------------------------
@@ -194,9 +180,7 @@ class Twist:
             dtype=np.float64,
         )
         if self.frame not in ("world", "body"):
-            raise ValueError(
-                f"frame debe ser 'world' o 'body'; recibido {self.frame!r}"
-            )
+            raise ValueError(f"frame debe ser 'world' o 'body'; recibido {self.frame!r}")
         _seal(self.linear_mps)
         _seal(self.angular_rps)
 
@@ -252,13 +236,11 @@ class NavigationState:
     def __post_init__(self) -> None:
         if self.twist_world.frame != "world":
             raise ValueError(
-                f"twist_world.frame debe ser 'world'; recibido "
-                f"{self.twist_world.frame!r}"
+                f"twist_world.frame debe ser 'world'; recibido {self.twist_world.frame!r}"
             )
         if self.twist_body.frame != "body":
             raise ValueError(
-                f"twist_body.frame debe ser 'body'; recibido "
-                f"{self.twist_body.frame!r}"
+                f"twist_body.frame debe ser 'body'; recibido {self.twist_body.frame!r}"
             )
         _validate_array(
             self.accel_body_mps2,
@@ -327,23 +309,17 @@ class FlightStatus:
 
     def __post_init__(self) -> None:
         if self.battery_v is not None and not np.isfinite(self.battery_v):
-            raise ValueError(
-                f"battery_v debe ser finito; recibido {self.battery_v}"
-            )
+            raise ValueError(f"battery_v debe ser finito; recibido {self.battery_v}")
         if self.battery_pct is not None:
             if not np.isfinite(self.battery_pct):
-                raise ValueError(
-                    f"battery_pct debe ser finito; recibido {self.battery_pct}"
-                )
+                raise ValueError(f"battery_pct debe ser finito; recibido {self.battery_pct}")
             if not _PERCENTAGE_MIN <= self.battery_pct <= _PERCENTAGE_MAX:
                 raise ValueError(
                     f"battery_pct debe estar en [{_PERCENTAGE_MIN}, "
                     f"{_PERCENTAGE_MAX}]; recibido {self.battery_pct}"
                 )
         if self.error_flags < 0:
-            raise ValueError(
-                f"error_flags debe ser >= 0; recibido {self.error_flags}"
-            )
+            raise ValueError(f"error_flags debe ser >= 0; recibido {self.error_flags}")
 
 
 # ---------------------------------------------------------------------------
@@ -398,18 +374,14 @@ class MissionStatus:
 
     def __post_init__(self) -> None:
         if not np.isfinite(self.progress):
-            raise ValueError(
-                f"progress debe ser finito; recibido {self.progress}"
-            )
+            raise ValueError(f"progress debe ser finito; recibido {self.progress}")
         if not _PERCENTAGE_MIN <= self.progress <= _PERCENTAGE_MAX:
             raise ValueError(
                 f"progress debe estar en [{_PERCENTAGE_MIN}, "
                 f"{_PERCENTAGE_MAX}]; recibido {self.progress}"
             )
         if self.started_sim_ns is not None and self.started_sim_ns < 0:
-            raise ValueError(
-                f"started_sim_ns debe ser >= 0; recibido {self.started_sim_ns}"
-            )
+            raise ValueError(f"started_sim_ns debe ser >= 0; recibido {self.started_sim_ns}")
 
 
 # ---------------------------------------------------------------------------
@@ -437,17 +409,11 @@ class VehicleState:
 
     def __post_init__(self) -> None:
         if self.stamp_sim_ns < 0:
-            raise ValueError(
-                f"stamp_sim_ns debe ser >= 0; recibido {self.stamp_sim_ns}"
-            )
+            raise ValueError(f"stamp_sim_ns debe ser >= 0; recibido {self.stamp_sim_ns}")
         if self.stamp_wall_ns < 0:
-            raise ValueError(
-                f"stamp_wall_ns debe ser >= 0; recibido {self.stamp_wall_ns}"
-            )
+            raise ValueError(f"stamp_wall_ns debe ser >= 0; recibido {self.stamp_wall_ns}")
         if self.schema_version < 1:
-            raise ValueError(
-                f"schema_version debe ser >= 1; recibido {self.schema_version}"
-            )
+            raise ValueError(f"schema_version debe ser >= 1; recibido {self.schema_version}")
 
 
 __all__ = [

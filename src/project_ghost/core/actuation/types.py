@@ -34,21 +34,13 @@ def _validate_taxonomy(value: str, *, field: str) -> None:
     en ADR-0021.
     """
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field} must be str; got {type(value).__name__}"
-        )
+        raise TypeError(f"{field} must be str; got {type(value).__name__}")
     if not value:
         raise ValueError(f"{field} cannot be empty")
     if len(value) > _TAXONOMY_MAX_LEN:
-        raise ValueError(
-            f"{field} must be <= {_TAXONOMY_MAX_LEN} chars; got "
-            f"len={len(value)}"
-        )
+        raise ValueError(f"{field} must be <= {_TAXONOMY_MAX_LEN} chars; got len={len(value)}")
     if not _TAXONOMY_PATTERN.match(value):
-        raise ValueError(
-            f"{field} must match {_TAXONOMY_PATTERN.pattern!r}; got "
-            f"{value!r}"
-        )
+        raise ValueError(f"{field} must match {_TAXONOMY_PATTERN.pattern!r}; got {value!r}")
 
 
 @dataclass(frozen=True)
@@ -83,19 +75,12 @@ class ActuationDirective:
 
     def __post_init__(self) -> None:
         if not isinstance(self.decision, Decision):
-            raise TypeError(
-                f"decision must be Decision; got "
-                f"{type(self.decision).__name__}"
-            )
+            raise TypeError(f"decision must be Decision; got {type(self.decision).__name__}")
         if self.directive_stamp_sim_ns < 0:
             raise ValueError(
-                f"directive_stamp_sim_ns must be >= 0; got "
-                f"{self.directive_stamp_sim_ns}"
+                f"directive_stamp_sim_ns must be >= 0; got {self.directive_stamp_sim_ns}"
             )
-        if (
-            self.directive_stamp_sim_ns
-            != self.decision.decision_stamp_sim_ns
-        ):
+        if self.directive_stamp_sim_ns != self.decision.decision_stamp_sim_ns:
             raise ValueError(
                 f"directive_stamp_sim_ns ({self.directive_stamp_sim_ns}) "
                 f"must equal decision.decision_stamp_sim_ns "
@@ -114,8 +99,7 @@ class ActuationDirective:
         _validate_taxonomy(self.reason, field="reason")
         if self.schema_version != ACTION_PROTOCOL_VERSION:
             raise ValueError(
-                f"schema_version must be {ACTION_PROTOCOL_VERSION}; "
-                f"got {self.schema_version}"
+                f"schema_version must be {ACTION_PROTOCOL_VERSION}; got {self.schema_version}"
             )
 
 

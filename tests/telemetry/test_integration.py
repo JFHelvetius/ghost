@@ -52,9 +52,7 @@ def _wire_bus_to_sink(bus: EventBus, sink: TelemetrySink) -> None:
 
     The EventBus rewrites `sequence` on publish; we use the sealed event's
     stamp_sim_ns as the log time."""
-    bus.subscribe_all(
-        lambda ev: sink.publish(CHANNEL_EVENTS, ev.stamp_sim_ns, ev)
-    )
+    bus.subscribe_all(lambda ev: sink.publish(CHANNEL_EVENTS, ev.stamp_sim_ns, ev))
 
 
 # ---------------------------------------------------------------------------
@@ -149,9 +147,7 @@ def test_event_bus_to_mcap_replay_equals_original_published_sequence(
     with MCAPFileSink(p) as sink:
         _wire_bus_to_sink(bus, sink)
         for i in range(5):
-            originals.append(
-                bus.publish(_ev(type_=EventType.WAYPOINT_REACHED, source=f"wp.{i}"))
-            )
+            originals.append(bus.publish(_ev(type_=EventType.WAYPOINT_REACHED, source=f"wp.{i}")))
 
     with MCAPReplayReader(p) as reader:
         decoded = [decode_message(m) for m in reader.iter_messages()]

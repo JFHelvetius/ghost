@@ -227,8 +227,7 @@ def test_smoke_baud_and_erur_partition_the_cycle_space(
     summary = run_closed_loop_smoke(out, n_cycles=10)
     total = summary.baud_report.cycles_total
     fired = (
-        summary.baud_report.cycles_precondition_held
-        + summary.erur_report.cycles_precondition_held
+        summary.baud_report.cycles_precondition_held + summary.erur_report.cycles_precondition_held
     )
     assert fired == total
     assert summary.baud_report.holds
@@ -311,9 +310,7 @@ def test_smoke_mcap_messages_decode_to_expected_types(
             if msg.channel not in expected_type_per_channel:
                 continue
             decoded = decode_message(msg)
-            assert isinstance(
-                decoded, expected_type_per_channel[msg.channel]
-            )
+            assert isinstance(decoded, expected_type_per_channel[msg.channel])
 
 
 def test_smoke_per_channel_log_times_are_monotonic(tmp_path: Path) -> None:
@@ -327,8 +324,7 @@ def test_smoke_per_channel_log_times_are_monotonic(tmp_path: Path) -> None:
             prev = last_seen.get(msg.channel)
             if prev is not None:
                 assert msg.log_time_sim_ns >= prev, (
-                    f"non-monotonic log_time on {msg.channel}: "
-                    f"{prev} -> {msg.log_time_sim_ns}"
+                    f"non-monotonic log_time on {msg.channel}: {prev} -> {msg.log_time_sim_ns}"
                 )
             last_seen[msg.channel] = msg.log_time_sim_ns
 

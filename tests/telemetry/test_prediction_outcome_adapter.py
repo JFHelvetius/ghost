@@ -74,9 +74,7 @@ def test_adapter_publishes_to_default_channel() -> None:
     sink = InMemorySink()
     adapter = PredictionOutcomeToTelemetryAdapter(sink)
     pred = _prediction(stamp=1000, horizon=500)
-    outcome = compute_divergence(
-        pred, _pose(x=0.05), pred.predicted_observation_stamp_sim_ns
-    )
+    outcome = compute_divergence(pred, _pose(x=0.05), pred.predicted_observation_stamp_sim_ns)
     adapter.publish(outcome)
     assert len(sink.captured) == 1
     assert sink.captured[0].channel == CHANNEL_PREDICTION_OUTCOMES
@@ -96,22 +94,16 @@ def test_adapter_publishes_outcome_as_message() -> None:
     sink = InMemorySink()
     adapter = PredictionOutcomeToTelemetryAdapter(sink)
     pred = _prediction()
-    outcome = compute_divergence(
-        pred, _pose(), pred.predicted_observation_stamp_sim_ns
-    )
+    outcome = compute_divergence(pred, _pose(), pred.predicted_observation_stamp_sim_ns)
     adapter.publish(outcome)
     assert sink.captured[0].message is outcome
 
 
 def test_adapter_accepts_custom_channel() -> None:
     sink = InMemorySink()
-    adapter = PredictionOutcomeToTelemetryAdapter(
-        sink, channel="/custom/outcomes"
-    )
+    adapter = PredictionOutcomeToTelemetryAdapter(sink, channel="/custom/outcomes")
     pred = _prediction()
-    outcome = compute_divergence(
-        pred, _pose(), pred.predicted_observation_stamp_sim_ns
-    )
+    outcome = compute_divergence(pred, _pose(), pred.predicted_observation_stamp_sim_ns)
     adapter.publish(outcome)
     assert sink.captured[0].channel == "/custom/outcomes"
     assert adapter.channel == "/custom/outcomes"
@@ -131,9 +123,7 @@ def test_adapter_rejects_channel_without_leading_slash() -> None:
 def test_mcap_round_trip_single_outcome(tmp_path: Path) -> None:
     p = tmp_path / "outcome.mcap"
     pred = _prediction(stamp=1000, horizon=500)
-    original = compute_divergence(
-        pred, _pose(x=0.05), pred.predicted_observation_stamp_sim_ns
-    )
+    original = compute_divergence(pred, _pose(x=0.05), pred.predicted_observation_stamp_sim_ns)
 
     with MCAPFileSink(p) as sink:
         PredictionOutcomeToTelemetryAdapter(sink).publish(original)
@@ -147,19 +137,10 @@ def test_mcap_round_trip_single_outcome(tmp_path: Path) -> None:
     decoded = decode_message(msgs[0])
     assert isinstance(decoded, PredictionOutcome)
     assert decoded.verdict == original.verdict
-    assert (
-        decoded.actual_belief_stamp_sim_ns
-        == original.actual_belief_stamp_sim_ns
-    )
-    assert decoded.position_error_norm_m == pytest.approx(
-        original.position_error_norm_m
-    )
-    assert decoded.position_mahalanobis_max == pytest.approx(
-        original.position_mahalanobis_max
-    )
-    np.testing.assert_array_equal(
-        decoded.position_error_enu_m, original.position_error_enu_m
-    )
+    assert decoded.actual_belief_stamp_sim_ns == original.actual_belief_stamp_sim_ns
+    assert decoded.position_error_norm_m == pytest.approx(original.position_error_norm_m)
+    assert decoded.position_mahalanobis_max == pytest.approx(original.position_mahalanobis_max)
+    np.testing.assert_array_equal(decoded.position_error_enu_m, original.position_error_enu_m)
 
 
 def test_mcap_round_trip_outcome_with_inf_mahalanobis(
@@ -179,9 +160,7 @@ def test_mcap_round_trip_outcome_with_inf_mahalanobis(
         associated_directive_hash=None,
         predictor_id="constant_velocity_v1",
     )
-    original = compute_divergence(
-        pred, _pose(x=1.0), pred.predicted_observation_stamp_sim_ns
-    )
+    original = compute_divergence(pred, _pose(x=1.0), pred.predicted_observation_stamp_sim_ns)
     assert original.position_mahalanobis_max == float("inf")
     assert original.verdict == DivergenceVerdict.BEYOND_5_STD
 
@@ -202,9 +181,7 @@ def test_mcap_capture_is_byte_deterministic(tmp_path: Path) -> None:
 
     def write(path: Path) -> None:
         pred = _prediction(stamp=1000, horizon=500)
-        outcome = compute_divergence(
-            pred, _pose(x=0.05), pred.predicted_observation_stamp_sim_ns
-        )
+        outcome = compute_divergence(pred, _pose(x=0.05), pred.predicted_observation_stamp_sim_ns)
         with MCAPFileSink(path) as sink:
             PredictionOutcomeToTelemetryAdapter(sink).publish(outcome)
 
@@ -229,9 +206,7 @@ def test_pipeline_predict_observe_divergence_smoke(
     pred = _prediction(stamp=1000, horizon=500_000_000)
     # 2. Observación llega en el stamp predicho
     actual = _pose(x=0.03)  # 0.15 std x 1 -> within_1_std
-    outcome = compute_divergence(
-        pred, actual, pred.predicted_observation_stamp_sim_ns
-    )
+    outcome = compute_divergence(pred, actual, pred.predicted_observation_stamp_sim_ns)
     # 3. Persistir
     with MCAPFileSink(p) as sink:
         PredictionOutcomeToTelemetryAdapter(sink).publish(outcome)

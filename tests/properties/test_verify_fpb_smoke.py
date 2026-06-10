@@ -106,6 +106,7 @@ def test_fire_fraction_matches_baud_cycles(smoke_mcap: Path) -> None:
     ``cycles_precondition_held`` exactly — both re-evaluate the same
     precondition. Cross-property consistency witness."""
     from project_ghost.properties import verify_baud
+
     fpb = verify_fpb(smoke_mcap)
     baud = verify_baud(smoke_mcap)
     assert fpb.cycles_precondition_held == baud.cycles_precondition_held

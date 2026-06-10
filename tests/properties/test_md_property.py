@@ -81,11 +81,13 @@ def _build_raw_at_level(
         start_stamp_sim_ns=_T0_NS,
         covariance_diag=_COVARIANCE_FOR_LEVEL[level],
     )
-    state = oracle.fuse(FusionInput(
-        sensor_samples=(),
-        prior_belief_stamp_sim_ns=None,
-        target_stamp_sim_ns=_T0_NS,
-    )).belief
+    state = oracle.fuse(
+        FusionInput(
+            sensor_samples=(),
+            prior_belief_stamp_sim_ns=None,
+            target_stamp_sim_ns=_T0_NS,
+        )
+    ).belief
     thresholds = AssessmentThresholds(
         position_known_std_m=0.05,
         position_unknown_std_m=0.5,
@@ -135,20 +137,30 @@ def _calibration_histories(draw: st.DrawFn) -> CalibrationHistory:
     if total == 0:
         return CalibrationHistory(
             outcomes_considered=0,
-            count_within_1_std=0, count_beyond_1_std=0,
-            count_beyond_3_std=0, count_beyond_5_std=0,
+            count_within_1_std=0,
+            count_beyond_1_std=0,
+            count_beyond_3_std=0,
+            count_beyond_5_std=0,
             worst_position_mahalanobis=0.0,
             worst_orientation_mahalanobis=0.0,
             most_recent_observed_stamp_sim_ns=None,
         )
-    worst_pos = draw(st.floats(
-        min_value=0.0, max_value=_MAX_MAHALANOBIS,
-        allow_nan=False, allow_infinity=False,
-    ))
-    worst_ori = draw(st.floats(
-        min_value=0.0, max_value=_MAX_MAHALANOBIS,
-        allow_nan=False, allow_infinity=False,
-    ))
+    worst_pos = draw(
+        st.floats(
+            min_value=0.0,
+            max_value=_MAX_MAHALANOBIS,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    worst_ori = draw(
+        st.floats(
+            min_value=0.0,
+            max_value=_MAX_MAHALANOBIS,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
     stamp = draw(st.integers(min_value=0, max_value=10**15))
     return CalibrationHistory(
         outcomes_considered=total,
@@ -202,8 +214,10 @@ def _history(
     if total == 0:
         return CalibrationHistory(
             outcomes_considered=0,
-            count_within_1_std=0, count_beyond_1_std=0,
-            count_beyond_3_std=0, count_beyond_5_std=0,
+            count_within_1_std=0,
+            count_beyond_1_std=0,
+            count_beyond_3_std=0,
+            count_beyond_5_std=0,
             worst_position_mahalanobis=0.0,
             worst_orientation_mahalanobis=0.0,
             most_recent_observed_stamp_sim_ns=None,
@@ -250,7 +264,8 @@ def test_md_v1_holds_across_all_raw_levels(
 
     mcap_path = tmp_path_factory.mktemp("md_property") / "synthetic.mcap"
     _run_single_cycle_calibration_only(
-        raw, history,
+        raw,
+        history,
         min_outcomes=min_outcomes,
         downgrade_threshold=downgrade_threshold,
         mcap_path=mcap_path,
@@ -287,8 +302,10 @@ def test_adversarial_passthrough_at_all_raw_levels_holds(
     raw = raws_by_level[raw_level]
     mcap_path = tmp_path / f"passthrough_{raw_level.value}.mcap"
     _run_single_cycle_calibration_only(
-        raw, _history(),
-        min_outcomes=4, downgrade_threshold=2,
+        raw,
+        _history(),
+        min_outcomes=4,
+        downgrade_threshold=2,
         mcap_path=mcap_path,
     )
     report = verify_md(mcap_path)
@@ -315,8 +332,10 @@ def test_adversarial_downgrade_storm_at_all_raw_levels_holds(
     history = _history(b5=10, worst_pos=42.0)
     mcap_path = tmp_path / f"downgrade_{raw_level.value}.mcap"
     _run_single_cycle_calibration_only(
-        raw, history,
-        min_outcomes=4, downgrade_threshold=2,
+        raw,
+        history,
+        min_outcomes=4,
+        downgrade_threshold=2,
         mcap_path=mcap_path,
     )
     report = verify_md(mcap_path)

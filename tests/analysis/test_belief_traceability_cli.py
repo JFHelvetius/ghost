@@ -54,9 +54,7 @@ def _make_truth(stamp_sim_ns: int) -> VehicleState:
     )
     return vehicle_state_from_ground_truth(
         gt=gt,
-        sensors_health=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors_health=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -79,11 +77,7 @@ def _make_belief(
     *,
     position_offset: np.ndarray | None = None,
 ) -> VehicleState:
-    pos = (
-        position_offset.copy()
-        if position_offset is not None
-        else np.zeros(3, dtype=np.float64)
-    )
+    pos = position_offset.copy() if position_offset is not None else np.zeros(3, dtype=np.float64)
     pose = Pose(position_enu_m=pos, orientation_q=_Q_IDENTITY.copy())
     twist_world = Twist(
         linear_mps=np.zeros(3, dtype=np.float64),
@@ -110,9 +104,7 @@ def _make_belief(
         stamp_sim_ns=stamp_sim_ns,
         stamp_wall_ns=stamp_sim_ns,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -168,9 +160,7 @@ def test_cli_analyze_belief_writes_report_to_output(tmp_path: Path) -> None:
     assert rc == 0
     assert output.exists()
     data = json.loads(output.read_text(encoding="utf-8"))
-    assert (
-        data["schema_version"] == BELIEF_TRACEABILITY_REPORT_SCHEMA_VERSION
-    )
+    assert data["schema_version"] == BELIEF_TRACEABILITY_REPORT_SCHEMA_VERSION
     assert data["report"]["total_samples"] == 3
     assert data["report"]["samples_with_covariance"] == 3
 
@@ -191,9 +181,7 @@ def test_cli_analyze_belief_writes_to_stdout_when_no_output(
     assert rc == 0
     captured = capsys.readouterr()
     parsed = json.loads(captured.out)
-    assert (
-        parsed["schema_version"] == BELIEF_TRACEABILITY_REPORT_SCHEMA_VERSION
-    )
+    assert parsed["schema_version"] == BELIEF_TRACEABILITY_REPORT_SCHEMA_VERSION
 
 
 def test_cli_analyze_belief_byte_identical_outputs(tmp_path: Path) -> None:

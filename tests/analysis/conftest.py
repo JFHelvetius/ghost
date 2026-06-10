@@ -86,9 +86,7 @@ def make_imu_sample(
 
 
 def make_actuator_command() -> DirectMotorCommand:
-    return DirectMotorCommand(
-        throttle=np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float64)
-    )
+    return DirectMotorCommand(throttle=np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float64))
 
 
 def make_vehicle_state(

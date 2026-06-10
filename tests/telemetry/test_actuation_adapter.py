@@ -163,10 +163,7 @@ def test_mcap_round_trip_single_kill_directive(tmp_path: Path) -> None:
     # Compare fields explicitly (np.ndarray prevents __eq__).
     assert decoded.decision.kind == original.decision.kind
     assert decoded.decision.reason == original.decision.reason
-    assert (
-        decoded.decision.decision_stamp_sim_ns
-        == original.decision.decision_stamp_sim_ns
-    )
+    assert decoded.decision.decision_stamp_sim_ns == original.decision.decision_stamp_sim_ns
     assert decoded.policy_id == original.policy_id
     assert decoded.reason == original.reason
     assert decoded.directive_stamp_sim_ns == original.directive_stamp_sim_ns
@@ -181,9 +178,7 @@ def test_mcap_round_trip_directive_with_none_command(tmp_path: Path) -> None:
     """Directive con actuator_command=None debe round-trip correctamente."""
     p = tmp_path / "none.mcap"
     policy = KillOnlyActuationPolicy()
-    d = _make_decision(
-        kind=DecisionKind.PROCEED, stamp=500, reason="overall_known"
-    )
+    d = _make_decision(kind=DecisionKind.PROCEED, stamp=500, reason="overall_known")
     original = policy.actuate(d)
     assert original.actuator_command is None
 
@@ -285,9 +280,7 @@ def _make_state(stamp: int, pos_var: float = 1e-4) -> VehicleState:
         stamp_sim_ns=stamp,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,

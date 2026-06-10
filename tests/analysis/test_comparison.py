@@ -236,9 +236,7 @@ def test_run_manifest_complex_json_safe_config_round_trip() -> None:
     }
     m = RunManifest(run_id="r", config_descriptor=cfg, inputs=(), outputs=())
     encoded = encode_run_manifest_to_bytes(m)
-    decoded = decode_run_manifest_from_json(
-        json.loads(encoded.decode("utf-8"))
-    )
+    decoded = decode_run_manifest_from_json(json.loads(encoded.decode("utf-8")))
     assert decoded.config_descriptor == cfg
 
 
@@ -252,9 +250,7 @@ def test_build_run_manifest_single_input(tmp_path: Path) -> None:
     p.write_bytes(b"hello")
     expected = hashlib.sha256(b"hello").hexdigest()
 
-    m = build_run_manifest(
-        run_id="t", config_descriptor={}, inputs=[(p, "data")], outputs=[]
-    )
+    m = build_run_manifest(run_id="t", config_descriptor={}, inputs=[(p, "data")], outputs=[])
 
     assert len(m.inputs) == 1
     assert m.inputs[0].sha256 == expected
@@ -289,9 +285,7 @@ def test_build_run_manifest_empty_file(tmp_path: Path) -> None:
     p.write_bytes(b"")
     expected = hashlib.sha256(b"").hexdigest()
 
-    m = build_run_manifest(
-        run_id="t", config_descriptor={}, inputs=[(p, "data")], outputs=[]
-    )
+    m = build_run_manifest(run_id="t", config_descriptor={}, inputs=[(p, "data")], outputs=[])
     assert m.inputs[0].sha256 == expected
 
 
@@ -302,9 +296,7 @@ def test_build_run_manifest_large_file_multi_chunk(tmp_path: Path) -> None:
     p.write_bytes(content)
     expected = hashlib.sha256(content).hexdigest()
 
-    m = build_run_manifest(
-        run_id="t", config_descriptor={}, inputs=[(p, "data")], outputs=[]
-    )
+    m = build_run_manifest(run_id="t", config_descriptor={}, inputs=[(p, "data")], outputs=[])
     assert m.inputs[0].sha256 == expected
 
 
@@ -675,17 +667,13 @@ def test_build_comparative_report_n3() -> None:
 
 def test_build_comparative_report_baseline_self_delta_is_zero_int() -> None:
     s = _summary_with(total_samples=7)
-    report = build_comparative_report(
-        [LabeledSummary(label="A", summary=s, manifest=None)]
-    )
+    report = build_comparative_report([LabeledSummary(label="A", summary=s, manifest=None)])
     assert report.metrics["total_samples"].deltas["A"] == 0
 
 
 def test_build_comparative_report_baseline_self_delta_is_zero_float() -> None:
     s = _summary_with(position_error_max_m=1.25)
-    report = build_comparative_report(
-        [LabeledSummary(label="A", summary=s, manifest=None)]
-    )
+    report = build_comparative_report([LabeledSummary(label="A", summary=s, manifest=None)])
     assert report.metrics["position_error_max_m"].deltas["A"] == 0.0
 
 
@@ -755,9 +743,7 @@ def test_build_comparative_report_covers_all_20_metric_names() -> None:
     """Verifica que el reporte cubre exactamente los 20 campos numéricos
     de BeliefConsistencySummary."""
     s = _empty_summary()
-    report = build_comparative_report(
-        [LabeledSummary(label="A", summary=s, manifest=None)]
-    )
+    report = build_comparative_report([LabeledSummary(label="A", summary=s, manifest=None)])
     expected = {
         "covariance_condition_number_max",
         "covariance_condition_number_mean",
@@ -789,9 +775,7 @@ def test_build_comparative_report_passes_through_manifests(
 ) -> None:
     p = tmp_path / "f"
     p.write_bytes(b"x")
-    m = build_run_manifest(
-        run_id="A", config_descriptor={}, inputs=[(p, "x")], outputs=[]
-    )
+    m = build_run_manifest(run_id="A", config_descriptor={}, inputs=[(p, "x")], outputs=[])
     report = build_comparative_report(
         [
             LabeledSummary(label="A", summary=_empty_summary(), manifest=m),
@@ -850,19 +834,11 @@ def test_encode_comparative_report_envelope_structure() -> None:
     report = build_comparative_report(
         [LabeledSummary(label="A", summary=_empty_summary(), manifest=None)]
     )
-    parsed = json.loads(
-        encode_comparative_report_to_bytes(report).decode("utf-8")
-    )
-    assert (
-        parsed["schema_version"]
-        == BELIEF_COMPARISON_REPORT_SCHEMA_VERSION
-    )
+    parsed = json.loads(encode_comparative_report_to_bytes(report).decode("utf-8"))
+    assert parsed["schema_version"] == BELIEF_COMPARISON_REPORT_SCHEMA_VERSION
     assert "comparison" in parsed
     assert parsed["comparison"]["baseline_label"] == "A"
-    assert (
-        parsed["comparison"]["analysis_version"]
-        == BELIEF_COMPARISON_ANALYSIS_VERSION
-    )
+    assert parsed["comparison"]["analysis_version"] == BELIEF_COMPARISON_ANALYSIS_VERSION
 
 
 # ---------------------------------------------------------------------------
@@ -882,12 +858,8 @@ def test_encode_run_manifest_byte_identical() -> None:
 
 def test_encode_comparative_report_byte_identical() -> None:
     s = _summary_with(total_samples=10)
-    report = build_comparative_report(
-        [LabeledSummary(label="A", summary=s, manifest=None)]
-    )
-    assert encode_comparative_report_to_bytes(
-        report
-    ) == encode_comparative_report_to_bytes(report)
+    report = build_comparative_report([LabeledSummary(label="A", summary=s, manifest=None)])
+    assert encode_comparative_report_to_bytes(report) == encode_comparative_report_to_bytes(report)
 
 
 def test_build_comparative_report_field_equal_across_calls() -> None:
@@ -903,15 +875,12 @@ def test_build_comparative_report_field_equal_across_calls() -> None:
 def test_sha256_stable_across_repeated_encodings() -> None:
     report = build_comparative_report(
         [
-            LabeledSummary(
-                label=lbl, summary=_summary_with(total_samples=i), manifest=None
-            )
+            LabeledSummary(label=lbl, summary=_summary_with(total_samples=i), manifest=None)
             for i, lbl in enumerate(["A", "B", "C"])
         ]
     )
     hashes = {
-        hashlib.sha256(encode_comparative_report_to_bytes(report)).hexdigest()
-        for _ in range(5)
+        hashlib.sha256(encode_comparative_report_to_bytes(report)).hexdigest() for _ in range(5)
     }
     assert len(hashes) == 1
 
@@ -946,9 +915,7 @@ def test_comparative_report_round_trip_no_manifests() -> None:
         ]
     )
     decoded = decode_comparative_report_from_json(
-        json.loads(
-            encode_comparative_report_to_bytes(original).decode("utf-8")
-        )
+        json.loads(encode_comparative_report_to_bytes(original).decode("utf-8"))
     )
     assert decoded == original
 
@@ -963,22 +930,16 @@ def test_comparative_report_round_trip_with_manifests(tmp_path: Path) -> None:
         outputs=[],
     )
     s = _summary_with(total_samples=10)
-    original = build_comparative_report(
-        [LabeledSummary(label="A", summary=s, manifest=m)]
-    )
+    original = build_comparative_report([LabeledSummary(label="A", summary=s, manifest=m)])
     decoded = decode_comparative_report_from_json(
-        json.loads(
-            encode_comparative_report_to_bytes(original).decode("utf-8")
-        )
+        json.loads(encode_comparative_report_to_bytes(original).decode("utf-8"))
     )
     assert decoded == original
 
 
 def test_decode_consistency_summary_envelope() -> None:
     summary = _summary_with(total_samples=42, position_error_max_m=0.7)
-    data = json.loads(
-        encode_consistency_summary_to_bytes(summary).decode("utf-8")
-    )
+    data = json.loads(encode_consistency_summary_to_bytes(summary).decode("utf-8"))
     decoded = decode_consistency_summary_from_json(data)
     assert decoded == summary
 

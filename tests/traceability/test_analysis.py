@@ -80,9 +80,7 @@ def test_single_preceding_event_captured(tmp_path: Path) -> None:
     mcap = tmp_path / "x.mcap"
     with MCAPFileSink(mcap) as sink:
         sink.publish(CHANNEL_EVENTS, 100, make_event(sequence=0, type_=EventType.ARMED))
-        sink.publish(
-            CHANNEL_EVENTS, 200, make_event(sequence=1, type_=EventType.TAKEOFF)
-        )
+        sink.publish(CHANNEL_EVENTS, 200, make_event(sequence=1, type_=EventType.TAKEOFF))
 
     with MCAPReplayReader(mcap) as reader:
         trace = build_behavior_trace(reader=reader, event_id=1, window_ns=_5_SECONDS_NS)
@@ -224,9 +222,7 @@ def test_preceding_lists_ordered_by_log_time_ascending(tmp_path: Path) -> None:
         # Mixed channels interleaved
         sink.publish(CHANNEL_EVENTS, 100, make_event(sequence=0, type_=EventType.ARMED))
         sink.publish(channel_for_sensor("imu0"), 150, make_imu_sample(seq=0))
-        sink.publish(
-            CHANNEL_EVENTS, 200, make_event(sequence=1, type_=EventType.TAKEOFF)
-        )
+        sink.publish(CHANNEL_EVENTS, 200, make_event(sequence=1, type_=EventType.TAKEOFF))
         sink.publish(channel_for_sensor("imu0"), 250, make_imu_sample(seq=1))
         write_actuator_channel(sink, 280)
         sink.publish(CHANNEL_EVENTS, 300, make_event(sequence=2, type_=EventType.LANDED))
@@ -259,9 +255,7 @@ def test_same_inputs_produce_same_trace(tmp_path: Path) -> None:
     traces = []
     for _ in range(3):
         with MCAPReplayReader(mcap) as reader:
-            traces.append(
-                build_behavior_trace(reader=reader, event_id=1, window_ns=_5_SECONDS_NS)
-            )
+            traces.append(build_behavior_trace(reader=reader, event_id=1, window_ns=_5_SECONDS_NS))
 
     assert traces[0] == traces[1] == traces[2]
 
@@ -295,9 +289,7 @@ def test_large_replay_completes_correctly(tmp_path: Path) -> None:
         )
 
     with MCAPReplayReader(mcap) as reader:
-        trace = build_behavior_trace(
-            reader=reader, event_id=999, window_ns=10 * 1_000_000_000
-        )
+        trace = build_behavior_trace(reader=reader, event_id=999, window_ns=10 * 1_000_000_000)
 
     assert trace.event_type == "safety_violation"
     assert len(trace.preceding_events) == 250

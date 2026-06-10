@@ -389,9 +389,7 @@ def test_camera_intrinsics_rejects_nonpositive_focal() -> None:
 def test_rgb_image_payload_valid() -> None:
     intr = _intrinsics(w=4, h=3)
     img = np.zeros((3, 4, 3), dtype=np.uint8)
-    payload = RGBImagePayload(
-        image=img, intrinsics=intr, exposure_ns=1_000_000, encoding="rgb8"
-    )
+    payload = RGBImagePayload(image=img, intrinsics=intr, exposure_ns=1_000_000, encoding="rgb8")
     assert payload.image.shape == (3, 4, 3)
 
 
@@ -442,9 +440,7 @@ def test_rgb_image_payload_rejects_negative_exposure() -> None:
 def test_rgb_image_payload_image_is_sealed() -> None:
     intr = _intrinsics()
     img = np.zeros((3, 4, 3), dtype=np.uint8)
-    payload = RGBImagePayload(
-        image=img, intrinsics=intr, exposure_ns=0, encoding="rgb8"
-    )
+    payload = RGBImagePayload(image=img, intrinsics=intr, exposure_ns=0, encoding="rgb8")
     assert not payload.image.flags.writeable
 
 
@@ -456,9 +452,7 @@ def test_rgb_image_payload_image_is_sealed() -> None:
 def test_depth_image_payload_valid() -> None:
     intr = _intrinsics(w=4, h=3)
     depth = np.full((3, 4), 1.5, dtype=np.float32)
-    payload = DepthImagePayload(
-        depth_m=depth, intrinsics=intr, min_range_m=0.1, max_range_m=10.0
-    )
+    payload = DepthImagePayload(depth_m=depth, intrinsics=intr, min_range_m=0.1, max_range_m=10.0)
     assert payload.min_range_m == 0.1
 
 
@@ -466,9 +460,7 @@ def test_depth_image_payload_allows_nan() -> None:
     """NaN explícitamente permitido per sensors.md §3.3."""
     intr = _intrinsics(w=2, h=2)
     depth = np.array([[1.0, np.nan], [np.nan, 2.0]], dtype=np.float32)
-    payload = DepthImagePayload(
-        depth_m=depth, intrinsics=intr, min_range_m=0.1, max_range_m=10.0
-    )
+    payload = DepthImagePayload(depth_m=depth, intrinsics=intr, min_range_m=0.1, max_range_m=10.0)
     assert np.isnan(payload.depth_m).sum() == 2
 
 
@@ -508,9 +500,7 @@ def test_depth_image_payload_rejects_max_less_than_min() -> None:
 def test_depth_image_payload_is_sealed() -> None:
     intr = _intrinsics()
     depth = np.zeros((3, 4), dtype=np.float32)
-    payload = DepthImagePayload(
-        depth_m=depth, intrinsics=intr, min_range_m=0.1, max_range_m=10.0
-    )
+    payload = DepthImagePayload(depth_m=depth, intrinsics=intr, min_range_m=0.1, max_range_m=10.0)
     assert not payload.depth_m.flags.writeable
 
 
@@ -601,7 +591,9 @@ def test_altimeter_payload_valid() -> None:
 def test_altimeter_payload_rejects_invalid_reference() -> None:
     with pytest.raises(ValueError, match="reference"):
         AltimeterPayload(
-            altitude_m=0.0, reference="ELLIPSOIDAL", variance_m2=0.01  # type: ignore[arg-type]
+            altitude_m=0.0,
+            reference="ELLIPSOIDAL",  # type: ignore[arg-type]
+            variance_m2=0.01,
         )
 
 

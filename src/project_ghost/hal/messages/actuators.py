@@ -98,23 +98,15 @@ def _validate_array(
     require_finite: bool = True,
 ) -> None:
     if not isinstance(arr, np.ndarray):
-        raise TypeError(
-            f"{name} debe ser np.ndarray; recibido {type(arr).__name__}"
-        )
+        raise TypeError(f"{name} debe ser np.ndarray; recibido {type(arr).__name__}")
     if shape is not None and arr.shape != shape:
-        raise TypeError(
-            f"{name} debe tener shape {shape}; recibido {arr.shape}"
-        )
+        raise TypeError(f"{name} debe tener shape {shape}; recibido {arr.shape}")
     if ndim is not None and arr.ndim != ndim:
-        raise TypeError(
-            f"{name} debe tener ndim {ndim}; recibido {arr.ndim}"
-        )
+        raise TypeError(f"{name} debe tener ndim {ndim}; recibido {arr.ndim}")
     if dtype is not None:
         expected = np.dtype(dtype)
         if arr.dtype != expected:
-            raise TypeError(
-                f"{name} debe tener dtype {expected}; recibido {arr.dtype}"
-            )
+            raise TypeError(f"{name} debe tener dtype {expected}; recibido {arr.dtype}")
     if require_finite and not bool(np.all(np.isfinite(arr))):
         raise ValueError(f"{name} contiene NaN o Inf")
 
@@ -125,18 +117,14 @@ def _seal(arr: np.ndarray) -> None:
 
 def _check_thrust(value: float, *, name: str = "thrust_normalized") -> None:
     if not _THRUST_MIN <= value <= _THRUST_MAX:
-        raise ValueError(
-            f"{name} debe estar en [{_THRUST_MIN}, {_THRUST_MAX}]; recibido {value}"
-        )
+        raise ValueError(f"{name} debe estar en [{_THRUST_MIN}, {_THRUST_MAX}]; recibido {value}")
 
 
 def _check_stamp_and_schema(stamp_ns: int, schema_version: int) -> None:
     if stamp_ns < 0:
         raise ValueError(f"stamp_ns debe ser >= 0; recibido {stamp_ns}")
     if schema_version < 1:
-        raise ValueError(
-            f"schema_version debe ser >= 1; recibido {schema_version}"
-        )
+        raise ValueError(f"schema_version debe ser >= 1; recibido {schema_version}")
 
 
 # ---------------------------------------------------------------------------
@@ -185,12 +173,8 @@ class DirectMotorCommand:
     def __post_init__(self) -> None:
         _validate_array(self.throttle, name="throttle", ndim=1, dtype=np.float64)
         if self.throttle.shape[0] < 1:
-            raise ValueError(
-                f"throttle debe tener al menos un motor; shape={self.throttle.shape}"
-            )
-        if bool(np.any(self.throttle < _THRUST_MIN)) or bool(
-            np.any(self.throttle > _THRUST_MAX)
-        ):
+            raise ValueError(f"throttle debe tener al menos un motor; shape={self.throttle.shape}")
+        if bool(np.any(self.throttle < _THRUST_MIN)) or bool(np.any(self.throttle > _THRUST_MAX)):
             raise ValueError(
                 f"throttle fuera de [{_THRUST_MIN}, {_THRUST_MAX}]; "
                 f"min={float(self.throttle.min())}, max={float(self.throttle.max())}"
@@ -233,21 +217,16 @@ class AttitudeCommand:
     level: ActuatorLevel = field(default=ActuatorLevel.ATTITUDE, init=False)
 
     def __post_init__(self) -> None:
-        _validate_array(
-            self.q_target, name="q_target", shape=(_QUAT_LEN,), dtype=np.float64
-        )
+        _validate_array(self.q_target, name="q_target", shape=(_QUAT_LEN,), dtype=np.float64)
         # Norma unit (tolerancia loose para absorber ruido numérico).
         norm = float(np.linalg.norm(self.q_target))
         if abs(norm - 1.0) > _QUAT_NORM_TOLERANCE:
             raise ValueError(
-                f"q_target debe ser unit (tolerancia {_QUAT_NORM_TOLERANCE}); "
-                f"norm={norm}"
+                f"q_target debe ser unit (tolerancia {_QUAT_NORM_TOLERANCE}); norm={norm}"
             )
         _check_thrust(self.thrust_normalized)
         if self.yaw_rate_rps is not None and not np.isfinite(self.yaw_rate_rps):
-            raise ValueError(
-                f"yaw_rate_rps debe ser finito; recibido {self.yaw_rate_rps}"
-            )
+            raise ValueError(f"yaw_rate_rps debe ser finito; recibido {self.yaw_rate_rps}")
         _check_stamp_and_schema(self.stamp_ns, self.schema_version)
         _seal(self.q_target)
 
@@ -274,13 +253,9 @@ class VelocityCommand:
             dtype=np.float64,
         )
         if self.frame not in ("world", "body"):
-            raise ValueError(
-                f"frame debe ser 'world' o 'body'; recibido {self.frame!r}"
-            )
+            raise ValueError(f"frame debe ser 'world' o 'body'; recibido {self.frame!r}")
         if self.yaw_rad is not None and not np.isfinite(self.yaw_rad):
-            raise ValueError(
-                f"yaw_rad debe ser finito; recibido {self.yaw_rad}"
-            )
+            raise ValueError(f"yaw_rad debe ser finito; recibido {self.yaw_rad}")
         _check_stamp_and_schema(self.stamp_ns, self.schema_version)
         _seal(self.velocity_mps)
 
@@ -303,9 +278,7 @@ class PositionCommand:
             dtype=np.float64,
         )
         if self.yaw_rad is not None and not np.isfinite(self.yaw_rad):
-            raise ValueError(
-                f"yaw_rad debe ser finito; recibido {self.yaw_rad}"
-            )
+            raise ValueError(f"yaw_rad debe ser finito; recibido {self.yaw_rad}")
         _check_stamp_and_schema(self.stamp_ns, self.schema_version)
         _seal(self.position_enu_m)
 
@@ -343,9 +316,7 @@ class TrajectoryCommand:
                 f"muestras; recibido {n}"
             )
         if not bool(np.all(np.diff(self.sample_times_ns) > 0)):
-            raise ValueError(
-                "sample_times_ns debe ser estrictamente monotónico creciente"
-            )
+            raise ValueError("sample_times_ns debe ser estrictamente monotónico creciente")
         if bool(np.any(self.sample_times_ns < 0)):
             raise ValueError("sample_times_ns no puede tener valores negativos")
         _validate_array(
@@ -355,9 +326,7 @@ class TrajectoryCommand:
             dtype=np.float64,
         )
         if self.yaws_rad is not None:
-            _validate_array(
-                self.yaws_rad, name="yaws_rad", shape=(n,), dtype=np.float64
-            )
+            _validate_array(self.yaws_rad, name="yaws_rad", shape=(n,), dtype=np.float64)
             _seal(self.yaws_rad)
         _check_stamp_and_schema(self.stamp_ns, self.schema_version)
         _seal(self.sample_times_ns)
@@ -387,17 +356,12 @@ class CommandAck:
     def __post_init__(self) -> None:
         if self.accepted and self.reason is not None:
             raise ValueError(
-                f"CommandAck(accepted=True) no puede llevar reason; "
-                f"recibido {self.reason!r}"
+                f"CommandAck(accepted=True) no puede llevar reason; recibido {self.reason!r}"
             )
         if not self.accepted and self.reason is None:
-            raise ValueError(
-                "CommandAck(accepted=False) debe llevar reason"
-            )
+            raise ValueError("CommandAck(accepted=False) debe llevar reason")
         if self.applied_stamp_ns < 0:
-            raise ValueError(
-                f"applied_stamp_ns debe ser >= 0; recibido {self.applied_stamp_ns}"
-            )
+            raise ValueError(f"applied_stamp_ns debe ser >= 0; recibido {self.applied_stamp_ns}")
 
 
 # ---------------------------------------------------------------------------
@@ -439,9 +403,7 @@ class SafetyEnvelope:
                 f"altitude_min_m ({self.altitude_min_m})"
             )
         if self.command_timeout_ns <= 0:
-            raise ValueError(
-                f"command_timeout_ns debe ser > 0; recibido {self.command_timeout_ns}"
-            )
+            raise ValueError(f"command_timeout_ns debe ser > 0; recibido {self.command_timeout_ns}")
         if self.geofence_polygon is not None:
             if not isinstance(self.geofence_polygon, tuple):
                 raise TypeError(
@@ -483,9 +445,7 @@ class ActuatorSpec:
         seen: list[ActuatorLevel] = []
         for lvl in self.supported_levels:
             if lvl in seen:
-                raise ValueError(
-                    f"supported_levels tiene duplicado: {lvl!r}"
-                )
+                raise ValueError(f"supported_levels tiene duplicado: {lvl!r}")
             seen.append(lvl)
 
 

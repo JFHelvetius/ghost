@@ -103,9 +103,7 @@ def _make_state(
         stamp_sim_ns=stamp,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -163,9 +161,7 @@ def test_pose_std_accepts_positive_components() -> None:
 def test_pose_std_rejects_negative_position() -> None:
     with pytest.raises(ValueError, match="must be >= 0"):
         PoseStd(
-            position_std_enu_m=np.array(
-                [-0.1, 0.0, 0.0], dtype=np.float64
-            ),
+            position_std_enu_m=np.array([-0.1, 0.0, 0.0], dtype=np.float64),
             orientation_std_rad=np.zeros(3, dtype=np.float64),
         )
 
@@ -174,9 +170,7 @@ def test_pose_std_rejects_negative_orientation() -> None:
     with pytest.raises(ValueError, match="must be >= 0"):
         PoseStd(
             position_std_enu_m=np.zeros(3, dtype=np.float64),
-            orientation_std_rad=np.array(
-                [0.0, -0.1, 0.0], dtype=np.float64
-            ),
+            orientation_std_rad=np.array([0.0, -0.1, 0.0], dtype=np.float64),
         )
 
 
@@ -199,9 +193,7 @@ def test_pose_std_rejects_wrong_dtype() -> None:
 def test_pose_std_rejects_non_finite() -> None:
     with pytest.raises(ValueError, match="must be finite"):
         PoseStd(
-            position_std_enu_m=np.array(
-                [np.inf, 0.0, 0.0], dtype=np.float64
-            ),
+            position_std_enu_m=np.array([np.inf, 0.0, 0.0], dtype=np.float64),
             orientation_std_rad=np.zeros(3, dtype=np.float64),
         )
 
@@ -216,9 +208,7 @@ def test_pose_std_rejects_non_ndarray() -> None:
 
 def test_pose_std_arrays_are_read_only() -> None:
     s = _make_pose_std()
-    with pytest.raises(
-        ValueError, match=r"read-only|assignment destination"
-    ):
+    with pytest.raises(ValueError, match=r"read-only|assignment destination"):
         s.position_std_enu_m[0] = 1.0
 
 
@@ -243,9 +233,7 @@ def test_prediction_accepts_directive_hash() -> None:
 
 
 def test_prediction_rejects_negative_source_stamp() -> None:
-    with pytest.raises(
-        ValueError, match="source_belief_stamp_sim_ns must be >= 0"
-    ):
+    with pytest.raises(ValueError, match="source_belief_stamp_sim_ns must be >= 0"):
         BeliefForwardPrediction(
             source_belief_stamp_sim_ns=-1,
             predicted_observation_stamp_sim_ns=499,
@@ -316,9 +304,7 @@ def test_prediction_rejects_wrong_predicted_pose_type() -> None:
 
 
 def test_prediction_rejects_wrong_predicted_std_type() -> None:
-    with pytest.raises(
-        TypeError, match="predicted_pose_std must be PoseStd"
-    ):
+    with pytest.raises(TypeError, match="predicted_pose_std must be PoseStd"):
         BeliefForwardPrediction(
             source_belief_stamp_sim_ns=1000,
             predicted_observation_stamp_sim_ns=1500,
@@ -331,23 +317,17 @@ def test_prediction_rejects_wrong_predicted_std_type() -> None:
 
 
 def test_prediction_rejects_short_directive_hash() -> None:
-    with pytest.raises(
-        ValueError, match="associated_directive_hash must be 64 hex chars"
-    ):
+    with pytest.raises(ValueError, match="associated_directive_hash must be 64 hex chars"):
         _make_prediction(directive_hash="abc")
 
 
 def test_prediction_rejects_uppercase_directive_hash() -> None:
-    with pytest.raises(
-        ValueError, match="associated_directive_hash must be lowercase hex"
-    ):
+    with pytest.raises(ValueError, match="associated_directive_hash must be lowercase hex"):
         _make_prediction(directive_hash="A" * 64)
 
 
 def test_prediction_rejects_non_hex_directive_hash() -> None:
-    with pytest.raises(
-        ValueError, match="associated_directive_hash must be lowercase hex"
-    ):
+    with pytest.raises(ValueError, match="associated_directive_hash must be lowercase hex"):
         _make_prediction(directive_hash="g" * 64)
 
 
@@ -402,9 +382,7 @@ def test_null_sink_satisfies_protocol() -> None:
 
 
 def test_recording_sink_satisfies_protocol() -> None:
-    assert isinstance(
-        RecordingForwardPredictionSink(), ForwardPredictionSink
-    )
+    assert isinstance(RecordingForwardPredictionSink(), ForwardPredictionSink)
 
 
 # ---------------------------------------------------------------------------
@@ -446,19 +424,14 @@ def test_recording_sink_clear_empties() -> None:
 
 
 def test_constant_velocity_predictor_id() -> None:
-    assert (
-        ConstantVelocityForwardPredictor().predictor_id
-        == "constant_velocity_v1"
-    )
+    assert ConstantVelocityForwardPredictor().predictor_id == "constant_velocity_v1"
 
 
 def test_constant_velocity_predicts_stationary_from_zero_velocity() -> None:
     predictor = ConstantVelocityForwardPredictor()
     state = _make_state(stamp=1000, velocity=(0.0, 0.0, 0.0))
     p = predictor.predict(state, horizon_ns=1_000_000_000)
-    np.testing.assert_array_equal(
-        p.predicted_pose.position_enu_m, np.zeros(3, dtype=np.float64)
-    )
+    np.testing.assert_array_equal(p.predicted_pose.position_enu_m, np.zeros(3, dtype=np.float64))
 
 
 def test_constant_velocity_propagates_position_with_velocity() -> None:
@@ -531,9 +504,7 @@ def test_constant_velocity_falls_back_when_no_covariance() -> None:
 def test_constant_velocity_carries_directive_hash() -> None:
     predictor = ConstantVelocityForwardPredictor()
     state = _make_state(stamp=1000)
-    p = predictor.predict(
-        state, horizon_ns=500, directive_hash=_VALID_HASH
-    )
+    p = predictor.predict(state, horizon_ns=500, directive_hash=_VALID_HASH)
     assert p.associated_directive_hash == _VALID_HASH
 
 
@@ -586,7 +557,5 @@ def test_forward_predict_and_publish_forwards_directive_hash() -> None:
     predictor = ConstantVelocityForwardPredictor()
     sink = RecordingForwardPredictionSink()
     state = _make_state(stamp=1000)
-    p = forward_predict_and_publish(
-        predictor, state, 500, sink, directive_hash=_VALID_HASH
-    )
+    p = forward_predict_and_publish(predictor, state, 500, sink, directive_hash=_VALID_HASH)
     assert p.associated_directive_hash == _VALID_HASH

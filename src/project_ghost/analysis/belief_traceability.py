@@ -112,9 +112,7 @@ class BeliefTraceabilityReport:
 # ---------------------------------------------------------------------------
 
 
-def compute_position_error(
-    truth_pos: np.ndarray, belief_pos: np.ndarray
-) -> float:
+def compute_position_error(truth_pos: np.ndarray, belief_pos: np.ndarray) -> float:
     """Euclidean norm of ``belief_pos - truth_pos`` in meters.
 
     Both inputs must be shape ``(3,)``, dtype ``float64``. The function
@@ -125,9 +123,7 @@ def compute_position_error(
     return float(np.linalg.norm(belief_pos - truth_pos))
 
 
-def compute_orientation_error(
-    truth_q_wxyz: np.ndarray, belief_q_wxyz: np.ndarray
-) -> float:
+def compute_orientation_error(truth_q_wxyz: np.ndarray, belief_q_wxyz: np.ndarray) -> float:
     """Angle between two unit quaternions, in radians.
 
     Inputs are **Hamilton** ``[w, x, y, z]`` unit quaternions. The
@@ -147,17 +143,11 @@ def compute_orientation_error(
 
 def _validate_vec(arr: np.ndarray, *, name: str, expected_len: int) -> None:
     if not isinstance(arr, np.ndarray):
-        raise TypeError(
-            f"{name} debe ser np.ndarray; recibido {type(arr).__name__}"
-        )
+        raise TypeError(f"{name} debe ser np.ndarray; recibido {type(arr).__name__}")
     if arr.shape != (expected_len,):
-        raise TypeError(
-            f"{name} debe tener shape ({expected_len},); recibido {arr.shape}"
-        )
+        raise TypeError(f"{name} debe tener shape ({expected_len},); recibido {arr.shape}")
     if arr.dtype != np.float64:
-        raise TypeError(
-            f"{name} debe tener dtype float64; recibido {arr.dtype}"
-        )
+        raise TypeError(f"{name} debe tener dtype float64; recibido {arr.dtype}")
     if not bool(np.all(np.isfinite(arr))):
         raise ValueError(f"{name} contiene NaN o Inf")
 
@@ -257,12 +247,8 @@ def build_traceability_report(
             timestamp_ns=int(t_state.stamp_sim_ns),
             truth_position_xyz=_as_xyz_tuple(t_pos),
             belief_position_xyz=_as_xyz_tuple(b_pos),
-            truth_orientation_xyzw=_as_xyzw_tuple(
-                quat_hamilton_to_scipy(t_q_wxyz)
-            ),
-            belief_orientation_xyzw=_as_xyzw_tuple(
-                quat_hamilton_to_scipy(b_q_wxyz)
-            ),
+            truth_orientation_xyzw=_as_xyzw_tuple(quat_hamilton_to_scipy(t_q_wxyz)),
+            belief_orientation_xyzw=_as_xyzw_tuple(quat_hamilton_to_scipy(b_q_wxyz)),
             position_error_norm_m=pos_err,
             orientation_error_rad=ori_err,
             covariance_trace=cov_trace,
@@ -346,9 +332,7 @@ def encode_belief_report_to_bytes(
     return (serialized + "\n").encode("utf-8")
 
 
-def generate_belief_report(
-    report: BeliefTraceabilityReport, output_path: Path
-) -> None:
+def generate_belief_report(report: BeliefTraceabilityReport, output_path: Path) -> None:
     """Write ``report`` as a JSON file at ``output_path``.
 
     Overwrites if the file exists. Does not create parent directories

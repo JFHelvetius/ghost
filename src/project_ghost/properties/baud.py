@@ -59,12 +59,14 @@ _HEX_CHARS: Final[frozenset[str]] = frozenset("0123456789abcdef")
 # recognises as safe-for-non-proceed. See ADR-0031 §1.1 for the
 # justification of each entry. Extending this set requires an explicit
 # ADR amendment — never widen it from code without one.
-_S_BAUD_V1_SAFE_REASONS: Final[frozenset[str]] = frozenset({
-    # ADR-0029: identity attitude + bounded thrust under HOLD.
-    "attitude_hold_hold",
-    # ADR-0029: zero throttle DirectMotorCommand under ENGAGE_KILL.
-    "kill_zero_throttle",
-})
+_S_BAUD_V1_SAFE_REASONS: Final[frozenset[str]] = frozenset(
+    {
+        # ADR-0029: identity attitude + bounded thrust under HOLD.
+        "attitude_hold_hold",
+        # ADR-0029: zero throttle DirectMotorCommand under ENGAGE_KILL.
+        "kill_zero_throttle",
+    }
+)
 
 
 class BAUDViolationKind(StrEnum):
@@ -113,23 +115,13 @@ class BAUDViolation:
 
     def __post_init__(self) -> None:
         if self.cycle_stamp_sim_ns < 0:
-            raise ValueError(
-                f"cycle_stamp_sim_ns must be >= 0; got "
-                f"{self.cycle_stamp_sim_ns}"
-            )
+            raise ValueError(f"cycle_stamp_sim_ns must be >= 0; got {self.cycle_stamp_sim_ns}")
         if self.cycle_index < 0:
-            raise ValueError(
-                f"cycle_index must be >= 0; got {self.cycle_index}"
-            )
+            raise ValueError(f"cycle_index must be >= 0; got {self.cycle_index}")
         if not isinstance(self.kind, BAUDViolationKind):
-            raise TypeError(
-                f"kind must be BAUDViolationKind; got "
-                f"{type(self.kind).__name__}"
-            )
+            raise TypeError(f"kind must be BAUDViolationKind; got {type(self.kind).__name__}")
         if not isinstance(self.observed, str):
-            raise TypeError(
-                f"observed must be str; got {type(self.observed).__name__}"
-            )
+            raise TypeError(f"observed must be str; got {type(self.observed).__name__}")
         if self.precondition_outcomes_considered < 0:
             raise ValueError(
                 "precondition_outcomes_considered must be >= 0; got "
@@ -175,18 +167,11 @@ class BAUDVerificationReport:
                 f"chars; got {self.mcap_sha256!r}"
             )
         if self.min_outcomes < 0:
-            raise ValueError(
-                f"min_outcomes must be >= 0; got {self.min_outcomes}"
-            )
+            raise ValueError(f"min_outcomes must be >= 0; got {self.min_outcomes}")
         if self.downgrade_threshold < 1:
-            raise ValueError(
-                f"downgrade_threshold must be >= 1; got "
-                f"{self.downgrade_threshold}"
-            )
+            raise ValueError(f"downgrade_threshold must be >= 1; got {self.downgrade_threshold}")
         if self.cycles_total < 0:
-            raise ValueError(
-                f"cycles_total must be >= 0; got {self.cycles_total}"
-            )
+            raise ValueError(f"cycles_total must be >= 0; got {self.cycles_total}")
         if not 0 <= self.cycles_precondition_held <= self.cycles_total:
             raise ValueError(
                 "cycles_precondition_held must be in "
@@ -214,14 +199,10 @@ class BAUDVerificationReport:
                 "when cycles_precondition_held > 0"
             )
         if not isinstance(self.violations, tuple):
-            raise TypeError(
-                f"violations must be tuple; got "
-                f"{type(self.violations).__name__}"
-            )
+            raise TypeError(f"violations must be tuple; got {type(self.violations).__name__}")
         if self.property_version != BAUD_PROPERTY_VERSION:
             raise ValueError(
-                f"property_version must be {BAUD_PROPERTY_VERSION!r}; "
-                f"got {self.property_version!r}"
+                f"property_version must be {BAUD_PROPERTY_VERSION!r}; got {self.property_version!r}"
             )
 
     @property
@@ -265,10 +246,7 @@ def _precondition_holds(
     """
     h = c.calibration_history
     beyond_3_or_worse = h.count_beyond_3_std + h.count_beyond_5_std
-    return (
-        h.outcomes_considered >= min_outcomes
-        and beyond_3_or_worse >= downgrade_threshold
-    )
+    return h.outcomes_considered >= min_outcomes and beyond_3_or_worse >= downgrade_threshold
 
 
 def _check_postconditions(
@@ -299,25 +277,29 @@ def _check_postconditions(
 
     # Postcondition 1: adjusted level is not KNOWN.
     if c.adjusted_overall_level is SelfAssessmentLevel.KNOWN:
-        out.append(BAUDViolation(
-            kind=BAUDViolationKind.ADJUSTED_LEVEL_KNOWN,
-            observed=(
-                f"adjusted_overall_level={c.adjusted_overall_level.value!r} "
-                f"under policy {c.adjustment_policy_id!r}"
-            ),
-            **base_kwargs,
-        ))
+        out.append(
+            BAUDViolation(
+                kind=BAUDViolationKind.ADJUSTED_LEVEL_KNOWN,
+                observed=(
+                    f"adjusted_overall_level={c.adjusted_overall_level.value!r} "
+                    f"under policy {c.adjustment_policy_id!r}"
+                ),
+                **base_kwargs,
+            )
+        )
 
     # Postconditions 2 and 3 require the actuation record.
     if a is None:
-        out.append(BAUDViolation(
-            kind=BAUDViolationKind.MISSING_ACTUATION_RECORD,
-            observed=(
-                f"no ActuationDirective at stamp_sim_ns={stamp}; "
-                "cannot verify postconditions 2/3"
-            ),
-            **base_kwargs,
-        ))
+        out.append(
+            BAUDViolation(
+                kind=BAUDViolationKind.MISSING_ACTUATION_RECORD,
+                observed=(
+                    f"no ActuationDirective at stamp_sim_ns={stamp}; "
+                    "cannot verify postconditions 2/3"
+                ),
+                **base_kwargs,
+            )
+        )
         return out
 
     # Postcondition 2: decision kind is not PROCEED. If it IS PROCEED,
@@ -325,33 +307,31 @@ def _check_postconditions(
     # under the reference action emission contract) — skip 3 to avoid
     # double-reporting.
     if a.decision.kind is DecisionKind.PROCEED:
-        out.append(BAUDViolation(
-            kind=BAUDViolationKind.DECISION_KIND_PROCEED,
-            observed=(
-                f"decision.kind={a.decision.kind.value!r} "
-                f"reason={a.decision.reason!r}"
-            ),
-            **base_kwargs,
-        ))
+        out.append(
+            BAUDViolation(
+                kind=BAUDViolationKind.DECISION_KIND_PROCEED,
+                observed=(f"decision.kind={a.decision.kind.value!r} reason={a.decision.reason!r}"),
+                **base_kwargs,
+            )
+        )
         return out
 
     # Postcondition 3: if actuator_command is non-None, its reason must
     # be in the BAUD-v1 safe set (ADR-0031 §1.1). ``None`` is always
     # safe — no command, no harm.
-    if (
-        a.actuator_command is not None
-        and a.reason not in _S_BAUD_V1_SAFE_REASONS
-    ):
-        out.append(BAUDViolation(
-            kind=BAUDViolationKind.UNSAFE_ACTUATOR_REASON,
-            observed=(
-                f"actuator_command={type(a.actuator_command).__name__} "
-                f"emitted while decision.kind={a.decision.kind.value!r} "
-                f"(non-PROCEED) with reason={a.reason!r} not in "
-                f"S_baud_v1={sorted(_S_BAUD_V1_SAFE_REASONS)!r}"
-            ),
-            **base_kwargs,
-        ))
+    if a.actuator_command is not None and a.reason not in _S_BAUD_V1_SAFE_REASONS:
+        out.append(
+            BAUDViolation(
+                kind=BAUDViolationKind.UNSAFE_ACTUATOR_REASON,
+                observed=(
+                    f"actuator_command={type(a.actuator_command).__name__} "
+                    f"emitted while decision.kind={a.decision.kind.value!r} "
+                    f"(non-PROCEED) with reason={a.reason!r} not in "
+                    f"S_baud_v1={sorted(_S_BAUD_V1_SAFE_REASONS)!r}"
+                ),
+                **base_kwargs,
+            )
+        )
 
     return out
 
@@ -399,13 +379,9 @@ def verify_baud(
         If ``mcap_path`` does not exist or is unreadable.
     """
     if min_outcomes < 0:
-        raise ValueError(
-            f"min_outcomes must be >= 0; got {min_outcomes}"
-        )
+        raise ValueError(f"min_outcomes must be >= 0; got {min_outcomes}")
     if downgrade_threshold < 1:
-        raise ValueError(
-            f"downgrade_threshold must be >= 1; got {downgrade_threshold}"
-        )
+        raise ValueError(f"downgrade_threshold must be >= 1; got {downgrade_threshold}")
 
     mcap_sha = hashlib.sha256(mcap_path.read_bytes()).hexdigest()
 
@@ -449,12 +425,14 @@ def verify_baud(
         if first_precondition_stamp is None:
             first_precondition_stamp = stamp
 
-        violations.extend(_check_postconditions(
-            c,
-            actuation_by_stamp.get(stamp),
-            stamp=stamp,
-            cycle_index=cycle_index,
-        ))
+        violations.extend(
+            _check_postconditions(
+                c,
+                actuation_by_stamp.get(stamp),
+                stamp=stamp,
+                cycle_index=cycle_index,
+            )
+        )
 
     return BAUDVerificationReport(
         mcap_sha256=mcap_sha,

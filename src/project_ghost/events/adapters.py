@@ -66,9 +66,7 @@ class SchedulerErrorToEventBusAdapter:
     cross-reference, no para orden total (events.md §3).
     """
 
-    def __init__(
-        self, bus: EventBus, source: str = "core.clock.scheduler"
-    ) -> None:
+    def __init__(self, bus: EventBus, source: str = "core.clock.scheduler") -> None:
         if not source:
             raise ValueError("source no puede ser vacío")
         self._bus = bus

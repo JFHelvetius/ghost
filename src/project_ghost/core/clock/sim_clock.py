@@ -141,10 +141,7 @@ class SimClockImpl:
                         exception=exc,
                     )
                 )
-            if (
-                entry.periodic_period_ns is not None
-                and not entry.token.cancelled
-            ):
+            if entry.periodic_period_ns is not None and not entry.token.cancelled:
                 next_entry = _HeapEntry(
                     at_ns=entry.at_ns + entry.periodic_period_ns,
                     sequence=self._next_seq,
@@ -164,9 +161,7 @@ class SimClockImpl:
         timestamps pasados esconde bugs de inicialización.
         """
         if at_ns < self._now_ns:
-            raise ValueError(
-                f"schedule: at_ns ({at_ns}) debe ser >= now_ns ({self._now_ns})"
-            )
+            raise ValueError(f"schedule: at_ns ({at_ns}) debe ser >= now_ns ({self._now_ns})")
         token = _CancelToken()
         entry = _HeapEntry(
             at_ns=at_ns,

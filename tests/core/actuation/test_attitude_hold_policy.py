@@ -31,9 +31,7 @@ from project_ghost.hal.messages.actuators import (
 from project_ghost.telemetry import encode_to_bytes
 
 
-def _make_decision(
-    kind: DecisionKind, stamp: int = 1000
-) -> Decision:
+def _make_decision(kind: DecisionKind, stamp: int = 1000) -> Decision:
     return Decision(
         kind=kind,
         decision_stamp_sim_ns=stamp,

@@ -146,15 +146,11 @@ class NoisyGroundTruthEstimator:
         delta_position = self._sample_vec3(cfg.position_noise_std_m)
         delta_theta = self._sample_vec3(cfg.orientation_noise_std_rad)
         delta_v_world = self._sample_vec3(cfg.linear_velocity_noise_std_mps)
-        delta_omega_body = self._sample_vec3(
-            cfg.angular_velocity_noise_std_rps
-        )
+        delta_omega_body = self._sample_vec3(cfg.angular_velocity_noise_std_rps)
         delta_accel_body = self._sample_vec3(cfg.accel_body_noise_std_mps2)
 
         # ----- Pose perturbada.
-        noisy_position = np.ascontiguousarray(
-            gt.position_enu_m + delta_position, dtype=np.float64
-        )
+        noisy_position = np.ascontiguousarray(gt.position_enu_m + delta_position, dtype=np.float64)
         noisy_q = _perturb_quaternion(gt.orientation_q, delta_theta)
 
         # ----- Velocidades perturbadas en sus frames nativos.
@@ -176,9 +172,7 @@ class NoisyGroundTruthEstimator:
         noisy_omega_world = np.ascontiguousarray(
             r_body_to_world @ noisy_omega_body, dtype=np.float64
         )
-        noisy_v_body = np.ascontiguousarray(
-            r_world_to_body @ noisy_v_world, dtype=np.float64
-        )
+        noisy_v_body = np.ascontiguousarray(r_world_to_body @ noisy_v_world, dtype=np.float64)
 
         pose = Pose(
             position_enu_m=noisy_position,
@@ -242,9 +236,7 @@ class NoisyGroundTruthEstimator:
         return np.ascontiguousarray(sample, dtype=np.float64)
 
 
-def _perturb_quaternion(
-    q_gt: np.ndarray, delta_theta: np.ndarray
-) -> np.ndarray:
+def _perturb_quaternion(q_gt: np.ndarray, delta_theta: np.ndarray) -> np.ndarray:
     """Compose small-angle ``δq`` with ``q_gt`` via Hamilton multiply.
 
     ``δq = [1, δθ_x/2, δθ_y/2, δθ_z/2]``, normalizado pre-composición

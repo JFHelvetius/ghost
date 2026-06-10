@@ -107,23 +107,15 @@ def _validate_array(
     Esa distinción mirrors el patrón de `core.uncertainty.estimate`.
     """
     if not isinstance(arr, np.ndarray):
-        raise TypeError(
-            f"{name} debe ser np.ndarray; recibido {type(arr).__name__}"
-        )
+        raise TypeError(f"{name} debe ser np.ndarray; recibido {type(arr).__name__}")
     if shape is not None and arr.shape != shape:
-        raise TypeError(
-            f"{name} debe tener shape {shape}; recibido {arr.shape}"
-        )
+        raise TypeError(f"{name} debe tener shape {shape}; recibido {arr.shape}")
     if ndim is not None and arr.ndim != ndim:
-        raise TypeError(
-            f"{name} debe tener ndim {ndim}; recibido {arr.ndim}"
-        )
+        raise TypeError(f"{name} debe tener ndim {ndim}; recibido {arr.ndim}")
     if dtype is not None:
         expected = np.dtype(dtype)
         if arr.dtype != expected:
-            raise TypeError(
-                f"{name} debe tener dtype {expected}; recibido {arr.dtype}"
-            )
+            raise TypeError(f"{name} debe tener dtype {expected}; recibido {arr.dtype}")
     if require_finite and not bool(np.all(np.isfinite(arr))):
         raise ValueError(f"{name} contiene NaN o Inf")
 
@@ -190,21 +182,13 @@ class SensorSample(Generic[T]):
         if self.seq < 0:
             raise ValueError(f"seq debe ser >= 0; recibido {self.seq}")
         if self.stamp_sensor_ns < 0:
-            raise ValueError(
-                f"stamp_sensor_ns debe ser >= 0; recibido {self.stamp_sensor_ns}"
-            )
+            raise ValueError(f"stamp_sensor_ns debe ser >= 0; recibido {self.stamp_sensor_ns}")
         if self.stamp_sim_ns < 0:
-            raise ValueError(
-                f"stamp_sim_ns debe ser >= 0; recibido {self.stamp_sim_ns}"
-            )
+            raise ValueError(f"stamp_sim_ns debe ser >= 0; recibido {self.stamp_sim_ns}")
         if self.stamp_wall_ns < 0:
-            raise ValueError(
-                f"stamp_wall_ns debe ser >= 0; recibido {self.stamp_wall_ns}"
-            )
+            raise ValueError(f"stamp_wall_ns debe ser >= 0; recibido {self.stamp_wall_ns}")
         if self.schema_version < 1:
-            raise ValueError(
-                f"schema_version debe ser >= 1; recibido {self.schema_version}"
-            )
+            raise ValueError(f"schema_version debe ser >= 1; recibido {self.schema_version}")
 
 
 @dataclass(frozen=True)
@@ -226,9 +210,7 @@ class SensorSpec:
         if not self.frame_id:
             raise ValueError("frame_id no puede ser vacío")
         if self.nominal_rate_hz <= 0:
-            raise ValueError(
-                f"nominal_rate_hz debe ser > 0; recibido {self.nominal_rate_hz}"
-            )
+            raise ValueError(f"nominal_rate_hz debe ser > 0; recibido {self.nominal_rate_hz}")
         if self.latency_ns < 0:
             raise ValueError(f"latency_ns debe ser >= 0; recibido {self.latency_ns}")
 
@@ -250,12 +232,8 @@ class IMUPayload:
     temperature_c: float | None
 
     def __post_init__(self) -> None:
-        _validate_array(
-            self.accel_mps2, name="accel_mps2", shape=(3,), dtype=np.float64
-        )
-        _validate_array(
-            self.gyro_rps, name="gyro_rps", shape=(3,), dtype=np.float64
-        )
+        _validate_array(self.accel_mps2, name="accel_mps2", shape=(3,), dtype=np.float64)
+        _validate_array(self.gyro_rps, name="gyro_rps", shape=(3,), dtype=np.float64)
         _seal(self.accel_mps2)
         _seal(self.gyro_rps)
 
@@ -306,9 +284,7 @@ class CameraIntrinsics:
                 f"width y height deben ser > 0; recibido ({self.width}, {self.height})"
             )
         if self.fx <= 0 or self.fy <= 0:
-            raise ValueError(
-                f"fx y fy deben ser > 0; recibido ({self.fx}, {self.fy})"
-            )
+            raise ValueError(f"fx y fy deben ser > 0; recibido ({self.fx}, {self.fy})")
         if self.distortion_model not in _DISTORTION_COEFFS_COUNT:
             raise ValueError(
                 f"distortion_model inválido: {self.distortion_model!r}. "
@@ -344,22 +320,16 @@ class RGBImagePayload:
         # Verificar coherencia con intrinsics
         h, w, ch = self.image.shape
         if ch != _RGB_CHANNELS:
-            raise TypeError(
-                f"image debe tener {_RGB_CHANNELS} canales en el eje -1; recibido {ch}"
-            )
+            raise TypeError(f"image debe tener {_RGB_CHANNELS} canales en el eje -1; recibido {ch}")
         if (h, w) != (self.intrinsics.height, self.intrinsics.width):
             raise ValueError(
                 f"image shape ({h}, {w}) no coincide con intrinsics "
                 f"({self.intrinsics.height}, {self.intrinsics.width})"
             )
         if self.exposure_ns < 0:
-            raise ValueError(
-                f"exposure_ns debe ser >= 0; recibido {self.exposure_ns}"
-            )
+            raise ValueError(f"exposure_ns debe ser >= 0; recibido {self.exposure_ns}")
         if self.encoding != "rgb8":
-            raise ValueError(
-                f"encoding debe ser 'rgb8'; recibido {self.encoding!r}"
-            )
+            raise ValueError(f"encoding debe ser 'rgb8'; recibido {self.encoding!r}")
         _seal(self.image)
 
 
@@ -387,13 +357,10 @@ class DepthImagePayload:
                 f"({self.intrinsics.height}, {self.intrinsics.width})"
             )
         if self.min_range_m < 0:
-            raise ValueError(
-                f"min_range_m debe ser >= 0; recibido {self.min_range_m}"
-            )
+            raise ValueError(f"min_range_m debe ser >= 0; recibido {self.min_range_m}")
         if self.max_range_m <= self.min_range_m:
             raise ValueError(
-                f"max_range_m ({self.max_range_m}) debe ser > "
-                f"min_range_m ({self.min_range_m})"
+                f"max_range_m ({self.max_range_m}) debe ser > min_range_m ({self.min_range_m})"
             )
         _seal(self.depth_m)
 
@@ -422,17 +389,13 @@ class GpsPayload:
     def __post_init__(self) -> None:
         if not _LAT_MIN_DEG <= self.lat_deg <= _LAT_MAX_DEG:
             raise ValueError(
-                f"lat_deg fuera de rango [{_LAT_MIN_DEG}, {_LAT_MAX_DEG}]; "
-                f"recibido {self.lat_deg}"
+                f"lat_deg fuera de rango [{_LAT_MIN_DEG}, {_LAT_MAX_DEG}]; recibido {self.lat_deg}"
             )
         if not _LON_MIN_DEG <= self.lon_deg <= _LON_MAX_DEG:
             raise ValueError(
-                f"lon_deg fuera de rango [{_LON_MIN_DEG}, {_LON_MAX_DEG}]; "
-                f"recibido {self.lon_deg}"
+                f"lon_deg fuera de rango [{_LON_MIN_DEG}, {_LON_MAX_DEG}]; recibido {self.lon_deg}"
             )
-        _validate_array(
-            self.enu_local_m, name="enu_local_m", shape=(3,), dtype=np.float64
-        )
+        _validate_array(self.enu_local_m, name="enu_local_m", shape=(3,), dtype=np.float64)
         if self.hacc_m < 0:
             raise ValueError(f"hacc_m debe ser >= 0; recibido {self.hacc_m}")
         if self.vacc_m < 0:
@@ -458,13 +421,10 @@ class AltimeterPayload:
     def __post_init__(self) -> None:
         if self.reference not in ("AMSL", "AGL", "LOCAL"):
             raise ValueError(
-                f"reference inválido: {self.reference!r}. "
-                f"Permitidos: 'AMSL', 'AGL', 'LOCAL'."
+                f"reference inválido: {self.reference!r}. Permitidos: 'AMSL', 'AGL', 'LOCAL'."
             )
         if self.variance_m2 < 0:
-            raise ValueError(
-                f"variance_m2 debe ser >= 0; recibido {self.variance_m2}"
-            )
+            raise ValueError(f"variance_m2 debe ser >= 0; recibido {self.variance_m2}")
 
 
 __all__ = [

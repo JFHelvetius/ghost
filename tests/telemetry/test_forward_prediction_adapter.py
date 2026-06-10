@@ -90,9 +90,7 @@ def _make_state(
         stamp_sim_ns=stamp,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -147,9 +145,7 @@ def test_adapter_publishes_prediction_as_message() -> None:
 
 def test_adapter_accepts_custom_channel() -> None:
     sink = InMemorySink()
-    adapter = ForwardPredictionToTelemetryAdapter(
-        sink, channel="/custom/predictions"
-    )
+    adapter = ForwardPredictionToTelemetryAdapter(sink, channel="/custom/predictions")
     predictor = ConstantVelocityForwardPredictor()
     state = _make_state(stamp=1000)
     prediction = predictor.predict(state, horizon_ns=500)
@@ -193,10 +189,7 @@ def test_mcap_round_trip_single_prediction(tmp_path: Path) -> None:
     decoded = decode_message(msgs[0])
     assert isinstance(decoded, BeliefForwardPrediction)
     assert decoded.source_belief_stamp_sim_ns == 1000
-    assert (
-        decoded.predicted_observation_stamp_sim_ns
-        == 1000 + 500_000_000
-    )
+    assert decoded.predicted_observation_stamp_sim_ns == 1000 + 500_000_000
     assert decoded.horizon_ns == 500_000_000
     assert decoded.predictor_id == "constant_velocity_v1"
     assert decoded.associated_directive_hash is None
@@ -220,9 +213,7 @@ def test_mcap_round_trip_prediction_with_directive_hash(
     p = tmp_path / "linked.mcap"
     predictor = ConstantVelocityForwardPredictor()
     state = _make_state(stamp=2000)
-    original = predictor.predict(
-        state, horizon_ns=1000, directive_hash=_VALID_HASH
-    )
+    original = predictor.predict(state, horizon_ns=1000, directive_hash=_VALID_HASH)
 
     with MCAPFileSink(p) as sink:
         ForwardPredictionToTelemetryAdapter(sink).publish(original)
@@ -253,10 +244,7 @@ def test_mcap_round_trip_multiple_predictions(tmp_path: Path) -> None:
     assert len(msgs) == len(stamps)
     for original, msg in zip(originals, msgs, strict=True):
         decoded = decode_message(msg)
-        assert (
-            decoded.source_belief_stamp_sim_ns
-            == original.source_belief_stamp_sim_ns
-        )
+        assert decoded.source_belief_stamp_sim_ns == original.source_belief_stamp_sim_ns
         assert decoded.horizon_ns == original.horizon_ns
 
 
@@ -292,9 +280,7 @@ def test_pipeline_belief_through_forward_prediction_smoke(
     predictor = ConstantVelocityForwardPredictor()
     with MCAPFileSink(p) as sink:
         adapter = ForwardPredictionToTelemetryAdapter(sink)
-        forward_predict_and_publish(
-            predictor, state, 1_000_000_000, adapter
-        )
+        forward_predict_and_publish(predictor, state, 1_000_000_000, adapter)
 
     with MCAPReplayReader(p) as reader:
         msgs = list(reader.iter_messages())

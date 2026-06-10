@@ -113,9 +113,7 @@ def _make_state(*, stamp_sim_ns: int, pos_var: float = 1e-4) -> VehicleState:
         stamp_sim_ns=stamp_sim_ns,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -449,9 +447,7 @@ def test_build_broken_when_sha_mismatch(tmp_path: Path) -> None:
     rec = report.records[0]
     assert rec.chain_status == ChainStatus.BROKEN
     assert rec.claimed_assessment_sha256 == bad_sha
-    assert rec.recomputed_assessment_sha256 == self_assessment_sha256(
-        assessment
-    )
+    assert rec.recomputed_assessment_sha256 == self_assessment_sha256(assessment)
 
 
 def test_build_mix_of_all_four_states(tmp_path: Path) -> None:
@@ -663,12 +659,8 @@ def test_encoded_report_envelope_structure(tmp_path: Path) -> None:
     p = tmp_path / "x.mcap"
     _write_clean_mcap(p, [100])
     report = build_decision_trace_report(p)
-    parsed = json.loads(
-        encode_decision_trace_report_to_bytes(report).decode("utf-8")
-    )
-    assert (
-        parsed["schema_version"] == DECISION_TRACE_REPORT_SCHEMA_VERSION
-    )
+    parsed = json.loads(encode_decision_trace_report_to_bytes(report).decode("utf-8"))
+    assert parsed["schema_version"] == DECISION_TRACE_REPORT_SCHEMA_VERSION
     assert "trace" in parsed
     assert parsed["trace"]["total_decisions"] == 1
 
@@ -700,9 +692,7 @@ def test_round_trip_encode_decode_preserves_report(tmp_path: Path) -> None:
     _write_clean_mcap(p, [100, 200, 300])
     original = build_decision_trace_report(p)
     encoded = encode_decision_trace_report_to_bytes(original)
-    decoded = decode_decision_trace_report_from_json(
-        json.loads(encoded.decode("utf-8"))
-    )
+    decoded = decode_decision_trace_report_from_json(json.loads(encoded.decode("utf-8")))
     assert decoded == original
 
 
@@ -713,9 +703,7 @@ def test_round_trip_encode_decode_preserves_report(tmp_path: Path) -> None:
 
 def test_decode_schema_mismatch_raises() -> None:
     with pytest.raises(ValueError, match="schema_version"):
-        decode_decision_trace_report_from_json(
-            {"schema_version": "999", "trace": {}}
-        )
+        decode_decision_trace_report_from_json({"schema_version": "999", "trace": {}})
 
 
 def test_decode_missing_schema_raises() -> None:

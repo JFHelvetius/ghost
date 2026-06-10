@@ -61,9 +61,7 @@ def build_behavior_trace(  # noqa: PLR0912
     yields empty preceding lists).
     """
     if window_ns < 0:
-        raise ValueError(
-            f"window_ns must be >= 0; got {window_ns}"
-        )
+        raise ValueError(f"window_ns must be >= 0; got {window_ns}")
 
     buffered: list[ReplayMessage] = []
     target_msg: ReplayMessage | None = None
@@ -77,18 +75,13 @@ def build_behavior_trace(  # noqa: PLR0912
         buffered.append(msg)
 
     if target_msg is None:
-        raise EventNotFoundError(
-            f"event_id={event_id} not found in MCAP"
-        )
+        raise EventNotFoundError(f"event_id={event_id} not found in MCAP")
 
     event_time = target_msg.log_time_sim_ns
     window_start = event_time - window_ns
 
     # Filter to half-open window [window_start, event_time).
-    in_window = [
-        m for m in buffered
-        if window_start <= m.log_time_sim_ns < event_time
-    ]
+    in_window = [m for m in buffered if window_start <= m.log_time_sim_ns < event_time]
 
     preceding_events: list[TracedMessage] = []
     preceding_sensor_samples: list[TracedMessage] = []
@@ -190,9 +183,7 @@ def generate_trace_report(
         sys.stdout.write(data.decode("utf-8"))
         return
     if isinstance(output, (str, bytes)):
-        raise TypeError(
-            "output must be a Path or a writable text stream; got str/bytes"
-        )
+        raise TypeError("output must be a Path or a writable text stream; got str/bytes")
     if hasattr(output, "write_bytes"):
         # pathlib.Path
         output.write_bytes(data)

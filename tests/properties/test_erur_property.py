@@ -59,6 +59,7 @@ from project_ghost.telemetry import (
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from project_ghost.properties import ERURVerificationReport
     from project_ghost.state.messages import FlightStatus, MissionStatus
 
 
@@ -71,9 +72,7 @@ _COVARIANCE_DIAG = 1e-4
 
 
 @pytest.fixture(scope="module")
-def fixed_raw_assessment() -> tuple[
-    BeliefSelfAssessment, FlightStatus, MissionStatus
-]:
+def fixed_raw_assessment() -> tuple[BeliefSelfAssessment, FlightStatus, MissionStatus]:
     """Canonical KNOWN raw self-assessment. Same construction as the
     BAUD property test — see that fixture for the rationale."""
     oracle = LinearMotionOracleFusionPolicy(
@@ -82,11 +81,13 @@ def fixed_raw_assessment() -> tuple[
         start_stamp_sim_ns=_T0_NS,
         covariance_diag=_COVARIANCE_DIAG,
     )
-    state = oracle.fuse(FusionInput(
-        sensor_samples=(),
-        prior_belief_stamp_sim_ns=None,
-        target_stamp_sim_ns=_T0_NS,
-    )).belief
+    state = oracle.fuse(
+        FusionInput(
+            sensor_samples=(),
+            prior_belief_stamp_sim_ns=None,
+            target_stamp_sim_ns=_T0_NS,
+        )
+    ).belief
     thresholds = AssessmentThresholds(
         position_known_std_m=0.05,
         position_unknown_std_m=0.5,
@@ -119,20 +120,30 @@ def _calibration_histories(draw: st.DrawFn) -> CalibrationHistory:
     if total == 0:
         return CalibrationHistory(
             outcomes_considered=0,
-            count_within_1_std=0, count_beyond_1_std=0,
-            count_beyond_3_std=0, count_beyond_5_std=0,
+            count_within_1_std=0,
+            count_beyond_1_std=0,
+            count_beyond_3_std=0,
+            count_beyond_5_std=0,
             worst_position_mahalanobis=0.0,
             worst_orientation_mahalanobis=0.0,
             most_recent_observed_stamp_sim_ns=None,
         )
-    worst_pos = draw(st.floats(
-        min_value=0.0, max_value=_MAX_MAHALANOBIS,
-        allow_nan=False, allow_infinity=False,
-    ))
-    worst_ori = draw(st.floats(
-        min_value=0.0, max_value=_MAX_MAHALANOBIS,
-        allow_nan=False, allow_infinity=False,
-    ))
+    worst_pos = draw(
+        st.floats(
+            min_value=0.0,
+            max_value=_MAX_MAHALANOBIS,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    worst_ori = draw(
+        st.floats(
+            min_value=0.0,
+            max_value=_MAX_MAHALANOBIS,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
     stamp = draw(st.integers(min_value=0, max_value=10**15))
     return CalibrationHistory(
         outcomes_considered=total,
@@ -200,8 +211,10 @@ def _history(
     if total == 0:
         return CalibrationHistory(
             outcomes_considered=0,
-            count_within_1_std=0, count_beyond_1_std=0,
-            count_beyond_3_std=0, count_beyond_5_std=0,
+            count_within_1_std=0,
+            count_beyond_1_std=0,
+            count_beyond_3_std=0,
+            count_beyond_5_std=0,
             worst_position_mahalanobis=0.0,
             worst_orientation_mahalanobis=0.0,
             most_recent_observed_stamp_sim_ns=None,
@@ -227,10 +240,13 @@ def _verify_one(
     *,
     min_outcomes: int = 4,
     downgrade_threshold: int = 2,
-):
+) -> ERURVerificationReport:
     mcap_path = tmp_path / "scenario.mcap"
     _run_single_cycle(
-        raw, flight, mission, history,
+        raw,
+        flight,
+        mission,
+        history,
         min_outcomes=min_outcomes,
         downgrade_threshold=downgrade_threshold,
         mcap_path=mcap_path,
@@ -258,9 +274,7 @@ def _verify_one(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
 )
 def test_erur_v1_holds_for_synthetic_single_cycle_runs(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path_factory: pytest.TempPathFactory,
     min_outcomes: int,
     downgrade_threshold: int,
@@ -269,11 +283,12 @@ def test_erur_v1_holds_for_synthetic_single_cycle_runs(
     """Canonical ERUR-v1 property test — single-cycle MCAP per example."""
     raw, flight, mission = fixed_raw_assessment
 
-    mcap_path = (
-        tmp_path_factory.mktemp("erur_property") / "synthetic.mcap"
-    )
+    mcap_path = tmp_path_factory.mktemp("erur_property") / "synthetic.mcap"
     _run_single_cycle(
-        raw, flight, mission, history,
+        raw,
+        flight,
+        mission,
+        history,
         min_outcomes=min_outcomes,
         downgrade_threshold=downgrade_threshold,
         mcap_path=mcap_path,
@@ -302,9 +317,7 @@ def test_erur_v1_holds_for_synthetic_single_cycle_runs(
 
 
 def test_adversarial_empty_history_fires_erur(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path: Path,
 ) -> None:
     """No outcomes yet (cold start). Drift is trivially clean (both
@@ -318,9 +331,7 @@ def test_adversarial_empty_history_fires_erur(
 
 
 def test_adversarial_within_m_guard_fires_erur(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path: Path,
 ) -> None:
     """``count_beyond_3+5 >= K`` but ``outcomes_considered < M`` — the
@@ -337,9 +348,7 @@ def test_adversarial_within_m_guard_fires_erur(
 
 
 def test_adversarial_below_k_threshold_fires_erur(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path: Path,
 ) -> None:
     """``outcomes_considered >= M`` but ``count_beyond_3+5 < K`` —
@@ -354,9 +363,7 @@ def test_adversarial_below_k_threshold_fires_erur(
 
 
 def test_adversarial_drift_storm_does_not_fire_erur(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path: Path,
 ) -> None:
     """``outcomes_considered >= M`` AND ``count_beyond_3+5 >= K`` —
@@ -371,9 +378,7 @@ def test_adversarial_drift_storm_does_not_fire_erur(
 
 
 def test_adversarial_interleaved_only_3_and_5_count_against_k(
-    fixed_raw_assessment: tuple[
-        BeliefSelfAssessment, FlightStatus, MissionStatus
-    ],
+    fixed_raw_assessment: tuple[BeliefSelfAssessment, FlightStatus, MissionStatus],
     tmp_path: Path,
 ) -> None:
     """Many beyond_1 outcomes count against neither the K threshold

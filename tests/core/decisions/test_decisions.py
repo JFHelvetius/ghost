@@ -76,11 +76,7 @@ def _make_state(
     cov_available: bool = True,
 ) -> VehicleState:
     diag = np.array(
-        [pos_var] * 3
-        + [1e-4] * 3
-        + [1e-4] * 3
-        + [1e-6] * 3
-        + [1e-6] * 3,
+        [pos_var] * 3 + [1e-4] * 3 + [1e-4] * 3 + [1e-6] * 3 + [1e-6] * 3,
         dtype=np.float64,
     )
     cov: np.ndarray | None = np.diag(diag) if cov_available else None
@@ -114,9 +110,7 @@ def _make_state(
         stamp_sim_ns=stamp_sim_ns,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -559,9 +553,9 @@ def test_sha256_differs_when_assessment_differs() -> None:
     ctx_unknown = _make_context(pos_var=1.0)
     assert ctx_known.self_assessment is not None
     assert ctx_unknown.self_assessment is not None
-    assert self_assessment_sha256(
-        ctx_known.self_assessment
-    ) != self_assessment_sha256(ctx_unknown.self_assessment)
+    assert self_assessment_sha256(ctx_known.self_assessment) != self_assessment_sha256(
+        ctx_unknown.self_assessment
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -761,10 +755,7 @@ def test_decide_with_rationale_carries_assessment_sha() -> None:
     ctx = _make_context()
     _, rationale = decide_with_rationale(policy, ctx)
     assert ctx.self_assessment is not None
-    assert (
-        rationale.self_assessment_sha256
-        == self_assessment_sha256(ctx.self_assessment)
-    )
+    assert rationale.self_assessment_sha256 == self_assessment_sha256(ctx.self_assessment)
 
 
 def test_decide_with_rationale_none_sha_when_no_assessment() -> None:

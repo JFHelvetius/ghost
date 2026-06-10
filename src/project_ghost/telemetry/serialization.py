@@ -110,13 +110,8 @@ def to_json_safe(obj: Any) -> Any:  # noqa: PLR0911
     if isinstance(obj, (tuple, list)):
         return [to_json_safe(v) for v in obj]
     if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
-        return {
-            f.name: to_json_safe(getattr(obj, f.name))
-            for f in dataclasses.fields(obj)
-        }
-    raise TypeError(
-        f"to_json_safe: tipo no soportado: {type(obj).__name__}"
-    )
+        return {f.name: to_json_safe(getattr(obj, f.name)) for f in dataclasses.fields(obj)}
+    raise TypeError(f"to_json_safe: tipo no soportado: {type(obj).__name__}")
 
 
 def encode_to_bytes(obj: Any) -> bytes:
@@ -149,9 +144,7 @@ def from_json_dict(cls: type[Any], d: collections.abc.Mapping[str, Any]) -> Any:
     return _decode_dataclass(cls, d)
 
 
-def _decode_dataclass(
-    cls: type[Any], d: collections.abc.Mapping[str, Any]
-) -> Any:
+def _decode_dataclass(cls: type[Any], d: collections.abc.Mapping[str, Any]) -> Any:
     if not dataclasses.is_dataclass(cls):
         raise TypeError(f"_decode_dataclass: {cls!r} is not a dataclass")
     hints = typing.get_type_hints(cls)
@@ -170,10 +163,7 @@ def _decode_dataclass(
         if f.default_factory is not dataclasses.MISSING:
             kwargs[f.name] = f.default_factory()
             continue
-        raise KeyError(
-            f"_decode_dataclass: missing required field {f.name!r} for "
-            f"{cls.__name__}"
-        )
+        raise KeyError(f"_decode_dataclass: missing required field {f.name!r} for {cls.__name__}")
     return cls(**kwargs)
 
 
@@ -194,9 +184,7 @@ def _decode_value(hint: Any, value: Any) -> Any:  # noqa: PLR0911, PLR0912
                 return _decode_value(arg, value)
             except (TypeError, ValueError, KeyError):
                 continue
-        raise TypeError(
-            f"_decode_value: cannot decode {value!r} for union {hint}"
-        )
+        raise TypeError(f"_decode_value: cannot decode {value!r} for union {hint}")
 
     # Numpy ndarray.
     if hint is np.ndarray:
@@ -215,9 +203,7 @@ def _decode_value(hint: Any, value: Any) -> Any:  # noqa: PLR0911, PLR0912
         if len(args) == _HOMOGENEOUS_TUPLE_NUM_ARGS and args[1] is Ellipsis:
             return tuple(_decode_value(args[0], v) for v in value)
         # Fixed-length heterogeneous tuple.
-        return tuple(
-            _decode_value(a, v) for a, v in zip(args, value, strict=True)
-        )
+        return tuple(_decode_value(a, v) for a, v in zip(args, value, strict=True))
 
     # list[X].
     if origin is list:
@@ -226,16 +212,14 @@ def _decode_value(hint: Any, value: Any) -> Any:  # noqa: PLR0911, PLR0912
         return list(value)
 
     # Mapping[K, V] / dict[K, V].
-    if origin is dict or origin is collections.abc.Mapping or (
-        isinstance(origin, type)
-        and issubclass(origin, collections.abc.Mapping)
+    if (
+        origin is dict
+        or origin is collections.abc.Mapping
+        or (isinstance(origin, type) and issubclass(origin, collections.abc.Mapping))
     ):
         if len(args) == _MAPPING_NUM_ARGS:
             k_hint, v_hint = args
-            return {
-                _decode_value(k_hint, k): _decode_value(v_hint, v)
-                for k, v in value.items()
-            }
+            return {_decode_value(k_hint, k): _decode_value(v_hint, v) for k, v in value.items()}
         return dict(value)
 
     # Literal types — values are already JSON-primitive.
@@ -259,8 +243,7 @@ def _decode_ndarray(d: Any) -> np.ndarray:
         )
     if _NDARRAY_DTYPE_KEY not in d or _NDARRAY_DATA_KEY not in d:
         raise TypeError(
-            f"_decode_ndarray: missing required keys "
-            f"{_NDARRAY_DTYPE_KEY!r} / {_NDARRAY_DATA_KEY!r}"
+            f"_decode_ndarray: missing required keys {_NDARRAY_DTYPE_KEY!r} / {_NDARRAY_DATA_KEY!r}"
         )
     dtype = np.dtype(d[_NDARRAY_DTYPE_KEY])
     return np.asarray(d[_NDARRAY_DATA_KEY], dtype=dtype)

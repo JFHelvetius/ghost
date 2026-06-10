@@ -149,17 +149,13 @@ class AssessmentThresholds:
             ),
         )
         for block, known, unknown in pairs:
-            if not isinstance(known, (int, float)) or not isinstance(
-                unknown, (int, float)
-            ):
+            if not isinstance(known, (int, float)) or not isinstance(unknown, (int, float)):
                 raise TypeError(
                     f"AssessmentThresholds: {block} thresholds must be "
                     f"numeric; got {type(known).__name__} / "
                     f"{type(unknown).__name__}"
                 )
-            if not math.isfinite(float(known)) or not math.isfinite(
-                float(unknown)
-            ):
+            if not math.isfinite(float(known)) or not math.isfinite(float(unknown)):
                 raise ValueError(
                     f"AssessmentThresholds: {block} thresholds must be "
                     f"finite; got known={known} unknown={unknown}"
@@ -270,15 +266,11 @@ class BeliefSelfAssessment:
 
     def __post_init__(self) -> None:
         if self.belief_stamp_sim_ns < 0:
-            raise ValueError(
-                f"belief_stamp_sim_ns must be >= 0; got "
-                f"{self.belief_stamp_sim_ns}"
-            )
+            raise ValueError(f"belief_stamp_sim_ns must be >= 0; got {self.belief_stamp_sim_ns}")
         # Hash format check: 64 lowercase hex chars.
         if not isinstance(self.thresholds_sha256, str):
             raise TypeError(
-                f"thresholds_sha256 must be str; got "
-                f"{type(self.thresholds_sha256).__name__}"
+                f"thresholds_sha256 must be str; got {type(self.thresholds_sha256).__name__}"
             )
         if len(self.thresholds_sha256) != _SHA256_HEX_LEN:
             raise ValueError(
@@ -288,8 +280,7 @@ class BeliefSelfAssessment:
         for c in self.thresholds_sha256:
             if c not in "0123456789abcdef":
                 raise ValueError(
-                    f"thresholds_sha256 must be lowercase hex; got "
-                    f"{self.thresholds_sha256!r}"
+                    f"thresholds_sha256 must be lowercase hex; got {self.thresholds_sha256!r}"
                 )
         if self.schema_version != SELF_ASSESSMENT_PROTOCOL_VERSION:
             raise ValueError(
@@ -327,9 +318,7 @@ def _classify_axis(
     return SelfAssessmentLevel.UNCERTAIN
 
 
-def _diagonal_std(
-    cov: np.ndarray | None, idx: int
-) -> float | None:
+def _diagonal_std(cov: np.ndarray | None, idx: int) -> float | None:
     """Return ``sqrt(cov[idx, idx])`` or ``None`` if cov is None or the
     diagonal value is negative / non-finite (defensive — PSD covariance
     won't produce negatives, but we guard so downstream classification

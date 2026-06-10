@@ -44,9 +44,7 @@ if TYPE_CHECKING:
     from project_ghost.core.decisions.types import Decision
 
 
-_Q_IDENTITY: Final[np.ndarray] = np.array(
-    [1.0, 0.0, 0.0, 0.0], dtype=np.float64
-)
+_Q_IDENTITY: Final[np.ndarray] = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
 
 _REASON_PROCEED: Final[str] = "attitude_hold_proceed"
 _REASON_HOLD: Final[str] = "attitude_hold_hold"
@@ -82,21 +80,13 @@ class AttitudeHoldReferencePolicy:
         proceed_thrust: float = 0.5,
         hold_thrust: float = 0.5,
     ) -> None:
-        if not (
-            np.isfinite(proceed_thrust)
-            and _THRUST_MIN <= proceed_thrust <= _THRUST_MAX
-        ):
+        if not (np.isfinite(proceed_thrust) and _THRUST_MIN <= proceed_thrust <= _THRUST_MAX):
             raise ValueError(
-                f"proceed_thrust must be in [{_THRUST_MIN}, {_THRUST_MAX}]; "
-                f"got {proceed_thrust}"
+                f"proceed_thrust must be in [{_THRUST_MIN}, {_THRUST_MAX}]; got {proceed_thrust}"
             )
-        if not (
-            np.isfinite(hold_thrust)
-            and _THRUST_MIN <= hold_thrust <= _THRUST_MAX
-        ):
+        if not (np.isfinite(hold_thrust) and _THRUST_MIN <= hold_thrust <= _THRUST_MAX):
             raise ValueError(
-                f"hold_thrust must be in [{_THRUST_MIN}, {_THRUST_MAX}]; "
-                f"got {hold_thrust}"
+                f"hold_thrust must be in [{_THRUST_MIN}, {_THRUST_MAX}]; got {hold_thrust}"
             )
         self._proceed_thrust: float = float(proceed_thrust)
         self._hold_thrust: float = float(hold_thrust)
@@ -117,12 +107,10 @@ class AttitudeHoldReferencePolicy:
     def actuate(self, decision: Decision) -> ActuationDirective:
         stamp = decision.decision_stamp_sim_ns
         if decision.kind == DecisionKind.PROCEED:
-            command: AttitudeCommand | DirectMotorCommand | None = (
-                AttitudeCommand(
-                    q_target=_Q_IDENTITY.copy(),
-                    thrust_normalized=self._proceed_thrust,
-                    stamp_ns=stamp,
-                )
+            command: AttitudeCommand | DirectMotorCommand | None = AttitudeCommand(
+                q_target=_Q_IDENTITY.copy(),
+                thrust_normalized=self._proceed_thrust,
+                stamp_ns=stamp,
             )
             reason = _REASON_PROCEED
         elif decision.kind == DecisionKind.HOLD:

@@ -65,34 +65,21 @@ class FPBViolation:
 
     def __post_init__(self) -> None:
         if not isinstance(self.kind, FPBViolationKind):
-            raise TypeError(
-                f"kind must be FPBViolationKind; got "
-                f"{type(self.kind).__name__}"
-            )
+            raise TypeError(f"kind must be FPBViolationKind; got {type(self.kind).__name__}")
         if not (0.0 <= self.observed_fire_fraction <= 1.0) or math.isnan(
             self.observed_fire_fraction
         ):
             raise ValueError(
-                "observed_fire_fraction must be in [0.0, 1.0]; got "
-                f"{self.observed_fire_fraction}"
+                f"observed_fire_fraction must be in [0.0, 1.0]; got {self.observed_fire_fraction}"
             )
-        if not (0.0 <= self.max_fire_fraction <= 1.0) or math.isnan(
-            self.max_fire_fraction
-        ):
+        if not (0.0 <= self.max_fire_fraction <= 1.0) or math.isnan(self.max_fire_fraction):
             raise ValueError(
-                "max_fire_fraction must be in [0.0, 1.0]; got "
-                f"{self.max_fire_fraction}"
+                f"max_fire_fraction must be in [0.0, 1.0]; got {self.max_fire_fraction}"
             )
         if self.cycles_baud_fires < 0:
-            raise ValueError(
-                "cycles_baud_fires must be >= 0; got "
-                f"{self.cycles_baud_fires}"
-            )
+            raise ValueError(f"cycles_baud_fires must be >= 0; got {self.cycles_baud_fires}")
         if self.cycles_total <= 0:
-            raise ValueError(
-                "cycles_total must be > 0 for a violation; got "
-                f"{self.cycles_total}"
-            )
+            raise ValueError(f"cycles_total must be > 0 for a violation; got {self.cycles_total}")
 
 
 @dataclass(frozen=True)
@@ -130,25 +117,15 @@ class FPBVerificationReport:
                 f"chars; got {self.mcap_sha256!r}"
             )
         if self.min_outcomes < 0:
-            raise ValueError(
-                f"min_outcomes must be >= 0; got {self.min_outcomes}"
-            )
+            raise ValueError(f"min_outcomes must be >= 0; got {self.min_outcomes}")
         if self.downgrade_threshold < 1:
+            raise ValueError(f"downgrade_threshold must be >= 1; got {self.downgrade_threshold}")
+        if not (0.0 <= self.max_fire_fraction <= 1.0) or math.isnan(self.max_fire_fraction):
             raise ValueError(
-                f"downgrade_threshold must be >= 1; got "
-                f"{self.downgrade_threshold}"
-            )
-        if not (0.0 <= self.max_fire_fraction <= 1.0) or math.isnan(
-            self.max_fire_fraction
-        ):
-            raise ValueError(
-                "max_fire_fraction must be in [0.0, 1.0]; got "
-                f"{self.max_fire_fraction}"
+                f"max_fire_fraction must be in [0.0, 1.0]; got {self.max_fire_fraction}"
             )
         if self.cycles_total < 0:
-            raise ValueError(
-                f"cycles_total must be >= 0; got {self.cycles_total}"
-            )
+            raise ValueError(f"cycles_total must be >= 0; got {self.cycles_total}")
         if not 0 <= self.cycles_precondition_held <= self.cycles_total:
             raise ValueError(
                 "cycles_precondition_held must be in "
@@ -187,14 +164,10 @@ class FPBVerificationReport:
                 "when cycles_precondition_held > 0"
             )
         if not isinstance(self.violations, tuple):
-            raise TypeError(
-                f"violations must be tuple; got "
-                f"{type(self.violations).__name__}"
-            )
+            raise TypeError(f"violations must be tuple; got {type(self.violations).__name__}")
         if self.property_version != FPB_PROPERTY_VERSION:
             raise ValueError(
-                f"property_version must be {FPB_PROPERTY_VERSION!r}; "
-                f"got {self.property_version!r}"
+                f"property_version must be {FPB_PROPERTY_VERSION!r}; got {self.property_version!r}"
             )
 
     @property
@@ -219,10 +192,7 @@ def _baud_precondition_fires(
     """
     h = c.calibration_history
     beyond_3_or_worse = h.count_beyond_3_std + h.count_beyond_5_std
-    return (
-        h.outcomes_considered >= min_outcomes
-        and beyond_3_or_worse >= downgrade_threshold
-    )
+    return h.outcomes_considered >= min_outcomes and beyond_3_or_worse >= downgrade_threshold
 
 
 # ---------------------------------------------------------------------------
@@ -267,20 +237,11 @@ def verify_fpb(
         If ``mcap_path`` does not exist or is unreadable.
     """
     if min_outcomes < 0:
-        raise ValueError(
-            f"min_outcomes must be >= 0; got {min_outcomes}"
-        )
+        raise ValueError(f"min_outcomes must be >= 0; got {min_outcomes}")
     if downgrade_threshold < 1:
-        raise ValueError(
-            f"downgrade_threshold must be >= 1; got {downgrade_threshold}"
-        )
-    if not (0.0 <= max_fire_fraction <= 1.0) or math.isnan(
-        max_fire_fraction
-    ):
-        raise ValueError(
-            "max_fire_fraction must be in [0.0, 1.0]; got "
-            f"{max_fire_fraction}"
-        )
+        raise ValueError(f"downgrade_threshold must be >= 1; got {downgrade_threshold}")
+    if not (0.0 <= max_fire_fraction <= 1.0) or math.isnan(max_fire_fraction):
+        raise ValueError(f"max_fire_fraction must be in [0.0, 1.0]; got {max_fire_fraction}")
 
     mcap_sha = hashlib.sha256(mcap_path.read_bytes()).hexdigest()
 
@@ -314,19 +275,19 @@ def verify_fpb(
             if first_fire_stamp is None:
                 first_fire_stamp = stamp
 
-    fire_fraction = (
-        cycles_fires / cycles_total if cycles_total > 0 else 0.0
-    )
+    fire_fraction = cycles_fires / cycles_total if cycles_total > 0 else 0.0
 
     violations: tuple[FPBViolation, ...] = ()
     if fire_fraction > max_fire_fraction and cycles_total > 0:
-        violations = (FPBViolation(
-            kind=FPBViolationKind.FIRE_FRACTION_EXCEEDS_BOUND,
-            observed_fire_fraction=fire_fraction,
-            max_fire_fraction=max_fire_fraction,
-            cycles_baud_fires=cycles_fires,
-            cycles_total=cycles_total,
-        ),)
+        violations = (
+            FPBViolation(
+                kind=FPBViolationKind.FIRE_FRACTION_EXCEEDS_BOUND,
+                observed_fire_fraction=fire_fraction,
+                max_fire_fraction=max_fire_fraction,
+                cycles_baud_fires=cycles_fires,
+                cycles_total=cycles_total,
+            ),
+        )
 
     return FPBVerificationReport(
         mcap_sha256=mcap_sha,

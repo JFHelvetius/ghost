@@ -83,9 +83,7 @@ def make_imu_sample(
 
 
 def make_actuator_command() -> DirectMotorCommand:
-    return DirectMotorCommand(
-        throttle=np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float64)
-    )
+    return DirectMotorCommand(throttle=np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float64))
 
 
 def make_vehicle_state(
@@ -104,9 +102,7 @@ def make_vehicle_state(
     )
     return vehicle_state_from_ground_truth(
         gt=gt,
-        sensors_health=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors_health=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=flight_mode,

@@ -40,9 +40,7 @@ from project_ghost.state import (
 # ---------------------------------------------------------------------------
 
 _Q_IDENTITY = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
-_Q_YAW_90 = np.array(
-    [np.sqrt(2.0) / 2.0, 0.0, 0.0, np.sqrt(2.0) / 2.0], dtype=np.float64
-)
+_Q_YAW_90 = np.array([np.sqrt(2.0) / 2.0, 0.0, 0.0, np.sqrt(2.0) / 2.0], dtype=np.float64)
 
 
 # ---------------------------------------------------------------------------
@@ -62,13 +60,9 @@ def _gt(
     return GroundTruth(
         stamp_sim_ns=stamp_sim_ns,
         position_enu_m=(
-            position_enu_m
-            if position_enu_m is not None
-            else np.zeros(3, dtype=np.float64)
+            position_enu_m if position_enu_m is not None else np.zeros(3, dtype=np.float64)
         ),
-        orientation_q=(
-            orientation_q if orientation_q is not None else _Q_IDENTITY.copy()
-        ),
+        orientation_q=(orientation_q if orientation_q is not None else _Q_IDENTITY.copy()),
         linear_velocity_world_mps=(
             linear_velocity_world_mps
             if linear_velocity_world_mps is not None
@@ -80,9 +74,7 @@ def _gt(
             else np.zeros(3, dtype=np.float64)
         ),
         accel_body_mps2=(
-            accel_body_mps2
-            if accel_body_mps2 is not None
-            else np.zeros(3, dtype=np.float64)
+            accel_body_mps2 if accel_body_mps2 is not None else np.zeros(3, dtype=np.float64)
         ),
     )
 
@@ -150,18 +142,10 @@ def test_static_quadrotor_at_spawn_reports_spawn_pose() -> None:
 def test_static_quadrotor_has_zero_twists() -> None:
     """Estático -> ambos twists son cero."""
     vs = _aggregate(gt=_gt())
-    np.testing.assert_array_equal(
-        vs.nav.twist_world.linear_mps, np.zeros(3, dtype=np.float64)
-    )
-    np.testing.assert_array_equal(
-        vs.nav.twist_world.angular_rps, np.zeros(3, dtype=np.float64)
-    )
-    np.testing.assert_array_equal(
-        vs.nav.twist_body.linear_mps, np.zeros(3, dtype=np.float64)
-    )
-    np.testing.assert_array_equal(
-        vs.nav.twist_body.angular_rps, np.zeros(3, dtype=np.float64)
-    )
+    np.testing.assert_array_equal(vs.nav.twist_world.linear_mps, np.zeros(3, dtype=np.float64))
+    np.testing.assert_array_equal(vs.nav.twist_world.angular_rps, np.zeros(3, dtype=np.float64))
+    np.testing.assert_array_equal(vs.nav.twist_body.linear_mps, np.zeros(3, dtype=np.float64))
+    np.testing.assert_array_equal(vs.nav.twist_body.angular_rps, np.zeros(3, dtype=np.float64))
 
 
 # ---------------------------------------------------------------------------
@@ -180,12 +164,8 @@ def test_gt_path_yields_zero_imu_biases() -> None:
     """Contrato del path GT: biases del IMU son zero. En sim con GT no
     hay biases que estimar."""
     vs = _aggregate()
-    np.testing.assert_array_equal(
-        vs.nav.imu_biases.accel_bias_mps2, np.zeros(3, dtype=np.float64)
-    )
-    np.testing.assert_array_equal(
-        vs.nav.imu_biases.gyro_bias_rps, np.zeros(3, dtype=np.float64)
-    )
+    np.testing.assert_array_equal(vs.nav.imu_biases.accel_bias_mps2, np.zeros(3, dtype=np.float64))
+    np.testing.assert_array_equal(vs.nav.imu_biases.gyro_bias_rps, np.zeros(3, dtype=np.float64))
 
 
 # ---------------------------------------------------------------------------
@@ -202,9 +182,7 @@ def test_translation_only_no_rotation_twist_body_equals_world() -> None:
     vs = _aggregate(gt=gt)
 
     np.testing.assert_array_equal(vs.nav.twist_world.linear_mps, v_world)
-    np.testing.assert_allclose(
-        vs.nav.twist_body.linear_mps, v_world, atol=1e-15
-    )
+    np.testing.assert_allclose(vs.nav.twist_body.linear_mps, v_world, atol=1e-15)
 
 
 def test_translation_only_no_rotation_angular_world_equals_body() -> None:
@@ -213,12 +191,8 @@ def test_translation_only_no_rotation_angular_world_equals_body() -> None:
 
     vs = _aggregate(gt=gt)
 
-    np.testing.assert_array_equal(
-        vs.nav.twist_body.angular_rps, omega_body
-    )
-    np.testing.assert_allclose(
-        vs.nav.twist_world.angular_rps, omega_body, atol=1e-15
-    )
+    np.testing.assert_array_equal(vs.nav.twist_body.angular_rps, omega_body)
+    np.testing.assert_allclose(vs.nav.twist_world.angular_rps, omega_body, atol=1e-15)
 
 
 # ---------------------------------------------------------------------------
@@ -249,9 +223,7 @@ def test_yaw_90_body_x_angular_velocity_maps_to_world_y() -> None:
 
     vs = _aggregate(gt=gt)
 
-    np.testing.assert_array_equal(
-        vs.nav.twist_body.angular_rps, omega_body
-    )
+    np.testing.assert_array_equal(vs.nav.twist_body.angular_rps, omega_body)
     np.testing.assert_allclose(
         vs.nav.twist_world.angular_rps,
         np.array([0.0, 1.0, 0.0], dtype=np.float64),
@@ -316,9 +288,7 @@ def test_aggregator_is_deterministic_bitwise() -> None:
     assert vs1.stamp_sim_ns == vs2.stamp_sim_ns
     assert vs1.stamp_wall_ns == vs2.stamp_wall_ns
     for attr in ("position_enu_m", "orientation_q"):
-        np.testing.assert_array_equal(
-            getattr(vs1.nav.pose, attr), getattr(vs2.nav.pose, attr)
-        )
+        np.testing.assert_array_equal(getattr(vs1.nav.pose, attr), getattr(vs2.nav.pose, attr))
     for attr in ("linear_mps", "angular_rps"):
         np.testing.assert_array_equal(
             getattr(vs1.nav.twist_world, attr),

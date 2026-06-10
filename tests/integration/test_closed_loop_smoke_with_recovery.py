@@ -45,11 +45,15 @@ def test_recovery_smoke_rejects_invalid_phase_lengths(
 ) -> None:
     with pytest.raises(ValueError, match="n_drift_cycles must be >= 2"):
         run_closed_loop_smoke_with_recovery(
-            tmp_path / "x.mcap", n_drift_cycles=1, n_recovery_cycles=10,
+            tmp_path / "x.mcap",
+            n_drift_cycles=1,
+            n_recovery_cycles=10,
         )
     with pytest.raises(ValueError, match="n_recovery_cycles must be >= 1"):
         run_closed_loop_smoke_with_recovery(
-            tmp_path / "x.mcap", n_drift_cycles=5, n_recovery_cycles=0,
+            tmp_path / "x.mcap",
+            n_drift_cycles=5,
+            n_recovery_cycles=0,
         )
 
 
@@ -149,8 +153,7 @@ def test_recovery_smoke_baud_and_erur_partition_the_cycle_space(
     summary = run_closed_loop_smoke_with_recovery(tmp_path / "r.mcap")
     total = summary.baud_report.cycles_total
     fired = (
-        summary.baud_report.cycles_precondition_held
-        + summary.erur_report.cycles_precondition_held
+        summary.baud_report.cycles_precondition_held + summary.erur_report.cycles_precondition_held
     )
     assert fired == total
     assert summary.baud_report.holds

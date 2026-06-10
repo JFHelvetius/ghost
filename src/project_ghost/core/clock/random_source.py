@@ -78,10 +78,7 @@ class RandomSourceImpl:
         # Permitir tanto "imu0" como "/imu0"; normalizar a un solo separador.
         segment = label.lstrip("/")
         if not segment:
-            raise ValueError(
-                f"child label debe contener algo más que slashes; "
-                f"recibido {label!r}"
-            )
+            raise ValueError(f"child label debe contener algo más que slashes; recibido {label!r}")
         child_seed = _derive_child_seed(self.seed, segment)
         sep = "" if self.label.endswith("/") else "/"
         child_path = self.label + sep + segment

@@ -187,9 +187,7 @@ def test_report_roundtrips_preserve_histogram_contents(tmp_path: Path) -> None:
 
 
 def test_report_roundtrips_preserve_optional_none(tmp_path: Path) -> None:
-    s = _summary(
-        first_timestamp_ns=None, last_timestamp_ns=None, duration_ns=None
-    )
+    s = _summary(first_timestamp_ns=None, last_timestamp_ns=None, duration_ns=None)
     p = tmp_path / "report.json"
     generate_run_report(s, p)
     data = json.loads(p.read_text(encoding="utf-8"))

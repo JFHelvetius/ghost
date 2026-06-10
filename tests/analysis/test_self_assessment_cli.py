@@ -85,9 +85,7 @@ def _make_state(stamp_sim_ns: int, pos_var: float = 1e-4) -> VehicleState:
         stamp_sim_ns=stamp_sim_ns,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -120,9 +118,7 @@ def _write_mcap(path, n_records: int) -> None:  # type: ignore[no-untyped-def]
     with MCAPFileSink(path) as sink:
         adapter = SelfAssessmentToTelemetryAdapter(sink)
         for i in range(n_records):
-            adapter.publish(
-                assess_belief(_make_state(stamp_sim_ns=i * 1000), t)
-            )
+            adapter.publish(assess_belief(_make_state(stamp_sim_ns=i * 1000), t))
 
 
 def test_cli_analyze_self_assessment_writes_output_file(
@@ -143,10 +139,7 @@ def test_cli_analyze_self_assessment_writes_output_file(
     )
     assert rc == 0
     parsed = json.loads(out.read_text(encoding="utf-8"))
-    assert (
-        parsed["schema_version"]
-        == SELF_ASSESSMENT_SUMMARY_SCHEMA_VERSION
-    )
+    assert parsed["schema_version"] == SELF_ASSESSMENT_SUMMARY_SCHEMA_VERSION
     assert parsed["summary"]["total_records"] == 3
 
 

@@ -120,12 +120,8 @@ def test_output_twist_frames_are_world_and_body() -> None:
 def test_output_imu_biases_are_zero() -> None:
     """ADR-0015 §5: este estimador no infiere biases."""
     vs = _estimate()
-    np.testing.assert_array_equal(
-        vs.nav.imu_biases.accel_bias_mps2, np.zeros(3, dtype=np.float64)
-    )
-    np.testing.assert_array_equal(
-        vs.nav.imu_biases.gyro_bias_rps, np.zeros(3, dtype=np.float64)
-    )
+    np.testing.assert_array_equal(vs.nav.imu_biases.accel_bias_mps2, np.zeros(3, dtype=np.float64))
+    np.testing.assert_array_equal(vs.nav.imu_biases.gyro_bias_rps, np.zeros(3, dtype=np.float64))
 
 
 def test_output_stamp_sim_ns_from_gt() -> None:
@@ -161,18 +157,14 @@ def test_twist_world_is_consistent_with_noisy_quaternion() -> None:
     vs = _estimate()
     r_b2w = R_body_to_world(vs.nav.pose.orientation_q)
     expected = r_b2w @ vs.nav.twist_body.angular_rps
-    np.testing.assert_allclose(
-        vs.nav.twist_world.angular_rps, expected, atol=1e-15
-    )
+    np.testing.assert_allclose(vs.nav.twist_world.angular_rps, expected, atol=1e-15)
 
 
 def test_twist_body_is_consistent_with_noisy_quaternion() -> None:
     vs = _estimate()
     r_w2b = R_world_to_body(vs.nav.pose.orientation_q)
     expected = r_w2b @ vs.nav.twist_world.linear_mps
-    np.testing.assert_allclose(
-        vs.nav.twist_body.linear_mps, expected, atol=1e-15
-    )
+    np.testing.assert_allclose(vs.nav.twist_body.linear_mps, expected, atol=1e-15)
 
 
 # ---------------------------------------------------------------------------
@@ -188,13 +180,9 @@ def test_zero_noise_position_equals_ground_truth_position() -> None:
         angular_velocity_noise_std_rps=0.0,
         accel_body_noise_std_mps2=0.0,
     )
-    gt = make_gt(
-        position_enu_m=np.array([1.5, -0.7, 0.2], dtype=np.float64)
-    )
+    gt = make_gt(position_enu_m=np.array([1.5, -0.7, 0.2], dtype=np.float64))
     vs = _estimate(config=cfg, gt=gt)
-    np.testing.assert_array_equal(
-        vs.nav.pose.position_enu_m, gt.position_enu_m
-    )
+    np.testing.assert_array_equal(vs.nav.pose.position_enu_m, gt.position_enu_m)
 
 
 def test_zero_noise_quaternion_equals_ground_truth_quaternion() -> None:
@@ -207,14 +195,10 @@ def test_zero_noise_quaternion_equals_ground_truth_quaternion() -> None:
         angular_velocity_noise_std_rps=0.0,
         accel_body_noise_std_mps2=0.0,
     )
-    q_yaw = np.array(
-        [np.sqrt(2.0) / 2.0, 0.0, 0.0, np.sqrt(2.0) / 2.0], dtype=np.float64
-    )
+    q_yaw = np.array([np.sqrt(2.0) / 2.0, 0.0, 0.0, np.sqrt(2.0) / 2.0], dtype=np.float64)
     gt = make_gt(orientation_q=q_yaw.copy())
     vs = _estimate(config=cfg, gt=gt)
-    np.testing.assert_allclose(
-        vs.nav.pose.orientation_q, q_yaw, atol=1e-15
-    )
+    np.testing.assert_allclose(vs.nav.pose.orientation_q, q_yaw, atol=1e-15)
 
 
 def test_zero_noise_velocities_and_accel_equal_ground_truth() -> None:
@@ -235,9 +219,7 @@ def test_zero_noise_velocities_and_accel_equal_ground_truth() -> None:
     )
     vs = _estimate(config=cfg, gt=gt)
     np.testing.assert_array_equal(vs.nav.twist_world.linear_mps, v_world)
-    np.testing.assert_array_equal(
-        vs.nav.twist_body.angular_rps, omega_body
-    )
+    np.testing.assert_array_equal(vs.nav.twist_body.angular_rps, omega_body)
     np.testing.assert_array_equal(vs.nav.accel_body_mps2, accel)
 
 
@@ -247,9 +229,7 @@ def test_zero_noise_velocities_and_accel_equal_ground_truth() -> None:
 
 
 def test_nonzero_noise_position_differs_from_ground_truth() -> None:
-    gt = make_gt(
-        position_enu_m=np.array([1.0, 2.0, 3.0], dtype=np.float64)
-    )
+    gt = make_gt(position_enu_m=np.array([1.0, 2.0, 3.0], dtype=np.float64))
     vs = _estimate(gt=gt)
     # Casi seguro distinto; pero usamos un margen no-igual para que el
     # test sea robusto a un seed que casualmente diera 0.
@@ -306,9 +286,7 @@ def test_estimator_does_not_mutate_ground_truth_arrays() -> None:
 def test_multiple_estimate_calls_yield_independent_samples() -> None:
     """Cada call avanza el Generator interno; samples sucesivas
     deben diferir (no degenerar a un solo draw cacheado)."""
-    estimator = NoisyGroundTruthEstimator(
-        config=make_config(), random_source=make_rs()
-    )
+    estimator = NoisyGroundTruthEstimator(config=make_config(), random_source=make_rs())
     vs1 = estimator.estimate(
         gt=make_gt(),
         sensors_health=make_health(),
@@ -323,25 +301,19 @@ def test_multiple_estimate_calls_yield_independent_samples() -> None:
         mission=make_mission(),
         stamp_wall_ns=0,
     )
-    diff = np.abs(
-        vs1.nav.pose.position_enu_m - vs2.nav.pose.position_enu_m
-    ).sum()
+    diff = np.abs(vs1.nav.pose.position_enu_m - vs2.nav.pose.position_enu_m).sum()
     assert diff > 0.0
 
 
 def test_estimator_exposes_random_source_label() -> None:
     cfg = make_config(random_source_label="/x/y/z")
-    estimator = NoisyGroundTruthEstimator(
-        config=cfg, random_source=make_rs()
-    )
+    estimator = NoisyGroundTruthEstimator(config=cfg, random_source=make_rs())
     assert estimator.random_source_label == "/x/y/z"
 
 
 def test_estimator_exposes_config() -> None:
     cfg = make_config()
-    estimator = NoisyGroundTruthEstimator(
-        config=cfg, random_source=make_rs()
-    )
+    estimator = NoisyGroundTruthEstimator(config=cfg, random_source=make_rs())
     assert estimator.config is cfg
 
 
@@ -360,9 +332,7 @@ def test_zero_noise_yaw_90_twist_world_to_body_matches_transforms() -> None:
         angular_velocity_noise_std_rps=0.0,
         accel_body_noise_std_mps2=0.0,
     )
-    q_yaw = np.array(
-        [np.sqrt(2.0) / 2.0, 0.0, 0.0, np.sqrt(2.0) / 2.0], dtype=np.float64
-    )
+    q_yaw = np.array([np.sqrt(2.0) / 2.0, 0.0, 0.0, np.sqrt(2.0) / 2.0], dtype=np.float64)
     v_world = np.array([1.0, 0.0, 0.0], dtype=np.float64)
     gt = make_gt(
         orientation_q=q_yaw.copy(),
@@ -370,9 +340,7 @@ def test_zero_noise_yaw_90_twist_world_to_body_matches_transforms() -> None:
     )
     vs = _estimate(config=cfg, gt=gt)
     expected_body = R_world_to_body(q_yaw) @ v_world
-    np.testing.assert_allclose(
-        vs.nav.twist_body.linear_mps, expected_body, atol=1e-15
-    )
+    np.testing.assert_allclose(vs.nav.twist_body.linear_mps, expected_body, atol=1e-15)
 
 
 # ---------------------------------------------------------------------------

@@ -88,9 +88,7 @@ def _vehicle_state(stamp: int = 0) -> VehicleState:
     )
     return vehicle_state_from_ground_truth(
         gt=gt,
-        sensors_health=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors_health=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -128,10 +126,7 @@ def test_supported_schemas_lists_all_sensor_sample_variants() -> None:
         "GpsPayload",
         "AltimeterPayload",
     ):
-        assert (
-            f"project_ghost.hal.messages.sensors.SensorSample.{payload_name}"
-            in schemas
-        )
+        assert f"project_ghost.hal.messages.sensors.SensorSample.{payload_name}" in schemas
 
 
 # ---------------------------------------------------------------------------
@@ -242,9 +237,7 @@ def test_vehicle_state_round_trip_via_mcap(tmp_path: Path) -> None:
     assert decoded.stamp_sim_ns == original.stamp_sim_ns
     assert decoded.flight.flight_mode == FlightMode.OFFBOARD
     assert decoded.nav.covariance_15x15 is None  # GT path: truth, not belief
-    np.testing.assert_array_equal(
-        decoded.nav.pose.position_enu_m, original.nav.pose.position_enu_m
-    )
+    np.testing.assert_array_equal(decoded.nav.pose.position_enu_m, original.nav.pose.position_enu_m)
 
 
 def test_sensor_sample_imu_round_trip_via_mcap(tmp_path: Path) -> None:
@@ -261,12 +254,8 @@ def test_sensor_sample_imu_round_trip_via_mcap(tmp_path: Path) -> None:
     assert decoded.sensor_id == original.sensor_id
     assert decoded.seq == 7
     assert decoded.health == SensorHealth.OK
-    np.testing.assert_array_equal(
-        decoded.payload.accel_mps2, original.payload.accel_mps2
-    )
-    np.testing.assert_array_equal(
-        decoded.payload.gyro_rps, original.payload.gyro_rps
-    )
+    np.testing.assert_array_equal(decoded.payload.accel_mps2, original.payload.accel_mps2)
+    np.testing.assert_array_equal(decoded.payload.gyro_rps, original.payload.gyro_rps)
     assert decoded.payload.temperature_c == 22.5
 
 

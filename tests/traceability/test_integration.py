@@ -36,9 +36,7 @@ def test_end_to_end_capture_trace_report(tmp_path: Path) -> None:
 
     # Capture
     with MCAPFileSink(mcap) as sink:
-        sink.publish(
-            CHANNEL_EVENTS, 100, make_event(sequence=0, type_=EventType.ARMED)
-        )
+        sink.publish(CHANNEL_EVENTS, 100, make_event(sequence=0, type_=EventType.ARMED))
         sink.publish(
             CHANNEL_STATE_NAV,
             200,
@@ -71,9 +69,7 @@ def test_end_to_end_capture_trace_report(tmp_path: Path) -> None:
 
     # Trace
     with MCAPReplayReader(mcap) as reader:
-        trace = build_behavior_trace(
-            reader=reader, event_id=42, window_ns=2 * 10**9
-        )
+        trace = build_behavior_trace(reader=reader, event_id=42, window_ns=2 * 10**9)
 
     # Report
     generate_trace_report(trace, output)

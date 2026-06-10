@@ -77,9 +77,7 @@ class SensorProvider(Protocol[T_Payload]):
     spec: SensorSpec
 
     def poll(self) -> list[SensorSample[T_Payload]]: ...
-    def subscribe(
-        self, cb: Callable[[SensorSample[T_Payload]], None]
-    ) -> Subscription: ...
+    def subscribe(self, cb: Callable[[SensorSample[T_Payload]], None]) -> Subscription: ...
 
 
 # ---------------------------------------------------------------------------

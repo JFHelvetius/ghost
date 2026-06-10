@@ -51,12 +51,8 @@ def _make_oracle(
     cov: float = 1.0,
 ) -> LinearMotionOracleFusionPolicy:
     return LinearMotionOracleFusionPolicy(
-        initial_position_enu_m=(
-            initial_pos if initial_pos is not None else _ZERO3.copy()
-        ),
-        velocity_world_mps=(
-            velocity if velocity is not None else _ZERO3.copy()
-        ),
+        initial_position_enu_m=(initial_pos if initial_pos is not None else _ZERO3.copy()),
+        velocity_world_mps=(velocity if velocity is not None else _ZERO3.copy()),
         start_stamp_sim_ns=start_ns,
         covariance_diag=cov,
     )
@@ -332,9 +328,7 @@ def test_oracle_fuse_at_t0_position_equals_initial() -> None:
     oracle = _make_oracle(initial_pos=pos0.copy(), start_ns=0)
     fi = _make_input(target_ns=0)
     result = oracle.fuse(fi)
-    np.testing.assert_array_equal(
-        result.belief.nav.pose.position_enu_m, pos0
-    )
+    np.testing.assert_array_equal(result.belief.nav.pose.position_enu_m, pos0)
 
 
 def test_oracle_fuse_linear_propagation() -> None:

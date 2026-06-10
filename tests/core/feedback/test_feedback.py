@@ -72,9 +72,7 @@ def _make_thresholds() -> AssessmentThresholds:
     )
 
 
-def _make_state(
-    stamp: int = 1000, pos_var: float = 1e-4
-) -> VehicleState:
+def _make_state(stamp: int = 1000, pos_var: float = 1e-4) -> VehicleState:
     cov = np.eye(15, dtype=np.float64) * pos_var
     pose = Pose(
         position_enu_m=np.zeros(3, dtype=np.float64),
@@ -106,9 +104,7 @@ def _make_state(
         stamp_sim_ns=stamp,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -125,9 +121,7 @@ def _make_state(
     )
 
 
-def _make_assessment(
-    stamp: int = 1000, pos_var: float = 1e-4
-) -> BeliefSelfAssessment:
+def _make_assessment(stamp: int = 1000, pos_var: float = 1e-4) -> BeliefSelfAssessment:
     return assess_belief(_make_state(stamp, pos_var), _make_thresholds())
 
 
@@ -158,9 +152,7 @@ def _make_outcome(
         position_enu_m=np.array([error_x, 0.0, 0.0], dtype=np.float64),
         orientation_q=_Q.copy(),
     )
-    return compute_divergence(
-        pred, actual, pred.predicted_observation_stamp_sim_ns
-    )
+    return compute_divergence(pred, actual, pred.predicted_observation_stamp_sim_ns)
 
 
 # ---------------------------------------------------------------------------
@@ -197,9 +189,7 @@ def test_calibration_history_rejects_negative_count() -> None:
 
 
 def test_calibration_history_rejects_sum_mismatch() -> None:
-    with pytest.raises(
-        ValueError, match=r"sum\(counts\) .* must equal outcomes_considered"
-    ):
+    with pytest.raises(ValueError, match=r"sum\(counts\) .* must equal outcomes_considered"):
         CalibrationHistory(
             outcomes_considered=5,
             count_within_1_std=2,
@@ -263,10 +253,7 @@ def test_calibration_history_empty_rejects_nonzero_worst() -> None:
 def test_calibration_history_empty_rejects_stamp_present() -> None:
     with pytest.raises(
         ValueError,
-        match=(
-            "most_recent_observed_stamp_sim_ns must be None when "
-            "outcomes_considered == 0"
-        ),
+        match=("most_recent_observed_stamp_sim_ns must be None when outcomes_considered == 0"),
     ):
         CalibrationHistory(
             outcomes_considered=0,
@@ -283,10 +270,7 @@ def test_calibration_history_empty_rejects_stamp_present() -> None:
 def test_calibration_history_nonempty_rejects_stamp_none() -> None:
     with pytest.raises(
         ValueError,
-        match=(
-            "most_recent_observed_stamp_sim_ns must not be None when "
-            "outcomes_considered > 0"
-        ),
+        match=("most_recent_observed_stamp_sim_ns must not be None when outcomes_considered > 0"),
     ):
         CalibrationHistory(
             outcomes_considered=1,
@@ -350,9 +334,7 @@ def test_calibrated_assessment_accepts_valid_input() -> None:
 
 def test_calibrated_assessment_rejects_wrong_raw_type() -> None:
     history = build_calibration_history([], max_n=32)
-    with pytest.raises(
-        TypeError, match="raw_assessment must be BeliefSelfAssessment"
-    ):
+    with pytest.raises(TypeError, match="raw_assessment must be BeliefSelfAssessment"):
         CalibratedSelfAssessment(
             raw_assessment="not an assessment",  # type: ignore[arg-type]
             calibration_history=history,
@@ -364,9 +346,7 @@ def test_calibrated_assessment_rejects_wrong_raw_type() -> None:
 
 def test_calibrated_assessment_rejects_wrong_history_type() -> None:
     raw = _make_assessment()
-    with pytest.raises(
-        TypeError, match="calibration_history must be CalibrationHistory"
-    ):
+    with pytest.raises(TypeError, match="calibration_history must be CalibrationHistory"):
         CalibratedSelfAssessment(
             raw_assessment=raw,
             calibration_history="not a history",  # type: ignore[arg-type]
@@ -379,9 +359,7 @@ def test_calibrated_assessment_rejects_wrong_history_type() -> None:
 def test_calibrated_assessment_rejects_wrong_level_type() -> None:
     raw = _make_assessment()
     history = build_calibration_history([], max_n=32)
-    with pytest.raises(
-        TypeError, match="adjusted_overall_level must be SelfAssessmentLevel"
-    ):
+    with pytest.raises(TypeError, match="adjusted_overall_level must be SelfAssessmentLevel"):
         CalibratedSelfAssessment(
             raw_assessment=raw,
             calibration_history=history,
@@ -391,9 +369,7 @@ def test_calibrated_assessment_rejects_wrong_level_type() -> None:
         )
 
 
-@pytest.mark.parametrize(
-    "bad_id", ["", "BadPolicy", "1bad", "has space", "a" * 65]
-)
+@pytest.mark.parametrize("bad_id", ["", "BadPolicy", "1bad", "has space", "a" * 65])
 def test_calibrated_assessment_rejects_bad_policy_id(bad_id: str) -> None:
     raw = _make_assessment()
     history = build_calibration_history([], max_n=32)
@@ -455,9 +431,7 @@ def test_build_history_tracks_most_recent_stamp() -> None:
 
 
 def test_build_history_truncates_to_max_n() -> None:
-    outcomes = [
-        _make_outcome(source_stamp=1000 * (i + 1)) for i in range(10)
-    ]
+    outcomes = [_make_outcome(source_stamp=1000 * (i + 1)) for i in range(10)]
     h = build_calibration_history(outcomes, max_n=3)
     assert h.outcomes_considered == 3
     # The 3 most recent are 8000, 9000, 10000 (all error_x=0 → WITHIN)
@@ -480,9 +454,7 @@ def test_build_history_rejects_negative_max_n() -> None:
 
 
 def test_policy_satisfies_protocol() -> None:
-    assert isinstance(
-        MahalanobisDowngradePolicy(), CalibrationAdjustmentPolicy
-    )
+    assert isinstance(MahalanobisDowngradePolicy(), CalibrationAdjustmentPolicy)
 
 
 def test_policy_id_includes_parameters() -> None:
@@ -494,9 +466,7 @@ def test_policy_id_includes_parameters() -> None:
 def test_policy_rejects_bad_params() -> None:
     with pytest.raises(ValueError, match="min_outcomes must be >= 0"):
         MahalanobisDowngradePolicy(min_outcomes=-1)
-    with pytest.raises(
-        ValueError, match="downgrade_threshold must be >= 1"
-    ):
+    with pytest.raises(ValueError, match="downgrade_threshold must be >= 1"):
         MahalanobisDowngradePolicy(downgrade_threshold=0)
 
 
@@ -510,15 +480,10 @@ def test_policy_passthrough_when_empty_history() -> None:
 
 
 def test_policy_passthrough_below_min_outcomes() -> None:
-    policy = MahalanobisDowngradePolicy(
-        min_outcomes=4, downgrade_threshold=2
-    )
+    policy = MahalanobisDowngradePolicy(min_outcomes=4, downgrade_threshold=2)
     raw = _make_assessment()
     # 3 outcomes all BEYOND_5_STD, but min_outcomes=4 → passthrough
-    outcomes = [
-        _make_outcome(source_stamp=1000 * (i + 1), error_x=2.0)
-        for i in range(3)
-    ]
+    outcomes = [_make_outcome(source_stamp=1000 * (i + 1), error_x=2.0) for i in range(3)]
     history = build_calibration_history(outcomes, max_n=32)
     cal = policy.adjust(raw, history)
     assert cal.adjusted_overall_level == raw.overall_level
@@ -526,9 +491,7 @@ def test_policy_passthrough_below_min_outcomes() -> None:
 
 
 def test_policy_passthrough_below_downgrade_threshold() -> None:
-    policy = MahalanobisDowngradePolicy(
-        min_outcomes=4, downgrade_threshold=2
-    )
+    policy = MahalanobisDowngradePolicy(min_outcomes=4, downgrade_threshold=2)
     raw = _make_assessment()
     # 5 outcomes, only 1 BEYOND_3, rest WITHIN_1 → below threshold → passthrough
     outcomes = [
@@ -545,9 +508,7 @@ def test_policy_passthrough_below_downgrade_threshold() -> None:
 
 
 def test_policy_downgrade_when_threshold_crossed() -> None:
-    policy = MahalanobisDowngradePolicy(
-        min_outcomes=4, downgrade_threshold=2
-    )
+    policy = MahalanobisDowngradePolicy(min_outcomes=4, downgrade_threshold=2)
     raw = _make_assessment(pos_var=1e-4)  # KNOWN
     # 4 outcomes, 2 BEYOND_5 → triggers downgrade
     outcomes = [
@@ -564,9 +525,7 @@ def test_policy_downgrade_when_threshold_crossed() -> None:
 
 
 def test_policy_downgrades_uncertain_to_unknown() -> None:
-    policy = MahalanobisDowngradePolicy(
-        min_outcomes=4, downgrade_threshold=2
-    )
+    policy = MahalanobisDowngradePolicy(min_outcomes=4, downgrade_threshold=2)
     # Use cov that produces UNCERTAIN (pos_var between known and unknown
     # thresholds). thresholds.known=0.05, unknown=0.5 → std in (0.05, 0.5).
     # pos_var = 0.04 → std = 0.2.
@@ -584,9 +543,7 @@ def test_policy_downgrades_uncertain_to_unknown() -> None:
 
 
 def test_policy_unknown_stays_unknown_on_downgrade() -> None:
-    policy = MahalanobisDowngradePolicy(
-        min_outcomes=4, downgrade_threshold=2
-    )
+    policy = MahalanobisDowngradePolicy(min_outcomes=4, downgrade_threshold=2)
     raw = _make_assessment(pos_var=10.0)  # std huge → UNKNOWN
     assert raw.overall_level == SelfAssessmentLevel.UNKNOWN
     outcomes = [
@@ -724,8 +681,6 @@ def test_taxonomy_rejects_non_string_input() -> None:
 
 
 def test_policy_exposes_parameters_as_properties() -> None:
-    p = MahalanobisDowngradePolicy(
-        min_outcomes=7, downgrade_threshold=3
-    )
+    p = MahalanobisDowngradePolicy(min_outcomes=7, downgrade_threshold=3)
     assert p.min_outcomes == 7
     assert p.downgrade_threshold == 3

@@ -88,19 +88,13 @@ class MCAPFileSink:
     def file_path(self) -> Path:
         return self._file_path
 
-    def publish(
-        self, channel: str, stamp_sim_ns: int, message: Any
-    ) -> None:
+    def publish(self, channel: str, stamp_sim_ns: int, message: Any) -> None:
         if self._writer is None:
             raise RuntimeError("MCAPFileSink is closed; cannot publish")
         if not channel.startswith("/"):
-            raise ValueError(
-                f"channel must start with '/'; got {channel!r}"
-            )
+            raise ValueError(f"channel must start with '/'; got {channel!r}")
         if stamp_sim_ns < 0:
-            raise ValueError(
-                f"stamp_sim_ns must be >= 0; got {stamp_sim_ns}"
-            )
+            raise ValueError(f"stamp_sim_ns must be >= 0; got {stamp_sim_ns}")
         schema_name = _schema_name_for(message)
         channel_id = self._ensure_channel(channel, schema_name)
         payload_bytes = encode_to_bytes(message)

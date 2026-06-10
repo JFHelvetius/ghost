@@ -61,9 +61,7 @@ def _prediction(
         predicted_observation_stamp_sim_ns=source_stamp + horizon,
         horizon_ns=horizon,
         predicted_pose=predicted_pose if predicted_pose is not None else _pose(),
-        predicted_pose_std=(
-            predicted_std if predicted_std is not None else _std()
-        ),
+        predicted_pose_std=(predicted_std if predicted_std is not None else _std()),
         associated_directive_hash=None,
         predictor_id="constant_velocity_v1",
     )
@@ -96,9 +94,7 @@ def test_verdict_values_are_snake_case() -> None:
 def test_identity_case_yields_zero_error_within_1_std() -> None:
     pred = _prediction()
     outcome = compute_divergence(pred, _pose(), pred.predicted_observation_stamp_sim_ns)
-    np.testing.assert_array_equal(
-        outcome.position_error_enu_m, np.zeros(3, dtype=np.float64)
-    )
+    np.testing.assert_array_equal(outcome.position_error_enu_m, np.zeros(3, dtype=np.float64))
     assert outcome.position_error_norm_m == 0.0
     np.testing.assert_allclose(
         outcome.orientation_error_rad,
@@ -125,20 +121,14 @@ def test_identity_case_yields_zero_error_within_1_std() -> None:
         (10.0, DivergenceVerdict.BEYOND_5_STD),
     ],
 )
-def test_position_error_verdict_thresholds(
-    multiplier: float, expected: DivergenceVerdict
-) -> None:
+def test_position_error_verdict_thresholds(multiplier: float, expected: DivergenceVerdict) -> None:
     pred = _prediction(predicted_std=_std(p=0.2, o=10.0))
     # Move only in x by `multiplier * pos_std_x` → mahal_max = multiplier
     actual = Pose(
-        position_enu_m=np.array(
-            [multiplier * 0.2, 0.0, 0.0], dtype=np.float64
-        ),
+        position_enu_m=np.array([multiplier * 0.2, 0.0, 0.0], dtype=np.float64),
         orientation_q=_Q_IDENTITY.copy(),
     )
-    outcome = compute_divergence(
-        pred, actual, pred.predicted_observation_stamp_sim_ns
-    )
+    outcome = compute_divergence(pred, actual, pred.predicted_observation_stamp_sim_ns)
     assert outcome.verdict == expected
     assert outcome.position_mahalanobis_max == pytest.approx(multiplier)
 
@@ -150,9 +140,7 @@ def test_position_error_verdict_thresholds(
 
 def test_mahalanobis_zero_over_zero_is_zero() -> None:
     pred = _prediction(predicted_std=_std(p=0.0, o=0.0))
-    outcome = compute_divergence(
-        pred, _pose(), pred.predicted_observation_stamp_sim_ns
-    )
+    outcome = compute_divergence(pred, _pose(), pred.predicted_observation_stamp_sim_ns)
     assert outcome.position_mahalanobis_max == 0.0
     assert outcome.orientation_mahalanobis_max == 0.0
     assert outcome.verdict == DivergenceVerdict.WITHIN_1_STD
@@ -161,9 +149,7 @@ def test_mahalanobis_zero_over_zero_is_zero() -> None:
 def test_mahalanobis_nonzero_over_zero_is_inf() -> None:
     pred = _prediction(predicted_std=_std(p=0.0, o=10.0))
     actual = _pose(x=0.5)
-    outcome = compute_divergence(
-        pred, actual, pred.predicted_observation_stamp_sim_ns
-    )
+    outcome = compute_divergence(pred, actual, pred.predicted_observation_stamp_sim_ns)
     assert outcome.position_mahalanobis_max == float("inf")
     assert outcome.verdict == DivergenceVerdict.BEYOND_5_STD
 
@@ -175,12 +161,8 @@ def test_mahalanobis_nonzero_over_zero_is_inf() -> None:
 
 def test_orientation_identity_yields_zero_error() -> None:
     pred = _prediction()
-    outcome = compute_divergence(
-        pred, _pose(), pred.predicted_observation_stamp_sim_ns
-    )
-    assert outcome.orientation_error_norm_rad == pytest.approx(
-        0.0, abs=1e-12
-    )
+    outcome = compute_divergence(pred, _pose(), pred.predicted_observation_stamp_sim_ns)
+    assert outcome.orientation_error_norm_rad == pytest.approx(0.0, abs=1e-12)
 
 
 def test_orientation_180_degree_rotation_yields_pi_norm() -> None:
@@ -189,9 +171,7 @@ def test_orientation_180_degree_rotation_yields_pi_norm() -> None:
         position_enu_m=np.zeros(3, dtype=np.float64),
         orientation_q=_Q_180_X.copy(),
     )
-    outcome = compute_divergence(
-        pred, actual, pred.predicted_observation_stamp_sim_ns
-    )
+    outcome = compute_divergence(pred, actual, pred.predicted_observation_stamp_sim_ns)
     assert outcome.orientation_error_norm_rad == pytest.approx(np.pi)
 
 
@@ -202,12 +182,8 @@ def test_orientation_negated_quaternion_is_same_rotation() -> None:
         position_enu_m=np.zeros(3, dtype=np.float64),
         orientation_q=(-_Q_IDENTITY).copy(),
     )
-    outcome = compute_divergence(
-        pred, actual, pred.predicted_observation_stamp_sim_ns
-    )
-    assert outcome.orientation_error_norm_rad == pytest.approx(
-        0.0, abs=1e-12
-    )
+    outcome = compute_divergence(pred, actual, pred.predicted_observation_stamp_sim_ns)
+    assert outcome.orientation_error_norm_rad == pytest.approx(0.0, abs=1e-12)
 
 
 # ---------------------------------------------------------------------------
@@ -266,9 +242,7 @@ def test_outcome_post_init_rejects_inconsistent_verdict() -> None:
 
 def test_outcome_post_init_rejects_negative_norm() -> None:
     pred = _prediction()
-    with pytest.raises(
-        ValueError, match="position_error_norm_m must be >= 0"
-    ):
+    with pytest.raises(ValueError, match="position_error_norm_m must be >= 0"):
         PredictionOutcome(
             prediction=pred,
             actual_belief_stamp_sim_ns=pred.predicted_observation_stamp_sim_ns,
@@ -290,9 +264,7 @@ def test_outcome_post_init_rejects_non_finite_error() -> None:
             prediction=pred,
             actual_belief_stamp_sim_ns=pred.predicted_observation_stamp_sim_ns,
             actual_pose=_pose(),
-            position_error_enu_m=np.array(
-                [np.nan, 0.0, 0.0], dtype=np.float64
-            ),
+            position_error_enu_m=np.array([np.nan, 0.0, 0.0], dtype=np.float64),
             position_error_norm_m=0.0,
             orientation_error_rad=np.zeros(3, dtype=np.float64),
             orientation_error_norm_rad=0.0,
@@ -338,29 +310,21 @@ def test_outcome_post_init_accepts_inf_mahalanobis() -> None:
 
 def test_outcome_is_frozen() -> None:
     pred = _prediction()
-    outcome = compute_divergence(
-        pred, _pose(), pred.predicted_observation_stamp_sim_ns
-    )
+    outcome = compute_divergence(pred, _pose(), pred.predicted_observation_stamp_sim_ns)
     with pytest.raises(AttributeError):
         outcome.verdict = DivergenceVerdict.BEYOND_5_STD  # type: ignore[misc]
 
 
 def test_outcome_error_arrays_are_read_only() -> None:
     pred = _prediction()
-    outcome = compute_divergence(
-        pred, _pose(x=0.05), pred.predicted_observation_stamp_sim_ns
-    )
-    with pytest.raises(
-        ValueError, match=r"read-only|assignment destination"
-    ):
+    outcome = compute_divergence(pred, _pose(x=0.05), pred.predicted_observation_stamp_sim_ns)
+    with pytest.raises(ValueError, match=r"read-only|assignment destination"):
         outcome.position_error_enu_m[0] = 99.0
 
 
 def test_outcome_schema_version() -> None:
     pred = _prediction()
-    outcome = compute_divergence(
-        pred, _pose(), pred.predicted_observation_stamp_sim_ns
-    )
+    outcome = compute_divergence(pred, _pose(), pred.predicted_observation_stamp_sim_ns)
     assert outcome.schema_version == DIVERGENCE_PROTOCOL_VERSION
 
 
@@ -373,12 +337,8 @@ def test_compute_divergence_pure_function() -> None:
     """Same input → byte-equal output via encode_to_bytes."""
     pred = _prediction(predicted_std=_std(p=0.2, o=0.1))
     actual = _pose(x=0.1, y=-0.05, z=0.02)
-    o1 = compute_divergence(
-        pred, actual, pred.predicted_observation_stamp_sim_ns
-    )
-    o2 = compute_divergence(
-        pred, actual, pred.predicted_observation_stamp_sim_ns
-    )
+    o1 = compute_divergence(pred, actual, pred.predicted_observation_stamp_sim_ns)
+    o2 = compute_divergence(pred, actual, pred.predicted_observation_stamp_sim_ns)
     assert encode_to_bytes(o1) == encode_to_bytes(o2)
 
 
@@ -393,9 +353,7 @@ def test_compute_divergence_rejects_wrong_pose_type() -> None:
 
 
 def test_compute_divergence_rejects_wrong_prediction_type() -> None:
-    with pytest.raises(
-        TypeError, match="prediction must be BeliefForwardPrediction"
-    ):
+    with pytest.raises(TypeError, match="prediction must be BeliefForwardPrediction"):
         compute_divergence(
             "not a prediction",  # type: ignore[arg-type]
             _pose(),

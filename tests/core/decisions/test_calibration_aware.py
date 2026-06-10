@@ -97,9 +97,7 @@ def _make_state(stamp: int = 1000, pos_var: float = 1e-4) -> VehicleState:
         stamp_sim_ns=stamp,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -127,15 +125,11 @@ def _make_thresholds() -> AssessmentThresholds:
     )
 
 
-def _make_assessment(
-    stamp: int = 1000, pos_var: float = 1e-4
-) -> BeliefSelfAssessment:
+def _make_assessment(stamp: int = 1000, pos_var: float = 1e-4) -> BeliefSelfAssessment:
     return assess_belief(_make_state(stamp, pos_var), _make_thresholds())
 
 
-def _make_bad_outcome(
-    source_stamp: int = 1000, horizon: int = 500
-) -> object:
+def _make_bad_outcome(source_stamp: int = 1000, horizon: int = 500) -> object:
     pred = BeliefForwardPrediction(
         source_belief_stamp_sim_ns=source_stamp,
         predicted_observation_stamp_sim_ns=source_stamp + horizon,
@@ -155,9 +149,7 @@ def _make_bad_outcome(
         position_enu_m=np.array([1.0, 0.0, 0.0], dtype=np.float64),
         orientation_q=_Q.copy(),
     )
-    return compute_divergence(
-        pred, actual, pred.predicted_observation_stamp_sim_ns
-    )
+    return compute_divergence(pred, actual, pred.predicted_observation_stamp_sim_ns)
 
 
 def _make_downgrade_calibrated(
@@ -166,14 +158,9 @@ def _make_downgrade_calibrated(
     """Build a calibrated assessment whose adjusted level is UNCERTAIN
     via the standard feedback path."""
     raw = _make_assessment(stamp=stamp, pos_var=1e-4)  # KNOWN
-    outcomes = [
-        _make_bad_outcome(source_stamp=900 + 100 * i, horizon=10)
-        for i in range(4)
-    ]
-    policy = MahalanobisDowngradePolicy(
-        min_outcomes=4, downgrade_threshold=2
-    )
-    cal = assess_with_feedback(raw, outcomes, policy)
+    outcomes = [_make_bad_outcome(source_stamp=900 + 100 * i, horizon=10) for i in range(4)]
+    policy = MahalanobisDowngradePolicy(min_outcomes=4, downgrade_threshold=2)
+    cal = assess_with_feedback(raw, outcomes, policy)  # type: ignore[arg-type]
     assert cal.adjusted_overall_level == SelfAssessmentLevel.UNCERTAIN
     return cal
 
@@ -345,9 +332,7 @@ def test_decision_context_without_calibrated_byte_equal_across_runs() -> None:
     # through it indirectly via rationale → decision, but we encode
     # the raw assessment to assert backward compat of the carried
     # field.
-    assert encode_to_bytes(ctx1.self_assessment) == encode_to_bytes(
-        ctx2.self_assessment
-    )
+    assert encode_to_bytes(ctx1.self_assessment) == encode_to_bytes(ctx2.self_assessment)
 
 
 # ---------------------------------------------------------------------------

@@ -116,23 +116,18 @@ def _validate_envelope(
     Returns the inner mapping on success.
     """
     if not isinstance(data, Mapping):
-        raise TypeError(
-            f"expected JSON mapping; got {type(data).__name__}"
-        )
+        raise TypeError(f"expected JSON mapping; got {type(data).__name__}")
     if "schema_version" not in data:
         raise ValueError("missing 'schema_version' in JSON envelope")
     if data["schema_version"] != schema_version:
         raise ValueError(
-            f"incompatible schema_version {data['schema_version']!r}; "
-            f"expected {schema_version!r}"
+            f"incompatible schema_version {data['schema_version']!r}; expected {schema_version!r}"
         )
     if inner_key not in data:
         raise ValueError(f"missing {inner_key!r} in JSON envelope")
     inner = data[inner_key]
     if not isinstance(inner, Mapping):
-        raise TypeError(
-            f"{inner_key!r} must be a mapping; got {type(inner).__name__}"
-        )
+        raise TypeError(f"{inner_key!r} must be a mapping; got {type(inner).__name__}")
     return inner
 
 
@@ -169,8 +164,7 @@ class ManifestArtifact:
         for c in self.sha256:
             if c not in _HEX_CHARS:
                 raise ValueError(
-                    "ManifestArtifact: sha256 must be lowercase hex; got "
-                    f"{self.sha256!r}"
+                    f"ManifestArtifact: sha256 must be lowercase hex; got {self.sha256!r}"
                 )
 
 
@@ -212,19 +206,15 @@ class RunManifest:
         try:
             json.dumps(normalized, sort_keys=True, ensure_ascii=False)
         except TypeError as e:
-            raise TypeError(
-                f"RunManifest: config_descriptor is not JSON-safe: {e}"
-            ) from e
+            raise TypeError(f"RunManifest: config_descriptor is not JSON-safe: {e}") from e
         object.__setattr__(self, "config_descriptor", normalized)
         if not isinstance(self.inputs, tuple):
             raise TypeError(
-                f"RunManifest: inputs must be a tuple; got "
-                f"{type(self.inputs).__name__}"
+                f"RunManifest: inputs must be a tuple; got {type(self.inputs).__name__}"
             )
         if not isinstance(self.outputs, tuple):
             raise TypeError(
-                f"RunManifest: outputs must be a tuple; got "
-                f"{type(self.outputs).__name__}"
+                f"RunManifest: outputs must be a tuple; got {type(self.outputs).__name__}"
             )
 
 
@@ -279,25 +269,21 @@ class MetricDelta:
             raise ValueError("MetricDelta: baseline_label cannot be empty")
         if not isinstance(self.values, Mapping):
             raise TypeError(
-                f"MetricDelta: values must be a Mapping; got "
-                f"{type(self.values).__name__}"
+                f"MetricDelta: values must be a Mapping; got {type(self.values).__name__}"
             )
         if not isinstance(self.deltas, Mapping):
             raise TypeError(
-                f"MetricDelta: deltas must be a Mapping; got "
-                f"{type(self.deltas).__name__}"
+                f"MetricDelta: deltas must be a Mapping; got {type(self.deltas).__name__}"
             )
         object.__setattr__(self, "values", dict(self.values))
         object.__setattr__(self, "deltas", dict(self.deltas))
         if self.baseline_label not in self.values:
             raise ValueError(
-                f"MetricDelta: baseline_label {self.baseline_label!r} "
-                f"must appear in values"
+                f"MetricDelta: baseline_label {self.baseline_label!r} must appear in values"
             )
         if self.baseline_label not in self.deltas:
             raise ValueError(
-                f"MetricDelta: baseline_label {self.baseline_label!r} "
-                f"must appear in deltas"
+                f"MetricDelta: baseline_label {self.baseline_label!r} must appear in deltas"
             )
 
 
@@ -325,18 +311,13 @@ class ComparativeBeliefReport:
 
     def __post_init__(self) -> None:
         if not self.baseline_label:
-            raise ValueError(
-                "ComparativeBeliefReport: baseline_label cannot be empty"
-            )
+            raise ValueError("ComparativeBeliefReport: baseline_label cannot be empty")
         if not isinstance(self.labels, tuple):
             raise TypeError(
-                "ComparativeBeliefReport: labels must be a tuple; got "
-                f"{type(self.labels).__name__}"
+                f"ComparativeBeliefReport: labels must be a tuple; got {type(self.labels).__name__}"
             )
         if not self.labels:
-            raise ValueError(
-                "ComparativeBeliefReport: labels cannot be empty"
-            )
+            raise ValueError("ComparativeBeliefReport: labels cannot be empty")
         if self.labels[0] != self.baseline_label:
             raise ValueError(
                 f"ComparativeBeliefReport: labels[0] {self.labels[0]!r} "
@@ -345,26 +326,17 @@ class ComparativeBeliefReport:
         seen: list[str] = []
         for label in self.labels:
             if label in seen:
-                raise ValueError(
-                    f"ComparativeBeliefReport: duplicate label {label!r}"
-                )
+                raise ValueError(f"ComparativeBeliefReport: duplicate label {label!r}")
             seen.append(label)
         if not isinstance(self.metrics, Mapping):
-            raise TypeError(
-                "ComparativeBeliefReport: metrics must be a Mapping"
-            )
+            raise TypeError("ComparativeBeliefReport: metrics must be a Mapping")
         if not isinstance(self.manifests, Mapping):
-            raise TypeError(
-                "ComparativeBeliefReport: manifests must be a Mapping"
-            )
+            raise TypeError("ComparativeBeliefReport: manifests must be a Mapping")
         object.__setattr__(self, "metrics", dict(self.metrics))
         object.__setattr__(self, "manifests", dict(self.manifests))
         for label in self.labels:
             if label not in self.manifests:
-                raise ValueError(
-                    f"ComparativeBeliefReport: manifests must contain "
-                    f"label {label!r}"
-                )
+                raise ValueError(f"ComparativeBeliefReport: manifests must contain label {label!r}")
 
 
 # ---------------------------------------------------------------------------
@@ -434,10 +406,7 @@ def verify_run_manifest(
             continue
         actual = _hash_file_sha256(p)
         if actual != art.sha256:
-            messages.append(
-                f"sha256 mismatch: {art.path} "
-                f"expected={art.sha256} actual={actual}"
-            )
+            messages.append(f"sha256 mismatch: {art.path} expected={art.sha256} actual={actual}")
             ok = False
     return (ok, tuple(messages))
 
@@ -461,16 +430,12 @@ def build_comparative_report(
     duplicate labels.
     """
     if not labeled_summaries:
-        raise ValueError(
-            "build_comparative_report: labeled_summaries cannot be empty"
-        )
+        raise ValueError("build_comparative_report: labeled_summaries cannot be empty")
 
     labels_list: list[str] = []
     for ls in labeled_summaries:
         if ls.label in labels_list:
-            raise ValueError(
-                f"build_comparative_report: duplicate label {ls.label!r}"
-            )
+            raise ValueError(f"build_comparative_report: duplicate label {ls.label!r}")
         labels_list.append(ls.label)
 
     baseline = labeled_summaries[0]
@@ -479,9 +444,7 @@ def build_comparative_report(
 
     metrics: dict[str, MetricDelta] = {}
     for metric_name in _NUMERIC_METRIC_NAMES:
-        baseline_value: int | float | None = getattr(
-            baseline_summary, metric_name
-        )
+        baseline_value: int | float | None = getattr(baseline_summary, metric_name)
         values: dict[str, int | float | None] = {}
         deltas: dict[str, int | float | None] = {}
         for ls in labeled_summaries:
@@ -498,9 +461,7 @@ def build_comparative_report(
             deltas=deltas,
         )
 
-    manifests: dict[str, RunManifest | None] = {
-        ls.label: ls.manifest for ls in labeled_summaries
-    }
+    manifests: dict[str, RunManifest | None] = {ls.label: ls.manifest for ls in labeled_summaries}
 
     return ComparativeBeliefReport(
         baseline_label=baseline_label,
@@ -562,9 +523,7 @@ def decode_consistency_summary_from_json(
         schema_version=BELIEF_CONSISTENCY_REPORT_SCHEMA_VERSION,
         inner_key="summary",
     )
-    decoded: BeliefConsistencySummary = from_json_dict(
-        BeliefConsistencySummary, inner
-    )
+    decoded: BeliefConsistencySummary = from_json_dict(BeliefConsistencySummary, inner)
     return decoded
 
 
@@ -580,9 +539,7 @@ def _decode_metric_delta(raw: Mapping[str, Any]) -> MetricDelta:
 def _decode_comparative_inner(
     raw: Mapping[str, Any],
 ) -> ComparativeBeliefReport:
-    analysis_version = raw.get(
-        "analysis_version", BELIEF_COMPARISON_ANALYSIS_VERSION
-    )
+    analysis_version = raw.get("analysis_version", BELIEF_COMPARISON_ANALYSIS_VERSION)
     if analysis_version != BELIEF_COMPARISON_ANALYSIS_VERSION:
         raise ValueError(
             f"incompatible analysis_version {analysis_version!r}; "
@@ -666,16 +623,12 @@ def encode_comparative_report_to_bytes(
     return (serialized + "\n").encode("utf-8")
 
 
-def generate_run_manifest(
-    manifest: RunManifest, output_path: Path
-) -> None:
+def generate_run_manifest(manifest: RunManifest, output_path: Path) -> None:
     """Write ``manifest`` as canonical JSON to ``output_path``."""
     output_path.write_bytes(encode_run_manifest_to_bytes(manifest))
 
 
-def generate_comparative_report(
-    report: ComparativeBeliefReport, output_path: Path
-) -> None:
+def generate_comparative_report(report: ComparativeBeliefReport, output_path: Path) -> None:
     """Write ``report`` as canonical JSON to ``output_path``."""
     output_path.write_bytes(encode_comparative_report_to_bytes(report))
 

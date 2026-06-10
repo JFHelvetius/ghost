@@ -141,6 +141,7 @@ def test_total_order_3_producers_5_subscribers_like() -> None:
         def _cb() -> None:
             for obs in observers:
                 obs.append(tag)
+
         return _cb
 
     clock.schedule_periodic(period_ns=7 * _MS_NS, cb=make_cb("a"))

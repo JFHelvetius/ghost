@@ -68,9 +68,7 @@ class LevelCounts:
             ("unknown", self.unknown),
         ):
             if v < 0:
-                raise ValueError(
-                    f"LevelCounts: {name} must be >= 0; got {v}"
-                )
+                raise ValueError(f"LevelCounts: {name} must be >= 0; got {v}")
 
     def total(self) -> int:
         return self.known + self.uncertain + self.unknown
@@ -107,9 +105,7 @@ class SelfAssessmentSummary:
 
     def __post_init__(self) -> None:
         if self.total_records < 0:
-            raise ValueError(
-                f"total_records must be >= 0; got {self.total_records}"
-            )
+            raise ValueError(f"total_records must be >= 0; got {self.total_records}")
         if not isinstance(self.distinct_thresholds_sha256, tuple):
             raise TypeError(
                 "distinct_thresholds_sha256 must be a tuple; got "
@@ -247,9 +243,7 @@ def encode_self_assessment_summary_to_bytes(
     return (serialized + "\n").encode("utf-8")
 
 
-def generate_self_assessment_summary(
-    summary: SelfAssessmentSummary, output_path: Path
-) -> None:
+def generate_self_assessment_summary(summary: SelfAssessmentSummary, output_path: Path) -> None:
     """Write ``summary`` as canonical JSON to ``output_path``."""
     output_path.write_bytes(encode_self_assessment_summary_to_bytes(summary))
 
@@ -266,23 +260,18 @@ def _validate_envelope(
     inner_key: str,
 ) -> Mapping[str, Any]:
     if not isinstance(data, Mapping):
-        raise TypeError(
-            f"expected JSON mapping; got {type(data).__name__}"
-        )
+        raise TypeError(f"expected JSON mapping; got {type(data).__name__}")
     if "schema_version" not in data:
         raise ValueError("missing 'schema_version' in JSON envelope")
     if data["schema_version"] != schema_version:
         raise ValueError(
-            f"incompatible schema_version {data['schema_version']!r}; "
-            f"expected {schema_version!r}"
+            f"incompatible schema_version {data['schema_version']!r}; expected {schema_version!r}"
         )
     if inner_key not in data:
         raise ValueError(f"missing {inner_key!r} in JSON envelope")
     inner = data[inner_key]
     if not isinstance(inner, Mapping):
-        raise TypeError(
-            f"{inner_key!r} must be a mapping; got {type(inner).__name__}"
-        )
+        raise TypeError(f"{inner_key!r} must be a mapping; got {type(inner).__name__}")
     return inner
 
 
@@ -306,9 +295,7 @@ def decode_self_assessment_summary_from_json(
         schema_version=SELF_ASSESSMENT_SUMMARY_SCHEMA_VERSION,
         inner_key="summary",
     )
-    analysis_version = inner.get(
-        "analysis_version", SELF_ASSESSMENT_SUMMARY_ANALYSIS_VERSION
-    )
+    analysis_version = inner.get("analysis_version", SELF_ASSESSMENT_SUMMARY_ANALYSIS_VERSION)
     if analysis_version != SELF_ASSESSMENT_SUMMARY_ANALYSIS_VERSION:
         raise ValueError(
             f"incompatible analysis_version {analysis_version!r}; "
@@ -318,16 +305,12 @@ def decode_self_assessment_summary_from_json(
         total_records=inner["total_records"],
         position_counts=_decode_level_counts(inner["position_counts"]),
         velocity_counts=_decode_level_counts(inner["velocity_counts"]),
-        orientation_counts=_decode_level_counts(
-            inner["orientation_counts"]
-        ),
+        orientation_counts=_decode_level_counts(inner["orientation_counts"]),
         overall_counts=_decode_level_counts(inner["overall_counts"]),
         timestamp_first_ns=inner["timestamp_first_ns"],
         timestamp_last_ns=inner["timestamp_last_ns"],
         timestamp_span_ns=inner["timestamp_span_ns"],
-        distinct_thresholds_sha256=tuple(
-            inner["distinct_thresholds_sha256"]
-        ),
+        distinct_thresholds_sha256=tuple(inner["distinct_thresholds_sha256"]),
         analysis_version=analysis_version,
     )
 

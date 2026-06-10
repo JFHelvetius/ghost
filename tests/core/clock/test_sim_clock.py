@@ -32,9 +32,12 @@ if TYPE_CHECKING:
 
 def _raises(exc: BaseException) -> Callable[[], None]:
     """Devuelve un callable que lanza `exc`; alternativa a lambdas con throw."""
+
     def _inner() -> None:
         raise exc
+
     return _inner
+
 
 _MS_NS: int = 1_000_000
 _SECOND_NS: int = 1_000_000_000
@@ -187,6 +190,7 @@ def test_periodic_count_exact_for_coprime_callbacks() -> None:
     def make_inc(key: str) -> Callable[[], None]:
         def _inc() -> None:
             counts[key] += 1
+
         return _inc
 
     clock.schedule_periodic(period_ns=7 * _MS_NS, cb=make_inc("a"))

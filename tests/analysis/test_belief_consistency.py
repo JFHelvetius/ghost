@@ -408,9 +408,7 @@ def test_timestamps_out_of_order_records_use_min_max() -> None:
 
 
 def test_single_record_timestamp_span_is_zero() -> None:
-    summary = summarize_belief_consistency(
-        _report(records=(_record(timestamp_ns=999),))
-    )
+    summary = summarize_belief_consistency(_report(records=(_record(timestamp_ns=999),)))
     assert summary.timestamp_first_ns == 999
     assert summary.timestamp_last_ns == 999
     assert summary.timestamp_span_ns == 0
@@ -507,8 +505,7 @@ def test_sha256_stable_across_repeated_encodings() -> None:
     )
     summary = summarize_belief_consistency(_report(records=recs))
     hashes = {
-        hashlib.sha256(encode_consistency_summary_to_bytes(summary)).hexdigest()
-        for _ in range(5)
+        hashlib.sha256(encode_consistency_summary_to_bytes(summary)).hexdigest() for _ in range(5)
     }
     assert len(hashes) == 1
 
@@ -611,9 +608,7 @@ def test_decode_summarize_pipeline_matches_direct_summary() -> None:
     direct = summarize_belief_consistency(original)
 
     data = json.loads(encode_belief_report_to_bytes(original).decode("utf-8"))
-    via_pipeline = summarize_belief_consistency(
-        decode_belief_report_from_json(data)
-    )
+    via_pipeline = summarize_belief_consistency(decode_belief_report_from_json(data))
 
     assert direct == via_pipeline
 
@@ -626,9 +621,7 @@ def test_decode_summarize_pipeline_matches_direct_summary() -> None:
 def test_generate_consistency_report_writes_canonical_bytes(
     tmp_path: Path,
 ) -> None:
-    summary = summarize_belief_consistency(
-        _report(records=(_record(timestamp_ns=0),))
-    )
+    summary = summarize_belief_consistency(_report(records=(_record(timestamp_ns=0),)))
     p = tmp_path / "summary.json"
     generate_consistency_report(summary, p)
     assert p.read_bytes() == encode_consistency_summary_to_bytes(summary)

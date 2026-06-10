@@ -86,9 +86,7 @@ def _make_state(
         stamp_sim_ns=stamp_sim_ns,
         stamp_wall_ns=stamp_sim_ns,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -114,11 +112,7 @@ def _make_diagonal_cov(
 ) -> np.ndarray:
     """Build a 15×15 diagonal covariance with given per-block variances."""
     diag = np.array(
-        [pos_var] * 3
-        + [vel_var] * 3
-        + [ori_var] * 3
-        + [bias_var] * 3
-        + [bias_var] * 3,
+        [pos_var] * 3 + [vel_var] * 3 + [ori_var] * 3 + [bias_var] * 3 + [bias_var] * 3,
         dtype=np.float64,
     )
     return np.diag(diag)
@@ -326,11 +320,19 @@ def test_mixed_per_axis_levels_block_takes_worst() -> None:
         [
             1e-4,  # pos x: std 0.01 = KNOWN
             4e-2,  # pos y: std 0.2  = UNCERTAIN
-            1.0,   # pos z: std 1.0  = UNKNOWN
-            1e-4, 1e-4, 1e-4,   # vel block (KNOWN)
-            1e-4, 1e-4, 1e-4,   # ori block (KNOWN)
-            1e-6, 1e-6, 1e-6,   # accel bias
-            1e-6, 1e-6, 1e-6,   # gyro bias
+            1.0,  # pos z: std 1.0  = UNKNOWN
+            1e-4,
+            1e-4,
+            1e-4,  # vel block (KNOWN)
+            1e-4,
+            1e-4,
+            1e-4,  # ori block (KNOWN)
+            1e-6,
+            1e-6,
+            1e-6,  # accel bias
+            1e-6,
+            1e-6,
+            1e-6,  # gyro bias
         ],
         dtype=np.float64,
     )

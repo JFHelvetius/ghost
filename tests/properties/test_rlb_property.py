@@ -56,6 +56,8 @@ from project_ghost.telemetry import (
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from project_ghost.properties import RLBVerificationReport
+
 
 _T0_NS = 1_000_000_000
 _DT_NS = 100_000_000
@@ -73,11 +75,13 @@ def fixed_raw_assessment() -> BeliefSelfAssessment:
         start_stamp_sim_ns=_T0_NS,
         covariance_diag=1e-4,
     )
-    state = oracle.fuse(FusionInput(
-        sensor_samples=(),
-        prior_belief_stamp_sim_ns=None,
-        target_stamp_sim_ns=_T0_NS,
-    )).belief
+    state = oracle.fuse(
+        FusionInput(
+            sensor_samples=(),
+            prior_belief_stamp_sim_ns=None,
+            target_stamp_sim_ns=_T0_NS,
+        )
+    ).belief
     thresholds = AssessmentThresholds(
         position_known_std_m=0.05,
         position_unknown_std_m=0.5,
@@ -109,16 +113,21 @@ def _outcome_sequences(draw: st.DrawFn) -> list[DivergenceVerdict]:
     """
     length = draw(st.integers(min_value=1, max_value=60))
     return [
-        draw(st.sampled_from([
-            DivergenceVerdict.WITHIN_1_STD,
-            DivergenceVerdict.BEYOND_5_STD,
-        ]))
+        draw(
+            st.sampled_from(
+                [
+                    DivergenceVerdict.WITHIN_1_STD,
+                    DivergenceVerdict.BEYOND_5_STD,
+                ]
+            )
+        )
         for _ in range(length)
     ]
 
 
 def _history_from_window(
-    window: list[DivergenceVerdict], stamp: int,
+    window: list[DivergenceVerdict],
+    stamp: int,
 ) -> CalibrationHistory:
     """Build a ``CalibrationHistory`` from a window of verdicts. Mirrors
     the counting logic that ``build_calibration_history`` performs on
@@ -126,8 +135,10 @@ def _history_from_window(
     if not window:
         return CalibrationHistory(
             outcomes_considered=0,
-            count_within_1_std=0, count_beyond_1_std=0,
-            count_beyond_3_std=0, count_beyond_5_std=0,
+            count_within_1_std=0,
+            count_beyond_1_std=0,
+            count_beyond_3_std=0,
+            count_beyond_5_std=0,
             worst_position_mahalanobis=0.0,
             worst_orientation_mahalanobis=0.0,
             most_recent_observed_stamp_sim_ns=None,
@@ -193,12 +204,14 @@ def _materialise_mcap(
 
 
 def _with_belief_stamp(
-    raw: BeliefSelfAssessment, stamp_sim_ns: int,
+    raw: BeliefSelfAssessment,
+    stamp_sim_ns: int,
 ) -> BeliefSelfAssessment:
     """Clone ``raw`` with an updated ``belief_stamp_sim_ns``. The other
     fields are unchanged; needed because each cycle must publish under
     a distinct stamp."""
     from dataclasses import replace
+
     return replace(raw, belief_stamp_sim_ns=stamp_sim_ns)
 
 
@@ -246,10 +259,13 @@ def _verify_sequence(
     tmp_path: Path,
     *,
     max_history: int = _W,
-):
+) -> RLBVerificationReport:
     mcap_path = tmp_path / "scenario.mcap"
     _materialise_mcap(
-        raw, verdicts, mcap_path, max_history=max_history,
+        raw,
+        verdicts,
+        mcap_path,
+        max_history=max_history,
     )
     return verify_rlb(mcap_path, max_history=max_history)
 
@@ -283,10 +299,7 @@ def test_adversarial_short_drift_then_recovery_holds(
 ) -> None:
     """3 dirty cycles followed by W+5 clean cycles — recovery happens
     well within the bound. L(t) = 3, much less than W=32."""
-    verdicts = (
-        [DivergenceVerdict.BEYOND_5_STD] * 3
-        + [DivergenceVerdict.WITHIN_1_STD] * (_W + 5)
-    )
+    verdicts = [DivergenceVerdict.BEYOND_5_STD] * 3 + [DivergenceVerdict.WITHIN_1_STD] * (_W + 5)
     report = _verify_sequence(fixed_raw_assessment, verdicts, tmp_path)
     assert report.holds
     # First recovery transition exists.
@@ -299,10 +312,7 @@ def test_adversarial_long_drift_then_recovery_at_bound(
 ) -> None:
     """W dirty cycles followed by W+5 clean cycles — the worst case
     that still satisfies the bound. L(t) = W = 32 exactly."""
-    verdicts = (
-        [DivergenceVerdict.BEYOND_5_STD] * _W
-        + [DivergenceVerdict.WITHIN_1_STD] * (_W + 5)
-    )
+    verdicts = [DivergenceVerdict.BEYOND_5_STD] * _W + [DivergenceVerdict.WITHIN_1_STD] * (_W + 5)
     report = _verify_sequence(fixed_raw_assessment, verdicts, tmp_path)
     assert report.holds
     assert report.cycles_precondition_held >= 1

@@ -77,14 +77,10 @@ def _validate_sha256(s: object, *, name: str) -> None:
     if not isinstance(s, str):
         raise TypeError(f"{name} must be str; got {type(s).__name__}")
     if len(s) != _SHA256_HEX_LEN:
-        raise ValueError(
-            f"{name} must be {_SHA256_HEX_LEN} hex chars; got len={len(s)}"
-        )
+        raise ValueError(f"{name} must be {_SHA256_HEX_LEN} hex chars; got len={len(s)}")
     for c in s:
         if c not in _HEX_CHARS:
-            raise ValueError(
-                f"{name} must be lowercase hex; got {s!r}"
-            )
+            raise ValueError(f"{name} must be lowercase hex; got {s!r}")
 
 
 def _validate_envelope(
@@ -94,23 +90,18 @@ def _validate_envelope(
     inner_key: str,
 ) -> Mapping[str, Any]:
     if not isinstance(data, Mapping):
-        raise TypeError(
-            f"expected JSON mapping; got {type(data).__name__}"
-        )
+        raise TypeError(f"expected JSON mapping; got {type(data).__name__}")
     if "schema_version" not in data:
         raise ValueError("missing 'schema_version' in JSON envelope")
     if data["schema_version"] != schema_version:
         raise ValueError(
-            f"incompatible schema_version {data['schema_version']!r}; "
-            f"expected {schema_version!r}"
+            f"incompatible schema_version {data['schema_version']!r}; expected {schema_version!r}"
         )
     if inner_key not in data:
         raise ValueError(f"missing {inner_key!r} in JSON envelope")
     inner = data[inner_key]
     if not isinstance(inner, Mapping):
-        raise TypeError(
-            f"{inner_key!r} must be a mapping; got {type(inner).__name__}"
-        )
+        raise TypeError(f"{inner_key!r} must be a mapping; got {type(inner).__name__}")
     return inner
 
 
@@ -182,18 +173,12 @@ class BeliefCalibrationReport:
             name="source_belief_report_sha256",
         )
         if not isinstance(self.records, tuple):
-            raise TypeError(
-                f"records must be a tuple; got {type(self.records).__name__}"
-            )
+            raise TypeError(f"records must be a tuple; got {type(self.records).__name__}")
         if self.total_records != len(self.records):
             raise ValueError(
-                f"total_records {self.total_records} != len(records) "
-                f"{len(self.records)}"
+                f"total_records {self.total_records} != len(records) {len(self.records)}"
             )
-        if (
-            self.records_usable_for_calibration + self.records_not_usable
-            != self.total_records
-        ):
+        if self.records_usable_for_calibration + self.records_not_usable != self.total_records:
             raise ValueError(
                 "records_usable_for_calibration + records_not_usable must "
                 f"equal total_records; got "
@@ -219,9 +204,7 @@ def analyze_belief_calibration(
     ``source_belief_report_sha256`` is the SHA-256 hex of the source
     belief_report bytes; validated as 64 lowercase hex chars.
     """
-    _validate_sha256(
-        source_belief_report_sha256, name="source_belief_report_sha256"
-    )
+    _validate_sha256(source_belief_report_sha256, name="source_belief_report_sha256")
 
     records: list[BeliefCalibrationRecord] = []
     pos_ratios: list[float] = []
@@ -234,18 +217,10 @@ def analyze_belief_calibration(
         pos_ratio: float | None = None
         ori_ratio: float | None = None
         usable = False
-        if (
-            source_record.covariance_available
-            and cov_trace is not None
-            and cov_trace > 0.0
-        ):
+        if source_record.covariance_available and cov_trace is not None and cov_trace > 0.0:
             sqrt_trace_v = math.sqrt(cov_trace)
-            pos_ratio_v = (
-                source_record.position_error_norm_m / sqrt_trace_v
-            )
-            ori_ratio_v = (
-                source_record.orientation_error_rad / sqrt_trace_v
-            )
+            pos_ratio_v = source_record.position_error_norm_m / sqrt_trace_v
+            ori_ratio_v = source_record.orientation_error_rad / sqrt_trace_v
             sqrt_trace = sqrt_trace_v
             pos_ratio = pos_ratio_v
             ori_ratio = ori_ratio_v
@@ -314,25 +289,17 @@ def _decode_calibration_record(
         orientation_error_rad=raw["orientation_error_rad"],
         covariance_trace=raw["covariance_trace"],
         covariance_sqrt_trace=raw["covariance_sqrt_trace"],
-        position_error_to_uncertainty_ratio=raw[
-            "position_error_to_uncertainty_ratio"
-        ],
-        orientation_error_to_uncertainty_ratio=raw[
-            "orientation_error_to_uncertainty_ratio"
-        ],
+        position_error_to_uncertainty_ratio=raw["position_error_to_uncertainty_ratio"],
+        orientation_error_to_uncertainty_ratio=raw["orientation_error_to_uncertainty_ratio"],
         usable_for_calibration=raw["usable_for_calibration"],
-        analysis_version=raw.get(
-            "analysis_version", BELIEF_CALIBRATION_ANALYSIS_VERSION
-        ),
+        analysis_version=raw.get("analysis_version", BELIEF_CALIBRATION_ANALYSIS_VERSION),
     )
 
 
 def _decode_calibration_inner(
     raw: Mapping[str, Any],
 ) -> BeliefCalibrationReport:
-    analysis_version = raw.get(
-        "analysis_version", BELIEF_CALIBRATION_ANALYSIS_VERSION
-    )
+    analysis_version = raw.get("analysis_version", BELIEF_CALIBRATION_ANALYSIS_VERSION)
     if analysis_version != BELIEF_CALIBRATION_ANALYSIS_VERSION:
         raise ValueError(
             f"incompatible analysis_version {analysis_version!r}; "
@@ -343,18 +310,10 @@ def _decode_calibration_inner(
         total_records=raw["total_records"],
         records_usable_for_calibration=raw["records_usable_for_calibration"],
         records_not_usable=raw["records_not_usable"],
-        records=tuple(
-            _decode_calibration_record(r) for r in raw["records"]
-        ),
-        position_error_to_uncertainty_ratio_min=raw[
-            "position_error_to_uncertainty_ratio_min"
-        ],
-        position_error_to_uncertainty_ratio_max=raw[
-            "position_error_to_uncertainty_ratio_max"
-        ],
-        position_error_to_uncertainty_ratio_mean=raw[
-            "position_error_to_uncertainty_ratio_mean"
-        ],
+        records=tuple(_decode_calibration_record(r) for r in raw["records"]),
+        position_error_to_uncertainty_ratio_min=raw["position_error_to_uncertainty_ratio_min"],
+        position_error_to_uncertainty_ratio_max=raw["position_error_to_uncertainty_ratio_max"],
+        position_error_to_uncertainty_ratio_mean=raw["position_error_to_uncertainty_ratio_mean"],
         orientation_error_to_uncertainty_ratio_min=raw[
             "orientation_error_to_uncertainty_ratio_min"
         ],
@@ -406,9 +365,7 @@ def encode_calibration_report_to_bytes(
     return (serialized + "\n").encode("utf-8")
 
 
-def generate_calibration_report(
-    report: BeliefCalibrationReport, output_path: Path
-) -> None:
+def generate_calibration_report(report: BeliefCalibrationReport, output_path: Path) -> None:
     """Write ``report`` as canonical JSON to ``output_path``."""
     output_path.write_bytes(encode_calibration_report_to_bytes(report))
 

@@ -162,10 +162,7 @@ def _add_analyze_run_parser(
 ) -> None:
     analyze = subparsers.add_parser(
         "analyze-run",
-        help=(
-            "Build a RunSummary JSON report from an MCAP file plus a final "
-            "state snapshot."
-        ),
+        help=("Build a RunSummary JSON report from an MCAP file plus a final state snapshot."),
         description=(
             "Walks the MCAP, derives run-level counts and histograms, "
             "hashes the final state, and writes a deterministic JSON report."
@@ -208,10 +205,7 @@ def _add_trace_event_parser(
 ) -> None:
     trace = subparsers.add_parser(
         "trace-event",
-        help=(
-            "Reconstruct the observational pre-event message sequence for "
-            "a target event."
-        ),
+        help=("Reconstruct the observational pre-event message sequence for a target event."),
         description=(
             "Walks the MCAP, finds the event by sequence number, and "
             "writes a deterministic JSON trace of messages in the window "
@@ -289,19 +283,13 @@ def _add_analyze_belief_parser(
         "--truth-mcap",
         type=Path,
         required=True,
-        help=(
-            "Path to MCAP containing the truth VehicleState stream "
-            "(input; never modified)."
-        ),
+        help=("Path to MCAP containing the truth VehicleState stream (input; never modified)."),
     )
     analyze.add_argument(
         "--belief-mcap",
         type=Path,
         required=True,
-        help=(
-            "Path to MCAP containing the belief VehicleState stream "
-            "(input; never modified)."
-        ),
+        help=("Path to MCAP containing the belief VehicleState stream (input; never modified)."),
     )
     analyze.add_argument(
         "--output",
@@ -438,10 +426,7 @@ def _add_summarize_belief_parser(
 ) -> None:
     summarize = subparsers.add_parser(
         "summarize-belief",
-        help=(
-            "Aggregate descriptive statistics over a "
-            "BeliefTraceabilityReport JSON (ADR-0017)."
-        ),
+        help=("Aggregate descriptive statistics over a BeliefTraceabilityReport JSON (ADR-0017)."),
         description=(
             "Reads the canonical JSON produced by `ghost analyze-belief`, "
             "computes min / max / mean over per-sample errors and "
@@ -454,10 +439,7 @@ def _add_summarize_belief_parser(
         "--report",
         type=Path,
         required=True,
-        help=(
-            "Path to the BeliefTraceabilityReport JSON file "
-            "(input; never modified)."
-        ),
+        help=("Path to the BeliefTraceabilityReport JSON file (input; never modified)."),
     )
     summarize.add_argument(
         "--output",
@@ -476,9 +458,7 @@ def _cmd_trace_event(args: argparse.Namespace) -> int:
     Writes the trace JSON to stdout. Returns 1 if event_id is not found.
     """
     if args.window_seconds < 0:
-        sys.stderr.write(
-            f"error: --window-seconds must be >= 0; got {args.window_seconds}\n"
-        )
+        sys.stderr.write(f"error: --window-seconds must be >= 0; got {args.window_seconds}\n")
         return 1
     window_ns = int(args.window_seconds * _NANOSECONDS_PER_SECOND)
 
@@ -529,9 +509,7 @@ def _cmd_analyze_belief(args: argparse.Namespace) -> int:
     belief_states = _read_vehicle_states_from_mcap(args.belief_mcap)
 
     try:
-        report = build_traceability_report(
-            truth=truth_states, belief=belief_states
-        )
+        report = build_traceability_report(truth=truth_states, belief=belief_states)
     except ValueError as e:
         sys.stderr.write(f"error: {e}\n")
         return 1
@@ -733,9 +711,7 @@ def _split_label_path(s: str) -> tuple[str, str]:
         raise ValueError(f"expected LABEL=PATH; got {s!r}")
     label, path = s.split("=", 1)
     if not label or not path:
-        raise ValueError(
-            f"LABEL and PATH must both be non-empty; got {s!r}"
-        )
+        raise ValueError(f"LABEL and PATH must both be non-empty; got {s!r}")
     return label, path
 
 
@@ -746,9 +722,7 @@ def _split_path_kind(s: str) -> tuple[str, str]:
         raise ValueError(f"expected PATH=KIND; got {s!r}")
     path, kind = s.rsplit("=", 1)
     if not path or not kind:
-        raise ValueError(
-            f"PATH and KIND must both be non-empty; got {s!r}"
-        )
+        raise ValueError(f"PATH and KIND must both be non-empty; got {s!r}")
     return path, kind
 
 
@@ -773,14 +747,11 @@ def _cmd_build_manifest(args: argparse.Namespace) -> int:  # noqa: PLR0911
         try:
             loaded = json.loads(raw)
         except json.JSONDecodeError as e:
-            sys.stderr.write(
-                f"error: invalid JSON in --config-json: {e}\n"
-            )
+            sys.stderr.write(f"error: invalid JSON in --config-json: {e}\n")
             return 1
         if not isinstance(loaded, dict):
             sys.stderr.write(
-                "error: --config-json must contain a JSON object; got "
-                f"{type(loaded).__name__}\n"
+                f"error: --config-json must contain a JSON object; got {type(loaded).__name__}\n"
             )
             return 1
         config.update(loaded)
@@ -795,12 +766,8 @@ def _cmd_build_manifest(args: argparse.Namespace) -> int:  # noqa: PLR0911
             config[key] = value
 
     try:
-        inputs = [
-            _split_path_kind(s) for s in (args.input or [])
-        ]
-        outputs = [
-            _split_path_kind(s) for s in (args.output_artifact or [])
-        ]
+        inputs = [_split_path_kind(s) for s in (args.input or [])]
+        outputs = [_split_path_kind(s) for s in (args.output_artifact or [])]
     except ValueError as e:
         sys.stderr.write(f"error: {e}\n")
         return 1
@@ -841,10 +808,7 @@ def _read_json_file(path: Path) -> dict[str, Any] | None:
         sys.stderr.write(f"error: invalid JSON in {path}: {e}\n")
         return None
     if not isinstance(loaded, dict):
-        sys.stderr.write(
-            f"error: expected JSON object in {path}; got "
-            f"{type(loaded).__name__}\n"
-        )
+        sys.stderr.write(f"error: expected JSON object in {path}; got {type(loaded).__name__}\n")
         return None
     return loaded
 
@@ -870,9 +834,7 @@ def _cmd_compare_belief(  # noqa: PLR0911, PLR0912
             sys.stderr.write(f"error: --summary {e}\n")
             return 1
         if label in summary_paths:
-            sys.stderr.write(
-                f"error: duplicate --summary label {label!r}\n"
-            )
+            sys.stderr.write(f"error: duplicate --summary label {label!r}\n")
             return 1
         summary_paths[label] = Path(path_str)
         label_order.append(label)
@@ -886,15 +848,10 @@ def _cmd_compare_belief(  # noqa: PLR0911, PLR0912
                 sys.stderr.write(f"error: --manifest {e}\n")
                 return 1
             if label not in summary_paths:
-                sys.stderr.write(
-                    f"error: --manifest label {label!r} has no matching "
-                    "--summary\n"
-                )
+                sys.stderr.write(f"error: --manifest label {label!r} has no matching --summary\n")
                 return 1
             if label in manifest_paths:
-                sys.stderr.write(
-                    f"error: duplicate --manifest label {label!r}\n"
-                )
+                sys.stderr.write(f"error: duplicate --manifest label {label!r}\n")
                 return 1
             manifest_paths[label] = Path(path_str)
 
@@ -920,9 +877,7 @@ def _cmd_compare_belief(  # noqa: PLR0911, PLR0912
                 sys.stderr.write(f"error: {e}\n")
                 return 1
 
-        labeled.append(
-            LabeledSummary(label=label, summary=summary, manifest=manifest)
-        )
+        labeled.append(LabeledSummary(label=label, summary=summary, manifest=manifest))
 
     try:
         report = build_comparative_report(labeled)
@@ -964,9 +919,7 @@ def _cmd_analyze_calibration(args: argparse.Namespace) -> int:
     try:
         data = json.loads(raw_bytes.decode("utf-8"))
     except json.JSONDecodeError as e:
-        sys.stderr.write(
-            f"error: invalid JSON in {args.belief_report}: {e}\n"
-        )
+        sys.stderr.write(f"error: invalid JSON in {args.belief_report}: {e}\n")
         return 1
 
     try:
@@ -975,9 +928,7 @@ def _cmd_analyze_calibration(args: argparse.Namespace) -> int:
         sys.stderr.write(f"error: {e}\n")
         return 1
 
-    calibration = analyze_belief_calibration(
-        report, source_belief_report_sha256=sha
-    )
+    calibration = analyze_belief_calibration(report, source_belief_report_sha256=sha)
     encoded = encode_calibration_report_to_bytes(calibration)
     if args.output is None:
         sys.stdout.write(encoded.decode("utf-8"))
@@ -996,9 +947,7 @@ def _cmd_analyze_self_assessment(args: argparse.Namespace) -> int:
     Returns ``1`` on missing file / MCAP errors.
     """
     if not args.mcap.exists():
-        sys.stderr.write(
-            f"error: --mcap path does not exist: {args.mcap}\n"
-        )
+        sys.stderr.write(f"error: --mcap path does not exist: {args.mcap}\n")
         return 1
     try:
         records = read_self_assessments_from_mcap(args.mcap)
@@ -1024,9 +973,7 @@ def _cmd_trace_decisions(args: argparse.Namespace) -> int:
     Returns ``1`` on missing file or MCAP read errors.
     """
     if not args.mcap.exists():
-        sys.stderr.write(
-            f"error: --mcap path does not exist: {args.mcap}\n"
-        )
+        sys.stderr.write(f"error: --mcap path does not exist: {args.mcap}\n")
         return 1
     try:
         report = build_decision_trace_report(args.mcap)
@@ -1077,23 +1024,33 @@ def _add_verify_properties_parser(
         ),
     )
     vp.add_argument(
-        "--mcap", type=Path, required=True,
+        "--mcap",
+        type=Path,
+        required=True,
         help="Path to the MCAP file (input; never modified).",
     )
     vp.add_argument(
-        "--min-outcomes", type=int, default=4,
+        "--min-outcomes",
+        type=int,
+        default=4,
         help="M parameter of BAUD / ERUR / FPB preconditions. Default 4.",
     )
     vp.add_argument(
-        "--downgrade-threshold", type=int, default=2,
+        "--downgrade-threshold",
+        type=int,
+        default=2,
         help="K parameter of BAUD / ERUR / FPB preconditions. Default 2.",
     )
     vp.add_argument(
-        "--max-history", type=int, default=32,
+        "--max-history",
+        type=int,
+        default=32,
         help="W parameter for RLB recovery bound. Default 32.",
     )
     vp.add_argument(
-        "--max-fire-fraction", type=float, default=1.0,
+        "--max-fire-fraction",
+        type=float,
+        default=1.0,
         help=(
             "FPB upper bound on BAUD's empirical fire fraction. "
             "Default 1.0 (purely observational, never fails); set "
@@ -1101,7 +1058,8 @@ def _add_verify_properties_parser(
         ),
     )
     vp.add_argument(
-        "--json", action="store_true",
+        "--json",
+        action="store_true",
         help="Emit a structured JSON report on stdout instead of text.",
     )
 
@@ -1112,9 +1070,7 @@ def _verify_properties_text(reports: dict[str, Any]) -> str:
     for tag, report in reports.items():
         verdict = "HOLDS" if report.holds else "VIOLATED"
         if tag in ("BAUD-v1", "ERUR-v1"):
-            params = (
-                f"M={report.min_outcomes}, K={report.downgrade_threshold}"
-            )
+            params = f"M={report.min_outcomes}, K={report.downgrade_threshold}"
         elif tag == "RLB-v1":
             params = f"W={report.max_history}"
         elif tag == "FPB-v1":
@@ -1131,7 +1087,9 @@ def _verify_properties_text(reports: dict[str, Any]) -> str:
 
 
 def _verify_properties_json(
-    mcap_path: Path, reports: dict[str, Any], all_hold: bool,
+    mcap_path: Path,
+    reports: dict[str, Any],
+    all_hold: bool,
 ) -> str:
     """Render the property reports as a deterministic JSON document."""
     out: dict[str, Any] = {
@@ -1168,9 +1126,7 @@ def _cmd_verify_properties(args: argparse.Namespace) -> int:
     ``0`` iff every property holds.
     """
     if not args.mcap.exists():
-        sys.stderr.write(
-            f"error: --mcap path does not exist: {args.mcap}\n"
-        )
+        sys.stderr.write(f"error: --mcap path does not exist: {args.mcap}\n")
         return 1
 
     from project_ghost.properties import (  # noqa: PLC0415
@@ -1195,7 +1151,8 @@ def _cmd_verify_properties(args: argparse.Namespace) -> int:
             ),
             "MD-v1": verify_md(args.mcap),
             "RLB-v1": verify_rlb(
-                args.mcap, max_history=args.max_history,
+                args.mcap,
+                max_history=args.max_history,
             ),
             "FPB-v1": verify_fpb(
                 args.mcap,
@@ -1211,9 +1168,7 @@ def _cmd_verify_properties(args: argparse.Namespace) -> int:
     all_hold = all(r.holds for r in reports.values())
 
     if args.json:
-        sys.stdout.write(
-            _verify_properties_json(args.mcap, reports, all_hold)
-        )
+        sys.stdout.write(_verify_properties_json(args.mcap, reports, all_hold))
     else:
         sys.stdout.write(_verify_properties_text(reports))
 

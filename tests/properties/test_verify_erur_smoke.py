@@ -48,9 +48,7 @@ def test_reference_smoke_satisfies_erur_v1(smoke_mcap: Path) -> None:
     PROCEED-while-drift-absent direction."""
     report = verify_erur(smoke_mcap)
     assert isinstance(report, ERURVerificationReport)
-    assert report.holds, (
-        f"ERUR-v1 violated by reference smoke: {report.violations}"
-    )
+    assert report.holds, f"ERUR-v1 violated by reference smoke: {report.violations}"
 
 
 def test_report_has_expected_shape(smoke_mcap: Path) -> None:
@@ -92,7 +90,9 @@ def test_late_cycles_do_not_trigger_erur_precondition(smoke_mcap: Path) -> None:
     [(-1, 2), (0, 0), (4, -3)],
 )
 def test_invalid_parameters_rejected(
-    smoke_mcap: Path, min_outcomes: int, downgrade_threshold: int,
+    smoke_mcap: Path,
+    min_outcomes: int,
+    downgrade_threshold: int,
 ) -> None:
     """Parameter validation mirrors ``verify_baud``."""
     with pytest.raises(ValueError):
@@ -123,9 +123,8 @@ def test_baud_and_erur_partition_the_cycle_space(smoke_mcap: Path) -> None:
     parameters — the safety claim is bidirectional.
     """
     from project_ghost.properties import verify_baud
+
     baud = verify_baud(smoke_mcap)
     erur = verify_erur(smoke_mcap)
-    assert baud.cycles_precondition_held + erur.cycles_precondition_held == (
-        baud.cycles_total
-    )
+    assert baud.cycles_precondition_held + erur.cycles_precondition_held == (baud.cycles_total)
     assert baud.cycles_total == erur.cycles_total

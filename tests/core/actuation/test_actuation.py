@@ -441,9 +441,7 @@ def test_actuate_and_publish_with_multiple_decisions() -> None:
     sink = RecordingActuationSink()
     decisions = [
         _make_decision(kind=DecisionKind.PROCEED, stamp=100, reason="ok"),
-        _make_decision(
-            kind=DecisionKind.ENGAGE_KILL, stamp=200, reason="kill"
-        ),
+        _make_decision(kind=DecisionKind.ENGAGE_KILL, stamp=200, reason="kill"),
         _make_decision(kind=DecisionKind.HOLD, stamp=300, reason="ok"),
     ]
     for d in decisions:

@@ -28,37 +28,22 @@ _HEX_CHARS: Final[frozenset[str]] = frozenset("0123456789abcdef")
 
 def _validate_taxonomy(value: str, *, field: str) -> None:
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field} must be str; got {type(value).__name__}"
-        )
+        raise TypeError(f"{field} must be str; got {type(value).__name__}")
     if not value:
         raise ValueError(f"{field} cannot be empty")
     if len(value) > _TAXONOMY_MAX_LEN:
-        raise ValueError(
-            f"{field} must be <= {_TAXONOMY_MAX_LEN} chars; got "
-            f"len={len(value)}"
-        )
+        raise ValueError(f"{field} must be <= {_TAXONOMY_MAX_LEN} chars; got len={len(value)}")
     if not _TAXONOMY_PATTERN.match(value):
-        raise ValueError(
-            f"{field} must match {_TAXONOMY_PATTERN.pattern!r}; got "
-            f"{value!r}"
-        )
+        raise ValueError(f"{field} must match {_TAXONOMY_PATTERN.pattern!r}; got {value!r}")
 
 
 def _validate_sha256_hex(value: str, *, field: str) -> None:
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field} must be str; got {type(value).__name__}"
-        )
+        raise TypeError(f"{field} must be str; got {type(value).__name__}")
     if len(value) != _SHA256_HEX_LEN:
-        raise ValueError(
-            f"{field} must be {_SHA256_HEX_LEN} hex chars; got "
-            f"len={len(value)}"
-        )
+        raise ValueError(f"{field} must be {_SHA256_HEX_LEN} hex chars; got len={len(value)}")
     if not all(c in _HEX_CHARS for c in value):
-        raise ValueError(
-            f"{field} must be lowercase hex; got {value!r}"
-        )
+        raise ValueError(f"{field} must be lowercase hex; got {value!r}")
 
 
 @dataclass(frozen=True)
@@ -86,24 +71,17 @@ class FusionInput:
     def __post_init__(self) -> None:
         if not isinstance(self.sensor_samples, tuple):
             raise TypeError(
-                f"sensor_samples must be tuple; got "
-                f"{type(self.sensor_samples).__name__}"
+                f"sensor_samples must be tuple; got {type(self.sensor_samples).__name__}"
             )
         if self.target_stamp_sim_ns < 0:
-            raise ValueError(
-                f"target_stamp_sim_ns must be >= 0; got "
-                f"{self.target_stamp_sim_ns}"
-            )
+            raise ValueError(f"target_stamp_sim_ns must be >= 0; got {self.target_stamp_sim_ns}")
         if self.prior_belief_stamp_sim_ns is not None:
             if self.prior_belief_stamp_sim_ns < 0:
                 raise ValueError(
                     f"prior_belief_stamp_sim_ns must be >= 0 when not "
                     f"None; got {self.prior_belief_stamp_sim_ns}"
                 )
-            if (
-                self.prior_belief_stamp_sim_ns
-                >= self.target_stamp_sim_ns
-            ):
+            if self.prior_belief_stamp_sim_ns >= self.target_stamp_sim_ns:
                 raise ValueError(
                     f"prior_belief_stamp_sim_ns "
                     f"({self.prior_belief_stamp_sim_ns}) must be < "
@@ -111,8 +89,7 @@ class FusionInput:
                 )
         if self.schema_version != FUSION_PROTOCOL_VERSION:
             raise ValueError(
-                f"schema_version must be {FUSION_PROTOCOL_VERSION}; "
-                f"got {self.schema_version}"
+                f"schema_version must be {FUSION_PROTOCOL_VERSION}; got {self.schema_version}"
             )
 
 
@@ -166,20 +143,12 @@ class FusionResult:
 
     def __post_init__(self) -> None:
         if not isinstance(self.belief, VehicleState):
-            raise TypeError(
-                f"belief must be VehicleState; got "
-                f"{type(self.belief).__name__}"
-            )
-        _validate_sha256_hex(
-            self.fusion_input_sha256, field="fusion_input_sha256"
-        )
-        _validate_taxonomy(
-            self.fusion_policy_id, field="fusion_policy_id"
-        )
+            raise TypeError(f"belief must be VehicleState; got {type(self.belief).__name__}")
+        _validate_sha256_hex(self.fusion_input_sha256, field="fusion_input_sha256")
+        _validate_taxonomy(self.fusion_policy_id, field="fusion_policy_id")
         if self.schema_version != FUSION_PROTOCOL_VERSION:
             raise ValueError(
-                f"schema_version must be {FUSION_PROTOCOL_VERSION}; "
-                f"got {self.schema_version}"
+                f"schema_version must be {FUSION_PROTOCOL_VERSION}; got {self.schema_version}"
             )
 
 

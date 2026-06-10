@@ -88,9 +88,7 @@ def channel_for_sensor(sensor_id: str) -> str:
     if not sensor_id:
         raise ValueError("sensor_id no puede ser vacío")
     if "/" in sensor_id:
-        raise ValueError(
-            f"sensor_id no puede contener '/'; recibido {sensor_id!r}"
-        )
+        raise ValueError(f"sensor_id no puede contener '/'; recibido {sensor_id!r}")
     return _SENSOR_PREFIX + sensor_id
 
 

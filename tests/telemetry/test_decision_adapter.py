@@ -95,9 +95,7 @@ def _make_state(*, stamp_sim_ns: int = 1000) -> VehicleState:
         stamp_sim_ns=stamp_sim_ns,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,

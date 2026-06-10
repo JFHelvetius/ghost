@@ -135,9 +135,12 @@ ignore = [
 # witness, and pytest.raises is the natural shape for parameter
 # validation tests.
 "tests/properties/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "SIM117", "TC003", "PT011"]
-# app: Streamlit UI code uses magic values, lazy imports, and Path annotations
-# that are idiomatic in the framework but flagged by strict ruff rules.
-"src/project_ghost/app/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "TC003", "TRY003", "TRY301"]
+# app: Streamlit UI code uses magic values, lazy imports, Path annotations,
+# and intentional non-ASCII characters in user-facing strings (em dashes
+# in narrative text, σ in math labels, × in matrix shapes). The first
+# four are idiomatic in the framework; the fifth is intentional
+# typography.
+"src/project_ghost/app/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "TC003", "TRY003", "TRY301", "RUF001"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["project_ghost"]
@@ -166,6 +169,8 @@ module = [
     "streamlit.*",
     "pandas",
     "pandas.*",
+    "plotly",
+    "plotly.*",
 ]
 ignore_missing_imports = true
 

@@ -112,9 +112,7 @@ class ModeEventToTelemetryAdapter:
         channel: str = CHANNEL_PERCEPTION_MODE,
     ) -> None:
         if not channel.startswith("/"):
-            raise ValueError(
-                f"channel debe empezar con '/'; recibido {channel!r}"
-            )
+            raise ValueError(f"channel debe empezar con '/'; recibido {channel!r}")
         self._sink: TelemetrySink = sink
         self._channel: str = channel
 
@@ -163,9 +161,7 @@ class SelfAssessmentToTelemetryAdapter:
         channel: str = CHANNEL_SELF_ASSESSMENT,
     ) -> None:
         if not channel.startswith("/"):
-            raise ValueError(
-                f"channel debe empezar con '/'; recibido {channel!r}"
-            )
+            raise ValueError(f"channel debe empezar con '/'; recibido {channel!r}")
         self._sink: TelemetrySink = sink
         self._channel: str = channel
 
@@ -174,9 +170,7 @@ class SelfAssessmentToTelemetryAdapter:
         return self._channel
 
     def publish(self, assessment: BeliefSelfAssessment) -> None:
-        self._sink.publish(
-            self._channel, assessment.belief_stamp_sim_ns, assessment
-        )
+        self._sink.publish(self._channel, assessment.belief_stamp_sim_ns, assessment)
 
 
 class DecisionToTelemetryAdapter:
@@ -223,9 +217,7 @@ class DecisionToTelemetryAdapter:
         channel: str = CHANNEL_DECISIONS,
     ) -> None:
         if not channel.startswith("/"):
-            raise ValueError(
-                f"channel debe empezar con '/'; recibido {channel!r}"
-            )
+            raise ValueError(f"channel debe empezar con '/'; recibido {channel!r}")
         self._sink: TelemetrySink = sink
         self._channel: str = channel
 
@@ -240,8 +232,7 @@ class DecisionToTelemetryAdapter:
     ) -> None:
         if rationale.decision != decision:
             raise ValueError(
-                "DecisionToTelemetryAdapter.publish: rationale.decision "
-                "must equal decision"
+                "DecisionToTelemetryAdapter.publish: rationale.decision must equal decision"
             )
         self._sink.publish(
             self._channel,
@@ -288,9 +279,7 @@ class ActuationToTelemetryAdapter:
         channel: str = CHANNEL_ACTUATIONS,
     ) -> None:
         if not channel.startswith("/"):
-            raise ValueError(
-                f"channel debe empezar con '/'; recibido {channel!r}"
-            )
+            raise ValueError(f"channel debe empezar con '/'; recibido {channel!r}")
         self._sink: TelemetrySink = sink
         self._channel: str = channel
 
@@ -351,9 +340,7 @@ class ForwardPredictionToTelemetryAdapter:
         channel: str = CHANNEL_FORWARD_PREDICTIONS,
     ) -> None:
         if not channel.startswith("/"):
-            raise ValueError(
-                f"channel debe empezar con '/'; recibido {channel!r}"
-            )
+            raise ValueError(f"channel debe empezar con '/'; recibido {channel!r}")
         self._sink: TelemetrySink = sink
         self._channel: str = channel
 
@@ -411,9 +398,7 @@ class PredictionOutcomeToTelemetryAdapter:
         channel: str = CHANNEL_PREDICTION_OUTCOMES,
     ) -> None:
         if not channel.startswith("/"):
-            raise ValueError(
-                f"channel debe empezar con '/'; recibido {channel!r}"
-            )
+            raise ValueError(f"channel debe empezar con '/'; recibido {channel!r}")
         self._sink: TelemetrySink = sink
         self._channel: str = channel
 
@@ -474,9 +459,7 @@ class CalibratedSelfAssessmentToTelemetryAdapter:
         channel: str = CHANNEL_CALIBRATED_SELF_ASSESSMENT,
     ) -> None:
         if not channel.startswith("/"):
-            raise ValueError(
-                f"channel debe empezar con '/'; recibido {channel!r}"
-            )
+            raise ValueError(f"channel debe empezar con '/'; recibido {channel!r}")
         self._sink: TelemetrySink = sink
         self._channel: str = channel
 
@@ -535,9 +518,7 @@ class FusionResultToTelemetryAdapter:
         channel: str = CHANNEL_FUSION_RESULTS,
     ) -> None:
         if not channel.startswith("/"):
-            raise ValueError(
-                f"channel debe empezar con '/'; recibido {channel!r}"
-            )
+            raise ValueError(f"channel debe empezar con '/'; recibido {channel!r}")
         self._sink: TelemetrySink = sink
         self._channel: str = channel
 

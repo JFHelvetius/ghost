@@ -39,9 +39,7 @@ def test_reference_smoke_satisfies_baud_v1(smoke_mcap: Path) -> None:
     """The reference smoke is the canonical BAUD-v1 witness."""
     report = verify_baud(smoke_mcap)
     assert isinstance(report, BAUDVerificationReport)
-    assert report.holds, (
-        f"BAUD-v1 violated by reference smoke: {report.violations}"
-    )
+    assert report.holds, f"BAUD-v1 violated by reference smoke: {report.violations}"
 
 
 def test_report_has_expected_shape(smoke_mcap: Path) -> None:
@@ -96,10 +94,7 @@ def test_smoke_exercises_safe_reason_path(smoke_mcap: Path) -> None:
             a = decode_message(msg)
             if not isinstance(a, ActuationDirective):
                 continue
-            if (
-                a.decision.kind.value != "proceed"
-                and a.actuator_command is not None
-            ):
+            if a.decision.kind.value != "proceed" and a.actuator_command is not None:
                 has_non_none_hold_command = True
                 # safe-reason whitelist check belongs to the verifier;
                 # here we only certify the smoke exercises this path.

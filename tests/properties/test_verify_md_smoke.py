@@ -41,9 +41,7 @@ def test_reference_smoke_satisfies_md_v1(smoke_mcap: Path) -> None:
     ``raw=KNOWN → adj∈{KNOWN, UNCERTAIN}`` slice of MD-v1."""
     report = verify_md(smoke_mcap)
     assert isinstance(report, MDVerificationReport)
-    assert report.holds, (
-        f"MD-v1 violated by reference smoke: {report.violations}"
-    )
+    assert report.holds, f"MD-v1 violated by reference smoke: {report.violations}"
 
 
 def test_report_has_expected_shape(smoke_mcap: Path) -> None:
@@ -78,10 +76,12 @@ def test_smoke_exercises_both_passthrough_and_downgrade(
             c = decode_message(msg)
             if not isinstance(c, CalibratedSelfAssessment):
                 continue
-            transitions.add((
-                c.raw_assessment.overall_level.value,
-                c.adjusted_overall_level.value,
-            ))
+            transitions.add(
+                (
+                    c.raw_assessment.overall_level.value,
+                    c.adjusted_overall_level.value,
+                )
+            )
     assert ("known", "known") in transitions, (
         "Smoke MCAP no longer exercises the passthrough branch."
     )

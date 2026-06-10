@@ -19,7 +19,7 @@ def run() -> None:
     import sys
     from pathlib import Path
 
-    from streamlit.web import cli as stcli  # type: ignore[import-untyped]
+    from streamlit.web import cli as stcli
 
     sys.argv = ["streamlit", "run", str(Path(__file__).parent / "main.py")]
     sys.exit(stcli.main())

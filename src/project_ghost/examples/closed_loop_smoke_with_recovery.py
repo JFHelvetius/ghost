@@ -69,9 +69,7 @@ _MIN_RECOVERY_CYCLES: Final[int] = 1
 # Identity orientation re-used for every ground-truth pose. Kept here
 # rather than inline so the recovery-phase pose construction matches
 # the drift-phase one byte-for-byte modulo the position vector.
-_Q_IDENTITY: Final[np.ndarray] = np.array(
-    [1.0, 0.0, 0.0, 0.0], dtype=np.float64
-)
+_Q_IDENTITY: Final[np.ndarray] = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)
 
 
 def _make_recovery_ground_truth_fn(
@@ -152,8 +150,7 @@ def run_closed_loop_smoke_with_recovery(
         )
     if n_recovery_cycles < _MIN_RECOVERY_CYCLES:
         raise ValueError(
-            f"n_recovery_cycles must be >= {_MIN_RECOVERY_CYCLES}; "
-            f"got {n_recovery_cycles}"
+            f"n_recovery_cycles must be >= {_MIN_RECOVERY_CYCLES}; got {n_recovery_cycles}"
         )
 
     total_cycles = n_drift_cycles + n_recovery_cycles
@@ -185,17 +182,19 @@ def main() -> None:
         + " -> ".join(summary.calibrated_levels_observed[-3:])
     )
     for tag, report, params_str in (
-        ("BAUD-v1", summary.baud_report,
-            f"M={summary.baud_report.min_outcomes}, "
-            f"K={summary.baud_report.downgrade_threshold}, "),
-        ("ERUR-v1", summary.erur_report,
-            f"M={summary.erur_report.min_outcomes}, "
-            f"K={summary.erur_report.downgrade_threshold}, "),
-        ("MD-v1",   summary.md_report, ""),
-        ("RLB-v1",  summary.rlb_report,
-            f"W={summary.rlb_report.max_history}, "),
-        ("FPB-v1",  summary.fpb_report,
-            f"fire_fraction={summary.fpb_report.fire_fraction:.2f}, "),
+        (
+            "BAUD-v1",
+            summary.baud_report,
+            f"M={summary.baud_report.min_outcomes}, K={summary.baud_report.downgrade_threshold}, ",
+        ),
+        (
+            "ERUR-v1",
+            summary.erur_report,
+            f"M={summary.erur_report.min_outcomes}, K={summary.erur_report.downgrade_threshold}, ",
+        ),
+        ("MD-v1", summary.md_report, ""),
+        ("RLB-v1", summary.rlb_report, f"W={summary.rlb_report.max_history}, "),
+        ("FPB-v1", summary.fpb_report, f"fire_fraction={summary.fpb_report.fire_fraction:.2f}, "),
     ):
         verdict = "HOLDS" if report.holds else "VIOLATED"
         print(

@@ -83,9 +83,7 @@ def _make_state(stamp_sim_ns: int) -> VehicleState:
         stamp_sim_ns=stamp_sim_ns,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -137,9 +135,7 @@ def test_adapter_uses_belief_stamp_as_log_time() -> None:
 
 def test_adapter_accepts_custom_channel() -> None:
     sink = InMemorySink()
-    adapter = SelfAssessmentToTelemetryAdapter(
-        sink, channel="/custom/sa"
-    )
+    adapter = SelfAssessmentToTelemetryAdapter(sink, channel="/custom/sa")
     a = assess_belief(_make_state(stamp_sim_ns=0), _make_thresholds())
     adapter.publish(a)
     assert sink.captured[0].channel == "/custom/sa"
@@ -189,10 +185,7 @@ def test_mcap_round_trip_single_assessment(tmp_path: Path) -> None:
 def test_mcap_round_trip_multiple_assessments(tmp_path: Path) -> None:
     p = tmp_path / "sa.mcap"
     thresholds = _make_thresholds()
-    originals = [
-        assess_belief(_make_state(stamp_sim_ns=i * 1000), thresholds)
-        for i in range(5)
-    ]
+    originals = [assess_belief(_make_state(stamp_sim_ns=i * 1000), thresholds) for i in range(5)]
 
     with MCAPFileSink(p) as sink:
         adapter = SelfAssessmentToTelemetryAdapter(sink)

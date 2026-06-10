@@ -97,9 +97,7 @@ def _make_state(stamp: int = 1000, pos_var: float = 1e-4) -> VehicleState:
         stamp_sim_ns=stamp,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -136,9 +134,7 @@ def _make_outcome(source_stamp: int, error_x: float) -> PredictionOutcome:
         position_enu_m=np.array([error_x, 0.0, 0.0], dtype=np.float64),
         orientation_q=_Q.copy(),
     )
-    return compute_divergence(
-        pred, actual, pred.predicted_observation_stamp_sim_ns
-    )
+    return compute_divergence(pred, actual, pred.predicted_observation_stamp_sim_ns)
 
 
 def _make_thresholds() -> AssessmentThresholds:
@@ -161,9 +157,7 @@ def test_adapter_publishes_to_default_channel() -> None:
     sink = InMemorySink()
     adapter = CalibratedSelfAssessmentToTelemetryAdapter(sink)
     raw = assess_belief(_make_state(), _make_thresholds())
-    cal = MahalanobisDowngradePolicy().adjust(
-        raw, build_calibration_history([], max_n=32)
-    )
+    cal = MahalanobisDowngradePolicy().adjust(raw, build_calibration_history([], max_n=32))
     adapter.publish(cal)
     assert len(sink.captured) == 1
     assert sink.captured[0].channel == CHANNEL_CALIBRATED_SELF_ASSESSMENT
@@ -173,9 +167,7 @@ def test_adapter_uses_raw_belief_stamp_as_log_time() -> None:
     sink = InMemorySink()
     adapter = CalibratedSelfAssessmentToTelemetryAdapter(sink)
     raw = assess_belief(_make_state(stamp=42_000), _make_thresholds())
-    cal = MahalanobisDowngradePolicy().adjust(
-        raw, build_calibration_history([], max_n=32)
-    )
+    cal = MahalanobisDowngradePolicy().adjust(raw, build_calibration_history([], max_n=32))
     adapter.publish(cal)
     assert sink.captured[0].stamp_sim_ns == 42_000
 
@@ -184,22 +176,16 @@ def test_adapter_publishes_calibrated_as_message() -> None:
     sink = InMemorySink()
     adapter = CalibratedSelfAssessmentToTelemetryAdapter(sink)
     raw = assess_belief(_make_state(), _make_thresholds())
-    cal = MahalanobisDowngradePolicy().adjust(
-        raw, build_calibration_history([], max_n=32)
-    )
+    cal = MahalanobisDowngradePolicy().adjust(raw, build_calibration_history([], max_n=32))
     adapter.publish(cal)
     assert sink.captured[0].message is cal
 
 
 def test_adapter_accepts_custom_channel() -> None:
     sink = InMemorySink()
-    adapter = CalibratedSelfAssessmentToTelemetryAdapter(
-        sink, channel="/custom/calibrated"
-    )
+    adapter = CalibratedSelfAssessmentToTelemetryAdapter(sink, channel="/custom/calibrated")
     raw = assess_belief(_make_state(), _make_thresholds())
-    cal = MahalanobisDowngradePolicy().adjust(
-        raw, build_calibration_history([], max_n=32)
-    )
+    cal = MahalanobisDowngradePolicy().adjust(raw, build_calibration_history([], max_n=32))
     adapter.publish(cal)
     assert sink.captured[0].channel == "/custom/calibrated"
     assert adapter.channel == "/custom/calibrated"
@@ -219,9 +205,7 @@ def test_adapter_rejects_channel_without_leading_slash() -> None:
 def test_mcap_round_trip_calibrated_passthrough(tmp_path: Path) -> None:
     p = tmp_path / "cal.mcap"
     raw = assess_belief(_make_state(stamp=1000), _make_thresholds())
-    original = MahalanobisDowngradePolicy().adjust(
-        raw, build_calibration_history([], max_n=32)
-    )
+    original = MahalanobisDowngradePolicy().adjust(raw, build_calibration_history([], max_n=32))
 
     with MCAPFileSink(p) as sink:
         CalibratedSelfAssessmentToTelemetryAdapter(sink).publish(original)
@@ -234,9 +218,7 @@ def test_mcap_round_trip_calibrated_passthrough(tmp_path: Path) -> None:
     assert msgs[0].log_time_sim_ns == 1000
     decoded = decode_message(msgs[0])
     assert isinstance(decoded, CalibratedSelfAssessment)
-    assert (
-        decoded.adjusted_overall_level == original.adjusted_overall_level
-    )
+    assert decoded.adjusted_overall_level == original.adjusted_overall_level
     assert decoded.adjustment_policy_id == original.adjustment_policy_id
     assert decoded.adjustment_reason == original.adjustment_reason
     assert decoded.calibration_history.outcomes_considered == 0
@@ -252,9 +234,7 @@ def test_mcap_round_trip_calibrated_with_downgrade(tmp_path: Path) -> None:
         _make_outcome(source_stamp=3000, error_x=0.0),
         _make_outcome(source_stamp=4000, error_x=0.0),
     ]
-    original = assess_with_feedback(
-        raw, outcomes, MahalanobisDowngradePolicy()
-    )
+    original = assess_with_feedback(raw, outcomes, MahalanobisDowngradePolicy())
     assert original.adjusted_overall_level == SelfAssessmentLevel.UNCERTAIN
 
     with MCAPFileSink(p) as sink:
@@ -282,9 +262,7 @@ def test_mcap_capture_is_byte_deterministic(tmp_path: Path) -> None:
             _make_outcome(source_stamp=3000, error_x=0.0),
             _make_outcome(source_stamp=4000, error_x=0.0),
         ]
-        cal = assess_with_feedback(
-            raw, outcomes, MahalanobisDowngradePolicy()
-        )
+        cal = assess_with_feedback(raw, outcomes, MahalanobisDowngradePolicy())
         with MCAPFileSink(path) as sink:
             CalibratedSelfAssessmentToTelemetryAdapter(sink).publish(cal)
 
@@ -316,9 +294,7 @@ def test_pipeline_closed_loop_smoke(tmp_path: Path) -> None:
     calibrated = assess_with_feedback(raw, outcomes, policy)
 
     with MCAPFileSink(p) as sink:
-        CalibratedSelfAssessmentToTelemetryAdapter(sink).publish(
-            calibrated
-        )
+        CalibratedSelfAssessmentToTelemetryAdapter(sink).publish(calibrated)
 
     with MCAPReplayReader(p) as reader:
         msgs = list(reader.iter_messages())

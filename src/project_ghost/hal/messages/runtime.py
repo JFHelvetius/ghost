@@ -61,19 +61,13 @@ def _validate_array(
     require_finite: bool = True,
 ) -> None:
     if not isinstance(arr, np.ndarray):
-        raise TypeError(
-            f"{name} debe ser np.ndarray; recibido {type(arr).__name__}"
-        )
+        raise TypeError(f"{name} debe ser np.ndarray; recibido {type(arr).__name__}")
     if shape is not None and arr.shape != shape:
-        raise TypeError(
-            f"{name} debe tener shape {shape}; recibido {arr.shape}"
-        )
+        raise TypeError(f"{name} debe tener shape {shape}; recibido {arr.shape}")
     if dtype is not None:
         expected = np.dtype(dtype)
         if arr.dtype != expected:
-            raise TypeError(
-                f"{name} debe tener dtype {expected}; recibido {arr.dtype}"
-            )
+            raise TypeError(f"{name} debe tener dtype {expected}; recibido {arr.dtype}")
     if require_finite and not bool(np.all(np.isfinite(arr))):
         raise ValueError(f"{name} contiene NaN o Inf")
 
@@ -86,10 +80,7 @@ def _validate_unit_quaternion(q: np.ndarray, *, name: str) -> None:
     _validate_array(q, name=name, shape=(_QUAT_LEN,), dtype=np.float64)
     norm = float(np.linalg.norm(q))
     if abs(norm - 1.0) > _QUAT_NORM_TOLERANCE:
-        raise ValueError(
-            f"{name} debe ser unit (tolerancia {_QUAT_NORM_TOLERANCE}); "
-            f"norm={norm}"
-        )
+        raise ValueError(f"{name} debe ser unit (tolerancia {_QUAT_NORM_TOLERANCE}); norm={norm}")
 
 
 # ---------------------------------------------------------------------------
@@ -117,9 +108,7 @@ class Capabilities:
 
     def __post_init__(self) -> None:
         if self.hal_version < 1:
-            raise ValueError(
-                f"hal_version debe ser >= 1; recibido {self.hal_version}"
-            )
+            raise ValueError(f"hal_version debe ser >= 1; recibido {self.hal_version}")
         if not isinstance(self.sensor_ids, tuple):
             raise TypeError(
                 "sensor_ids debe ser tuple (uncertainty.md §10); "
@@ -172,8 +161,7 @@ class ScenarioSpec:
             raise ValueError("vehicle_id no puede ser vacío")
         if self.duration_ns is not None and self.duration_ns <= 0:
             raise ValueError(
-                f"duration_ns debe ser > 0 cuando no es None; "
-                f"recibido {self.duration_ns}"
+                f"duration_ns debe ser > 0 cuando no es None; recibido {self.duration_ns}"
             )
 
 
@@ -205,9 +193,7 @@ class GroundTruth:
 
     def __post_init__(self) -> None:
         if self.stamp_sim_ns < 0:
-            raise ValueError(
-                f"stamp_sim_ns debe ser >= 0; recibido {self.stamp_sim_ns}"
-            )
+            raise ValueError(f"stamp_sim_ns debe ser >= 0; recibido {self.stamp_sim_ns}")
         _validate_array(
             self.position_enu_m,
             name="position_enu_m",
@@ -261,9 +247,7 @@ class StepReport:
 
     def __post_init__(self) -> None:
         if self.dt_advanced_ns < 0:
-            raise ValueError(
-                f"dt_advanced_ns debe ser >= 0; recibido {self.dt_advanced_ns}"
-            )
+            raise ValueError(f"dt_advanced_ns debe ser >= 0; recibido {self.dt_advanced_ns}")
 
 
 __all__ = [

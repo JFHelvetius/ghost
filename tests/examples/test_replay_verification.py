@@ -79,16 +79,12 @@ def test_summary_paths_match_arguments(smoke_mcap: Path, tmp_path: Path) -> None
     assert summary.replay_path == replay
 
 
-def test_summary_has_six_channel_verifications(
-    smoke_mcap: Path, tmp_path: Path
-) -> None:
+def test_summary_has_six_channel_verifications(smoke_mcap: Path, tmp_path: Path) -> None:
     summary = replay_downstream_from_fusion(smoke_mcap, tmp_path / "r.mcap")
     assert len(summary.channels) == 6
 
 
-def test_channel_verifications_are_frozen_dataclasses(
-    smoke_mcap: Path, tmp_path: Path
-) -> None:
+def test_channel_verifications_are_frozen_dataclasses(smoke_mcap: Path, tmp_path: Path) -> None:
     summary = replay_downstream_from_fusion(smoke_mcap, tmp_path / "r.mcap")
     for cv in summary.channels:
         assert isinstance(cv, ChannelVerification)
@@ -99,24 +95,18 @@ def test_channel_verifications_are_frozen_dataclasses(
 # ---------------------------------------------------------------------------
 
 
-def test_all_downstream_channels_byte_equal(
-    smoke_mcap: Path, tmp_path: Path
-) -> None:
+def test_all_downstream_channels_byte_equal(smoke_mcap: Path, tmp_path: Path) -> None:
     summary = replay_downstream_from_fusion(smoke_mcap, tmp_path / "r.mcap")
     assert summary.all_channels_byte_equal is True
 
 
-def test_each_channel_verification_byte_equal(
-    smoke_mcap: Path, tmp_path: Path
-) -> None:
+def test_each_channel_verification_byte_equal(smoke_mcap: Path, tmp_path: Path) -> None:
     summary = replay_downstream_from_fusion(smoke_mcap, tmp_path / "r.mcap")
     for cv in summary.channels:
         assert cv.byte_equal, f"channel {cv.channel!r} not byte-equal"
 
 
-def test_byte_equal_channels_have_no_mismatch_index(
-    smoke_mcap: Path, tmp_path: Path
-) -> None:
+def test_byte_equal_channels_have_no_mismatch_index(smoke_mcap: Path, tmp_path: Path) -> None:
     summary = replay_downstream_from_fusion(smoke_mcap, tmp_path / "r.mcap")
     for cv in summary.channels:
         if cv.byte_equal:
@@ -145,9 +135,7 @@ def test_decisions_count(smoke_mcap: Path, tmp_path: Path) -> None:
 def test_outcomes_count_is_n_minus_one(smoke_mcap: Path, tmp_path: Path) -> None:
     """First cycle has no prior prediction; outcomes = n_cycles - 1."""
     summary = replay_downstream_from_fusion(smoke_mcap, tmp_path / "r.mcap")
-    cv = next(
-        c for c in summary.channels if c.channel == CHANNEL_PREDICTION_OUTCOMES
-    )
+    cv = next(c for c in summary.channels if c.channel == CHANNEL_PREDICTION_OUTCOMES)
     assert cv.source_count == _N - 1
     assert cv.replay_count == _N - 1
 
@@ -157,9 +145,7 @@ def test_outcomes_count_is_n_minus_one(smoke_mcap: Path, tmp_path: Path) -> None
 # ---------------------------------------------------------------------------
 
 
-def test_replay_mcap_contains_exactly_downstream_channels(
-    smoke_mcap: Path, tmp_path: Path
-) -> None:
+def test_replay_mcap_contains_exactly_downstream_channels(smoke_mcap: Path, tmp_path: Path) -> None:
     replay = tmp_path / "r.mcap"
     replay_downstream_from_fusion(smoke_mcap, replay)
     with MCAPReplayReader(replay) as reader:
@@ -205,9 +191,7 @@ def test_replay_is_byte_deterministic_3x(smoke_mcap: Path, tmp_path: Path) -> No
 # ---------------------------------------------------------------------------
 
 
-def test_wrong_ground_truth_breaks_byte_equality(
-    smoke_mcap: Path, tmp_path: Path
-) -> None:
+def test_wrong_ground_truth_breaks_byte_equality(smoke_mcap: Path, tmp_path: Path) -> None:
     """Passing a wrong ground-truth function changes divergence outcomes,
     which cascades through calibration and decisions, making at least one
     downstream channel non-byte-equal."""

@@ -66,9 +66,7 @@ def test_adapter_event_has_correct_type_and_severity() -> None:
     received: list[Event] = []
     bus.subscribe_all(received.append)
     SchedulerErrorToEventBusAdapter(bus).report(
-        SchedulerCallbackError(
-            callback_repr="x", at_ns=0, exception=RuntimeError("x")
-        )
+        SchedulerCallbackError(callback_repr="x", at_ns=0, exception=RuntimeError("x"))
     )
     ev = received[0]
     assert ev.type == EventType.SCHEDULER_CALLBACK_FAILED
@@ -80,9 +78,7 @@ def test_adapter_uses_at_ns_as_stamp_sim_ns() -> None:
     received: list[Event] = []
     bus.subscribe_all(received.append)
     SchedulerErrorToEventBusAdapter(bus).report(
-        SchedulerCallbackError(
-            callback_repr="cb", at_ns=12345, exception=RuntimeError("x")
-        )
+        SchedulerCallbackError(callback_repr="cb", at_ns=12345, exception=RuntimeError("x"))
     )
     assert received[0].stamp_sim_ns == 12345
 
@@ -236,9 +232,7 @@ def test_simclock_with_adapter_other_callbacks_keep_firing_after_failure() -> No
     ven afectados, y además los eventos de fallo viajan al bus."""
     bus = EventBus()
     events_seen: list[Event] = []
-    bus.subscribe(
-        (EventType.SCHEDULER_CALLBACK_FAILED,), events_seen.append
-    )
+    bus.subscribe((EventType.SCHEDULER_CALLBACK_FAILED,), events_seen.append)
 
     clock = SimClockImpl(seed=0, error_sink=SchedulerErrorToEventBusAdapter(bus))
     healthy_fires: list[int] = []

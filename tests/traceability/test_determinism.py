@@ -42,9 +42,7 @@ def _write_mixed_mcap(path: Path) -> None:
             600,
             make_vehicle_state(mission_mode=MissionMode.NAVIGATE),
         )
-        sink.publish(
-            CHANNEL_EVENTS, 700, make_event(sequence=1, type_=EventType.TAKEOFF)
-        )
+        sink.publish(CHANNEL_EVENTS, 700, make_event(sequence=1, type_=EventType.TAKEOFF))
         sink.publish(
             CHANNEL_EVENTS,
             800,
@@ -64,9 +62,7 @@ def test_same_mcap_produces_identical_trace_object(tmp_path: Path) -> None:
     traces = []
     for _ in range(3):
         with MCAPReplayReader(mcap) as reader:
-            traces.append(
-                build_behavior_trace(reader=reader, event_id=2, window_ns=10**9)
-            )
+            traces.append(build_behavior_trace(reader=reader, event_id=2, window_ns=10**9))
 
     assert traces[0] == traces[1] == traces[2]
 

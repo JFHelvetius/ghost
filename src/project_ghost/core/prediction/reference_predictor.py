@@ -55,9 +55,7 @@ def _std_from_cov_diag(cov: np.ndarray, sl: slice) -> np.ndarray:
     cubrir el caso de eigenvalor diagonal marginalmente negativo.
     """
     block_diag = np.diag(cov)[sl]
-    result: np.ndarray = np.sqrt(np.clip(block_diag, 0.0, None)).astype(
-        np.float64
-    )
+    result: np.ndarray = np.sqrt(np.clip(block_diag, 0.0, None)).astype(np.float64)
     return result
 
 
@@ -87,9 +85,7 @@ class ConstantVelocityForwardPredictor:
         directive_hash: str | None = None,
     ) -> BeliefForwardPrediction:
         if horizon_ns <= 0:
-            raise ValueError(
-                f"horizon_ns must be > 0; got {horizon_ns}"
-            )
+            raise ValueError(f"horizon_ns must be > 0; got {horizon_ns}")
         dt_s = float(horizon_ns) / _NS_PER_S
 
         pose = belief.nav.pose
@@ -97,9 +93,7 @@ class ConstantVelocityForwardPredictor:
 
         predicted_position = pose.position_enu_m + v_world * dt_s
         predicted_position = predicted_position.astype(np.float64, copy=True)
-        predicted_orientation = pose.orientation_q.astype(
-            np.float64, copy=True
-        )
+        predicted_orientation = pose.orientation_q.astype(np.float64, copy=True)
 
         cov = belief.nav.covariance_15x15
         if cov is not None:
@@ -120,9 +114,7 @@ class ConstantVelocityForwardPredictor:
 
         return BeliefForwardPrediction(
             source_belief_stamp_sim_ns=belief.stamp_sim_ns,
-            predicted_observation_stamp_sim_ns=(
-                belief.stamp_sim_ns + horizon_ns
-            ),
+            predicted_observation_stamp_sim_ns=(belief.stamp_sim_ns + horizon_ns),
             horizon_ns=horizon_ns,
             predicted_pose=predicted_pose,
             predicted_pose_std=predicted_pose_std,

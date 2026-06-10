@@ -90,9 +90,7 @@ def test_cli_summarize_belief_writes_to_output_file(tmp_path: Path) -> None:
     assert rc == 0
     assert output.exists()
     data = json.loads(output.read_text(encoding="utf-8"))
-    assert (
-        data["schema_version"] == BELIEF_CONSISTENCY_REPORT_SCHEMA_VERSION
-    )
+    assert data["schema_version"] == BELIEF_CONSISTENCY_REPORT_SCHEMA_VERSION
     assert data["summary"]["total_samples"] == 2
     assert data["summary"]["samples_with_finite_trace"] == 2
 
@@ -113,9 +111,7 @@ def test_cli_summarize_belief_writes_to_stdout_when_no_output(
 
     assert rc == 0
     parsed = json.loads(capsys.readouterr().out)
-    assert (
-        parsed["schema_version"] == BELIEF_CONSISTENCY_REPORT_SCHEMA_VERSION
-    )
+    assert parsed["schema_version"] == BELIEF_CONSISTENCY_REPORT_SCHEMA_VERSION
     assert parsed["summary"]["total_samples"] == 2
 
 

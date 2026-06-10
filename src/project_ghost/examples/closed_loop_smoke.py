@@ -215,8 +215,7 @@ def run_closed_loop_smoke(
     """
     if n_cycles < _MIN_CYCLES:
         raise ValueError(
-            f"n_cycles must be >= {_MIN_CYCLES} (need at least one "
-            f"outcome); got {n_cycles}"
+            f"n_cycles must be >= {_MIN_CYCLES} (need at least one outcome); got {n_cycles}"
         )
 
     thresholds = _make_thresholds()
@@ -257,9 +256,7 @@ def run_closed_loop_smoke(
             if k > 0:
                 prior_prediction = predictions_by_cycle[k - 1]
                 actual_pose = _ground_truth_fn(t_k)
-                outcome = compute_divergence(
-                    prior_prediction, actual_pose, t_k
-                )
+                outcome = compute_divergence(prior_prediction, actual_pose, t_k)
                 outcomes_so_far.append(outcome)
                 out_adapter.publish(outcome)
 
@@ -300,9 +297,7 @@ def run_closed_loop_smoke(
                 perception_mode=None,
                 calibrated_self_assessment=calibrated,
             )
-            decision, rationale = decide_with_rationale(
-                decision_policy, ctx
-            )
+            decision, rationale = decide_with_rationale(decision_policy, ctx)
             dec_adapter.publish(decision, rationale)
             decisions_by_kind[decision.kind.value] = (
                 decisions_by_kind.get(decision.kind.value, 0) + 1
@@ -316,12 +311,8 @@ def run_closed_loop_smoke(
             pred_adapter.publish(prediction)
             predictions_by_cycle.append(prediction)
 
-    final_verdict = (
-        outcomes_so_far[-1].verdict.value if outcomes_so_far else None
-    )
-    calibrated_levels_observed = [
-        c.adjusted_overall_level.value for c in calibrated_records
-    ]
+    final_verdict = outcomes_so_far[-1].verdict.value if outcomes_so_far else None
+    calibrated_levels_observed = [c.adjusted_overall_level.value for c in calibrated_records]
 
     mcap_bytes = output_path.read_bytes()
     mcap_sha = hashlib.sha256(mcap_bytes).hexdigest()
@@ -351,7 +342,8 @@ def run_closed_loop_smoke(
         ),
         md_report=verify_md(output_path),
         rlb_report=verify_rlb(
-            output_path, max_history=_FEEDBACK_MAX_HISTORY,
+            output_path,
+            max_history=_FEEDBACK_MAX_HISTORY,
         ),
         fpb_report=verify_fpb(
             output_path,
@@ -371,24 +363,23 @@ def main() -> None:
     print(f"Outcomes:           {summary.n_outcomes}")
     print(f"Final verdict:      {summary.final_verdict}")
     print(f"Decisions by kind:  {summary.decisions_by_kind}")
-    print(
-        "Calibrated levels:  "
-        + " -> ".join(summary.calibrated_levels_observed)
-    )
+    print("Calibrated levels:  " + " -> ".join(summary.calibrated_levels_observed))
     # ADR-0031/0032/0033 — property trio self-verification, printed
     # last so CI logs end on the citable veredicto trio.
     for tag, report, params_str in (
-        ("BAUD-v1", summary.baud_report,
-            f"M={summary.baud_report.min_outcomes}, "
-            f"K={summary.baud_report.downgrade_threshold}, "),
-        ("ERUR-v1", summary.erur_report,
-            f"M={summary.erur_report.min_outcomes}, "
-            f"K={summary.erur_report.downgrade_threshold}, "),
-        ("MD-v1",   summary.md_report, ""),
-        ("RLB-v1",  summary.rlb_report,
-            f"W={summary.rlb_report.max_history}, "),
-        ("FPB-v1",  summary.fpb_report,
-            f"fire_fraction={summary.fpb_report.fire_fraction:.2f}, "),
+        (
+            "BAUD-v1",
+            summary.baud_report,
+            f"M={summary.baud_report.min_outcomes}, K={summary.baud_report.downgrade_threshold}, ",
+        ),
+        (
+            "ERUR-v1",
+            summary.erur_report,
+            f"M={summary.erur_report.min_outcomes}, K={summary.erur_report.downgrade_threshold}, ",
+        ),
+        ("MD-v1", summary.md_report, ""),
+        ("RLB-v1", summary.rlb_report, f"W={summary.rlb_report.max_history}, "),
+        ("FPB-v1", summary.fpb_report, f"fire_fraction={summary.fpb_report.fire_fraction:.2f}, "),
     ):
         verdict = "HOLDS" if report.holds else "VIOLATED"
         print(

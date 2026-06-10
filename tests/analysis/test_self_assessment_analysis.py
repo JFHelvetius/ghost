@@ -68,11 +68,7 @@ def _make_state(
     ori_var: float = 1e-4,
 ) -> VehicleState:
     diag = np.array(
-        [pos_var] * 3
-        + [vel_var] * 3
-        + [ori_var] * 3
-        + [1e-6] * 3
-        + [1e-6] * 3,
+        [pos_var] * 3 + [vel_var] * 3 + [ori_var] * 3 + [1e-6] * 3 + [1e-6] * 3,
         dtype=np.float64,
     )
     cov = np.diag(diag)
@@ -106,9 +102,7 @@ def _make_state(
         stamp_sim_ns=stamp_sim_ns,
         stamp_wall_ns=0,
         nav=nav,
-        sensors=SensorHealthMap(
-            by_id=MappingProxyType({"imu0": SensorHealth.OK})
-        ),
+        sensors=SensorHealthMap(by_id=MappingProxyType({"imu0": SensorHealth.OK})),
         flight=FlightStatus(
             armed=True,
             flight_mode=FlightMode.OFFBOARD,
@@ -204,9 +198,7 @@ def test_summary_timestamps_use_min_max() -> None:
 
 def test_summary_distinct_thresholds_when_homogeneous() -> None:
     t = _make_thresholds()
-    records = tuple(
-        assess_belief(_make_state(stamp_sim_ns=i), t) for i in range(3)
-    )
+    records = tuple(assess_belief(_make_state(stamp_sim_ns=i), t) for i in range(3))
     summary = summarize_self_assessments(records)
     assert len(summary.distinct_thresholds_sha256) == 1
 
@@ -285,13 +277,8 @@ def test_encoded_summary_keys_sorted() -> None:
 
 def test_encoded_summary_envelope_structure() -> None:
     s = summarize_self_assessments(())
-    parsed = json.loads(
-        encode_self_assessment_summary_to_bytes(s).decode("utf-8")
-    )
-    assert (
-        parsed["schema_version"]
-        == SELF_ASSESSMENT_SUMMARY_SCHEMA_VERSION
-    )
+    parsed = json.loads(encode_self_assessment_summary_to_bytes(s).decode("utf-8"))
+    assert parsed["schema_version"] == SELF_ASSESSMENT_SUMMARY_SCHEMA_VERSION
     assert "summary" in parsed
 
 
@@ -302,9 +289,7 @@ def test_encoded_summary_envelope_structure() -> None:
 
 def test_two_encodings_byte_identical() -> None:
     t = _make_thresholds()
-    records = tuple(
-        assess_belief(_make_state(stamp_sim_ns=i), t) for i in range(3)
-    )
+    records = tuple(assess_belief(_make_state(stamp_sim_ns=i), t) for i in range(3))
     summary = summarize_self_assessments(records)
     a = encode_self_assessment_summary_to_bytes(summary)
     b = encode_self_assessment_summary_to_bytes(summary)
@@ -314,14 +299,11 @@ def test_two_encodings_byte_identical() -> None:
 def test_round_trip_preserves_summary() -> None:
     t = _make_thresholds()
     records = tuple(
-        assess_belief(_make_state(stamp_sim_ns=i * 100, pos_var=0.04), t)
-        for i in range(4)
+        assess_belief(_make_state(stamp_sim_ns=i * 100, pos_var=0.04), t) for i in range(4)
     )
     original = summarize_self_assessments(records)
     encoded = encode_self_assessment_summary_to_bytes(original)
-    decoded = decode_self_assessment_summary_from_json(
-        json.loads(encoded.decode("utf-8"))
-    )
+    decoded = decode_self_assessment_summary_from_json(json.loads(encoded.decode("utf-8")))
     assert decoded == original
 
 
@@ -332,9 +314,7 @@ def test_round_trip_preserves_summary() -> None:
 
 def test_decode_schema_mismatch_raises() -> None:
     with pytest.raises(ValueError, match="schema_version"):
-        decode_self_assessment_summary_from_json(
-            {"schema_version": "999", "summary": {}}
-        )
+        decode_self_assessment_summary_from_json({"schema_version": "999", "summary": {}})
 
 
 def test_decode_missing_schema_raises() -> None:
@@ -354,16 +334,24 @@ def test_decode_analysis_version_mismatch_raises() -> None:
             "analysis_version": 999,
             "total_records": 0,
             "position_counts": {
-                "known": 0, "uncertain": 0, "unknown": 0,
+                "known": 0,
+                "uncertain": 0,
+                "unknown": 0,
             },
             "velocity_counts": {
-                "known": 0, "uncertain": 0, "unknown": 0,
+                "known": 0,
+                "uncertain": 0,
+                "unknown": 0,
             },
             "orientation_counts": {
-                "known": 0, "uncertain": 0, "unknown": 0,
+                "known": 0,
+                "uncertain": 0,
+                "unknown": 0,
             },
             "overall_counts": {
-                "known": 0, "uncertain": 0, "unknown": 0,
+                "known": 0,
+                "uncertain": 0,
+                "unknown": 0,
             },
             "timestamp_first_ns": None,
             "timestamp_last_ns": None,
@@ -395,10 +383,7 @@ def test_generate_summary_writes_canonical_bytes(tmp_path: Path) -> None:
 def test_read_self_assessments_from_mcap_round_trip(tmp_path: Path) -> None:
     p = tmp_path / "sa.mcap"
     t = _make_thresholds()
-    originals = tuple(
-        assess_belief(_make_state(stamp_sim_ns=i * 1000), t)
-        for i in range(3)
-    )
+    originals = tuple(assess_belief(_make_state(stamp_sim_ns=i * 1000), t) for i in range(3))
     with MCAPFileSink(p) as sink:
         adapter = SelfAssessmentToTelemetryAdapter(sink)
         for a in originals:
@@ -420,9 +405,7 @@ def test_read_self_assessments_from_mcap_filters_by_channel(
     a_custom = assess_belief(_make_state(stamp_sim_ns=200), t)
     with MCAPFileSink(p) as sink:
         SelfAssessmentToTelemetryAdapter(sink).publish(a_default)
-        SelfAssessmentToTelemetryAdapter(
-            sink, channel="/other/sa"
-        ).publish(a_custom)
+        SelfAssessmentToTelemetryAdapter(sink, channel="/other/sa").publish(a_custom)
 
     read = read_self_assessments_from_mcap(p)
     assert len(read) == 1

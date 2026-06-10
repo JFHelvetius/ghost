@@ -56,9 +56,7 @@ class DecisionSink(Protocol):
       replay y testing).
     """
 
-    def publish(
-        self, decision: Decision, rationale: DecisionRationale
-    ) -> None: ...
+    def publish(self, decision: Decision, rationale: DecisionRationale) -> None: ...
 
 
 __all__ = [

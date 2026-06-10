@@ -96,19 +96,12 @@ class ChainStatus(StrEnum):
 
 def _validate_sha256(value: str, *, field: str) -> None:
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field} must be str; got {type(value).__name__}"
-        )
+        raise TypeError(f"{field} must be str; got {type(value).__name__}")
     if len(value) != _SHA256_HEX_LEN:
-        raise ValueError(
-            f"{field} must be {_SHA256_HEX_LEN} hex chars; got "
-            f"len={len(value)}"
-        )
+        raise ValueError(f"{field} must be {_SHA256_HEX_LEN} hex chars; got len={len(value)}")
     for c in value:
         if c not in _HEX_CHARS:
-            raise ValueError(
-                f"{field} must be lowercase hex; got {value!r}"
-            )
+            raise ValueError(f"{field} must be lowercase hex; got {value!r}")
 
 
 def _validate_optional_sha256(value: str | None, *, field: str) -> None:
@@ -133,23 +126,18 @@ def _validate_envelope(
     inner_key: str,
 ) -> Mapping[str, Any]:
     if not isinstance(data, Mapping):
-        raise TypeError(
-            f"expected JSON mapping; got {type(data).__name__}"
-        )
+        raise TypeError(f"expected JSON mapping; got {type(data).__name__}")
     if "schema_version" not in data:
         raise ValueError("missing 'schema_version' in JSON envelope")
     if data["schema_version"] != schema_version:
         raise ValueError(
-            f"incompatible schema_version {data['schema_version']!r}; "
-            f"expected {schema_version!r}"
+            f"incompatible schema_version {data['schema_version']!r}; expected {schema_version!r}"
         )
     if inner_key not in data:
         raise ValueError(f"missing {inner_key!r} in JSON envelope")
     inner = data[inner_key]
     if not isinstance(inner, Mapping):
-        raise TypeError(
-            f"{inner_key!r} must be a mapping; got {type(inner).__name__}"
-        )
+        raise TypeError(f"{inner_key!r} must be a mapping; got {type(inner).__name__}")
     return inner
 
 
@@ -185,18 +173,14 @@ class DecisionTraceRecord:
 
     def __post_init__(self) -> None:
         if self.timestamp_ns < 0:
-            raise ValueError(
-                f"timestamp_ns must be >= 0; got {self.timestamp_ns}"
-            )
+            raise ValueError(f"timestamp_ns must be >= 0; got {self.timestamp_ns}")
         if not isinstance(self.decision_kind, DecisionKind):
             raise TypeError(
-                f"decision_kind must be DecisionKind; got "
-                f"{type(self.decision_kind).__name__}"
+                f"decision_kind must be DecisionKind; got {type(self.decision_kind).__name__}"
             )
         if not isinstance(self.chain_status, ChainStatus):
             raise TypeError(
-                f"chain_status must be ChainStatus; got "
-                f"{type(self.chain_status).__name__}"
+                f"chain_status must be ChainStatus; got {type(self.chain_status).__name__}"
             )
         _validate_optional_sha256(
             self.claimed_assessment_sha256,
@@ -234,17 +218,12 @@ class DecisionTraceReport:
     analysis_version: int = DECISION_TRACE_ANALYSIS_VERSION
 
     def __post_init__(self) -> None:
-        _validate_sha256(
-            self.source_mcap_sha256, field="source_mcap_sha256"
-        )
+        _validate_sha256(self.source_mcap_sha256, field="source_mcap_sha256")
         if not isinstance(self.records, tuple):
-            raise TypeError(
-                f"records must be a tuple; got {type(self.records).__name__}"
-            )
+            raise TypeError(f"records must be a tuple; got {type(self.records).__name__}")
         if self.total_decisions != len(self.records):
             raise ValueError(
-                f"total_decisions {self.total_decisions} != len(records) "
-                f"{len(self.records)}"
+                f"total_decisions {self.total_decisions} != len(records) {len(self.records)}"
             )
         counts_sum = (
             self.verified_count
@@ -254,17 +233,14 @@ class DecisionTraceReport:
         )
         if counts_sum != self.total_decisions:
             raise ValueError(
-                f"counts sum ({counts_sum}) must equal total_decisions "
-                f"({self.total_decisions})"
+                f"counts sum ({counts_sum}) must equal total_decisions ({self.total_decisions})"
             )
         for name, m in (
             ("per_decision_kind_counts", self.per_decision_kind_counts),
             ("per_policy_id_counts", self.per_policy_id_counts),
         ):
             if not isinstance(m, Mapping):
-                raise TypeError(
-                    f"{name} must be a Mapping; got {type(m).__name__}"
-                )
+                raise TypeError(f"{name} must be a Mapping; got {type(m).__name__}")
         object.__setattr__(
             self,
             "per_decision_kind_counts",
@@ -310,9 +286,7 @@ def build_decision_trace_report(  # noqa: PLR0912, PLR0915
             if msg.channel == CHANNEL_SELF_ASSESSMENT:
                 decoded_sa = decode_message(msg)
                 if isinstance(decoded_sa, BeliefSelfAssessment):
-                    assessments_by_stamp[decoded_sa.belief_stamp_sim_ns] = (
-                        decoded_sa
-                    )
+                    assessments_by_stamp[decoded_sa.belief_stamp_sim_ns] = decoded_sa
             elif msg.channel == CHANNEL_DECISIONS:
                 decoded_d = decode_message(msg)
                 if isinstance(decoded_d, DecisionRationale):
@@ -461,9 +435,7 @@ def encode_decision_trace_report_to_bytes(
     return (serialized + "\n").encode("utf-8")
 
 
-def generate_decision_trace_report(
-    report: DecisionTraceReport, output_path: Path
-) -> None:
+def generate_decision_trace_report(report: DecisionTraceReport, output_path: Path) -> None:
     """Write canonical JSON to ``output_path``."""
     output_path.write_bytes(encode_decision_trace_report_to_bytes(report))
 
@@ -477,9 +449,7 @@ def _decode_record(raw: Mapping[str, Any]) -> DecisionTraceRecord:
         claimed_assessment_sha256=raw["claimed_assessment_sha256"],
         recomputed_assessment_sha256=raw["recomputed_assessment_sha256"],
         chain_status=ChainStatus(raw["chain_status"]),
-        analysis_version=raw.get(
-            "analysis_version", DECISION_TRACE_ANALYSIS_VERSION
-        ),
+        analysis_version=raw.get("analysis_version", DECISION_TRACE_ANALYSIS_VERSION),
     )
 
 
@@ -495,9 +465,7 @@ def decode_decision_trace_report_from_json(
         schema_version=DECISION_TRACE_REPORT_SCHEMA_VERSION,
         inner_key="trace",
     )
-    analysis_version = inner.get(
-        "analysis_version", DECISION_TRACE_ANALYSIS_VERSION
-    )
+    analysis_version = inner.get("analysis_version", DECISION_TRACE_ANALYSIS_VERSION)
     if analysis_version != DECISION_TRACE_ANALYSIS_VERSION:
         raise ValueError(
             f"incompatible analysis_version {analysis_version!r}; "

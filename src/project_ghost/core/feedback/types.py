@@ -30,28 +30,18 @@ _TAXONOMY_MAX_LEN: Final[int] = 64
 def _validate_taxonomy(value: str, *, field: str) -> None:
     """Validar identificador snake_case taxonomizado."""
     if not isinstance(value, str):
-        raise TypeError(
-            f"{field} must be str; got {type(value).__name__}"
-        )
+        raise TypeError(f"{field} must be str; got {type(value).__name__}")
     if not value:
         raise ValueError(f"{field} cannot be empty")
     if len(value) > _TAXONOMY_MAX_LEN:
-        raise ValueError(
-            f"{field} must be <= {_TAXONOMY_MAX_LEN} chars; got "
-            f"len={len(value)}"
-        )
+        raise ValueError(f"{field} must be <= {_TAXONOMY_MAX_LEN} chars; got len={len(value)}")
     if not _TAXONOMY_PATTERN.match(value):
-        raise ValueError(
-            f"{field} must match {_TAXONOMY_PATTERN.pattern!r}; got "
-            f"{value!r}"
-        )
+        raise ValueError(f"{field} must match {_TAXONOMY_PATTERN.pattern!r}; got {value!r}")
 
 
 def _validate_nonneg_count(value: int, *, field: str) -> None:
     if not isinstance(value, int) or isinstance(value, bool):
-        raise TypeError(
-            f"{field} must be int; got {type(value).__name__}"
-        )
+        raise TypeError(f"{field} must be int; got {type(value).__name__}")
     if value < 0:
         raise ValueError(f"{field} must be >= 0; got {value}")
 
@@ -98,21 +88,11 @@ class CalibrationHistory:
     schema_version: int = FEEDBACK_PROTOCOL_VERSION
 
     def __post_init__(self) -> None:
-        _validate_nonneg_count(
-            self.outcomes_considered, field="outcomes_considered"
-        )
-        _validate_nonneg_count(
-            self.count_within_1_std, field="count_within_1_std"
-        )
-        _validate_nonneg_count(
-            self.count_beyond_1_std, field="count_beyond_1_std"
-        )
-        _validate_nonneg_count(
-            self.count_beyond_3_std, field="count_beyond_3_std"
-        )
-        _validate_nonneg_count(
-            self.count_beyond_5_std, field="count_beyond_5_std"
-        )
+        _validate_nonneg_count(self.outcomes_considered, field="outcomes_considered")
+        _validate_nonneg_count(self.count_within_1_std, field="count_within_1_std")
+        _validate_nonneg_count(self.count_beyond_1_std, field="count_beyond_1_std")
+        _validate_nonneg_count(self.count_beyond_3_std, field="count_beyond_3_std")
+        _validate_nonneg_count(self.count_beyond_5_std, field="count_beyond_5_std")
         counts_sum = (
             self.count_within_1_std
             + self.count_beyond_1_std
@@ -164,8 +144,7 @@ class CalibrationHistory:
                 )
         if self.schema_version != FEEDBACK_PROTOCOL_VERSION:
             raise ValueError(
-                f"schema_version must be {FEEDBACK_PROTOCOL_VERSION}; "
-                f"got {self.schema_version}"
+                f"schema_version must be {FEEDBACK_PROTOCOL_VERSION}; got {self.schema_version}"
             )
 
 
@@ -210,23 +189,16 @@ class CalibratedSelfAssessment:
                 f"calibration_history must be CalibrationHistory; got "
                 f"{type(self.calibration_history).__name__}"
             )
-        if not isinstance(
-            self.adjusted_overall_level, SelfAssessmentLevel
-        ):
+        if not isinstance(self.adjusted_overall_level, SelfAssessmentLevel):
             raise TypeError(
                 f"adjusted_overall_level must be SelfAssessmentLevel; "
                 f"got {type(self.adjusted_overall_level).__name__}"
             )
-        _validate_taxonomy(
-            self.adjustment_policy_id, field="adjustment_policy_id"
-        )
-        _validate_taxonomy(
-            self.adjustment_reason, field="adjustment_reason"
-        )
+        _validate_taxonomy(self.adjustment_policy_id, field="adjustment_policy_id")
+        _validate_taxonomy(self.adjustment_reason, field="adjustment_reason")
         if self.schema_version != FEEDBACK_PROTOCOL_VERSION:
             raise ValueError(
-                f"schema_version must be {FEEDBACK_PROTOCOL_VERSION}; "
-                f"got {self.schema_version}"
+                f"schema_version must be {FEEDBACK_PROTOCOL_VERSION}; got {self.schema_version}"
             )
 
 

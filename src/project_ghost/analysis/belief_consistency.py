@@ -149,11 +149,7 @@ def summarize_belief_consistency(
 
     # Covariance trace: include only records whose computed trace was
     # finite (ADR-0016 collapses non-finite metrics to None).
-    traces: list[float] = [
-        r.covariance_trace
-        for r in records
-        if r.covariance_trace is not None
-    ]
+    traces: list[float] = [r.covariance_trace for r in records if r.covariance_trace is not None]
     if traces:
         cov_trace_min: float | None = min(traces)
         cov_trace_max: float | None = max(traces)
@@ -164,9 +160,7 @@ def summarize_belief_consistency(
         cov_trace_mean = None
 
     conds: list[float] = [
-        r.covariance_condition_number
-        for r in records
-        if r.covariance_condition_number is not None
+        r.covariance_condition_number for r in records if r.covariance_condition_number is not None
     ]
     if conds:
         cov_cond_min: float | None = min(conds)
@@ -226,13 +220,10 @@ def decode_belief_report_from_json(
     """
     if not isinstance(data, Mapping):
         raise TypeError(
-            f"decode_belief_report_from_json: expected mapping; got "
-            f"{type(data).__name__}"
+            f"decode_belief_report_from_json: expected mapping; got {type(data).__name__}"
         )
     if "schema_version" not in data:
-        raise ValueError(
-            "decode_belief_report_from_json: missing 'schema_version'"
-        )
+        raise ValueError("decode_belief_report_from_json: missing 'schema_version'")
     schema_version = data["schema_version"]
     if schema_version != BELIEF_TRACEABILITY_REPORT_SCHEMA_VERSION:
         raise ValueError(
@@ -241,9 +232,7 @@ def decode_belief_report_from_json(
             f"{BELIEF_TRACEABILITY_REPORT_SCHEMA_VERSION!r}"
         )
     if "report" not in data:
-        raise ValueError(
-            "decode_belief_report_from_json: missing 'report' field"
-        )
+        raise ValueError("decode_belief_report_from_json: missing 'report' field")
     report_dict = data["report"]
     if not isinstance(report_dict, Mapping):
         raise TypeError(
@@ -253,8 +242,7 @@ def decode_belief_report_from_json(
     decoded = from_json_dict(BeliefTraceabilityReport, report_dict)
     if not isinstance(decoded, BeliefTraceabilityReport):  # pragma: no cover
         raise TypeError(
-            "decode_belief_report_from_json: decoded object is not a "
-            "BeliefTraceabilityReport"
+            "decode_belief_report_from_json: decoded object is not a BeliefTraceabilityReport"
         )
     return decoded
 
@@ -297,9 +285,7 @@ def encode_consistency_summary_to_bytes(
     return (serialized + "\n").encode("utf-8")
 
 
-def generate_consistency_report(
-    summary: BeliefConsistencySummary, output_path: Path
-) -> None:
+def generate_consistency_report(summary: BeliefConsistencySummary, output_path: Path) -> None:
     """Write ``summary`` as canonical JSON to ``output_path``.
 
     Overwrites if the file exists. Does not invent parent directories.

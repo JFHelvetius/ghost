@@ -89,23 +89,13 @@ class ERURViolation:
 
     def __post_init__(self) -> None:
         if self.cycle_stamp_sim_ns < 0:
-            raise ValueError(
-                f"cycle_stamp_sim_ns must be >= 0; got "
-                f"{self.cycle_stamp_sim_ns}"
-            )
+            raise ValueError(f"cycle_stamp_sim_ns must be >= 0; got {self.cycle_stamp_sim_ns}")
         if self.cycle_index < 0:
-            raise ValueError(
-                f"cycle_index must be >= 0; got {self.cycle_index}"
-            )
+            raise ValueError(f"cycle_index must be >= 0; got {self.cycle_index}")
         if not isinstance(self.kind, ERURViolationKind):
-            raise TypeError(
-                f"kind must be ERURViolationKind; got "
-                f"{type(self.kind).__name__}"
-            )
+            raise TypeError(f"kind must be ERURViolationKind; got {type(self.kind).__name__}")
         if not isinstance(self.observed, str):
-            raise TypeError(
-                f"observed must be str; got {type(self.observed).__name__}"
-            )
+            raise TypeError(f"observed must be str; got {type(self.observed).__name__}")
         if self.precondition_outcomes_considered < 0:
             raise ValueError(
                 "precondition_outcomes_considered must be >= 0; got "
@@ -145,18 +135,11 @@ class ERURVerificationReport:
                 f"chars; got {self.mcap_sha256!r}"
             )
         if self.min_outcomes < 0:
-            raise ValueError(
-                f"min_outcomes must be >= 0; got {self.min_outcomes}"
-            )
+            raise ValueError(f"min_outcomes must be >= 0; got {self.min_outcomes}")
         if self.downgrade_threshold < 1:
-            raise ValueError(
-                f"downgrade_threshold must be >= 1; got "
-                f"{self.downgrade_threshold}"
-            )
+            raise ValueError(f"downgrade_threshold must be >= 1; got {self.downgrade_threshold}")
         if self.cycles_total < 0:
-            raise ValueError(
-                f"cycles_total must be >= 0; got {self.cycles_total}"
-            )
+            raise ValueError(f"cycles_total must be >= 0; got {self.cycles_total}")
         if not 0 <= self.cycles_precondition_held <= self.cycles_total:
             raise ValueError(
                 "cycles_precondition_held must be in "
@@ -184,14 +167,10 @@ class ERURVerificationReport:
                 "when cycles_precondition_held > 0"
             )
         if not isinstance(self.violations, tuple):
-            raise TypeError(
-                f"violations must be tuple; got "
-                f"{type(self.violations).__name__}"
-            )
+            raise TypeError(f"violations must be tuple; got {type(self.violations).__name__}")
         if self.property_version != ERUR_PROPERTY_VERSION:
             raise ValueError(
-                f"property_version must be {ERUR_PROPERTY_VERSION!r}; "
-                f"got {self.property_version!r}"
+                f"property_version must be {ERUR_PROPERTY_VERSION!r}; got {self.property_version!r}"
             )
 
     @property
@@ -235,10 +214,7 @@ def _precondition_holds(
     """
     h = c.calibration_history
     beyond_3_or_worse = h.count_beyond_3_std + h.count_beyond_5_std
-    drift_clean = (
-        h.outcomes_considered < min_outcomes
-        or beyond_3_or_worse < downgrade_threshold
-    )
+    drift_clean = h.outcomes_considered < min_outcomes or beyond_3_or_worse < downgrade_threshold
     raw_known = c.raw_assessment.overall_level is SelfAssessmentLevel.KNOWN
     return drift_clean and raw_known
 
@@ -265,37 +241,42 @@ def _check_postconditions(
 
     # Postcondition 1: adjusted level is exactly KNOWN.
     if c.adjusted_overall_level is not SelfAssessmentLevel.KNOWN:
-        out.append(ERURViolation(
-            kind=ERURViolationKind.ADJUSTED_LEVEL_NOT_KNOWN,
-            observed=(
-                f"adjusted_overall_level={c.adjusted_overall_level.value!r} "
-                f"under policy {c.adjustment_policy_id!r}; expected KNOWN"
-            ),
-            **base_kwargs,
-        ))
+        out.append(
+            ERURViolation(
+                kind=ERURViolationKind.ADJUSTED_LEVEL_NOT_KNOWN,
+                observed=(
+                    f"adjusted_overall_level={c.adjusted_overall_level.value!r} "
+                    f"under policy {c.adjustment_policy_id!r}; expected KNOWN"
+                ),
+                **base_kwargs,
+            )
+        )
 
     # Postcondition 2 requires the actuation record.
     if a is None:
-        out.append(ERURViolation(
-            kind=ERURViolationKind.MISSING_ACTUATION_RECORD,
-            observed=(
-                f"no ActuationDirective at stamp_sim_ns={stamp}; "
-                "cannot verify postcondition 2"
-            ),
-            **base_kwargs,
-        ))
+        out.append(
+            ERURViolation(
+                kind=ERURViolationKind.MISSING_ACTUATION_RECORD,
+                observed=(
+                    f"no ActuationDirective at stamp_sim_ns={stamp}; cannot verify postcondition 2"
+                ),
+                **base_kwargs,
+            )
+        )
         return out
 
     # Postcondition 2: decision kind is exactly PROCEED.
     if a.decision.kind is not DecisionKind.PROCEED:
-        out.append(ERURViolation(
-            kind=ERURViolationKind.DECISION_KIND_NOT_PROCEED,
-            observed=(
-                f"decision.kind={a.decision.kind.value!r} "
-                f"reason={a.decision.reason!r}; expected PROCEED"
-            ),
-            **base_kwargs,
-        ))
+        out.append(
+            ERURViolation(
+                kind=ERURViolationKind.DECISION_KIND_NOT_PROCEED,
+                observed=(
+                    f"decision.kind={a.decision.kind.value!r} "
+                    f"reason={a.decision.reason!r}; expected PROCEED"
+                ),
+                **base_kwargs,
+            )
+        )
 
     return out
 
@@ -344,13 +325,9 @@ def verify_erur(
         If ``mcap_path`` does not exist or is unreadable.
     """
     if min_outcomes < 0:
-        raise ValueError(
-            f"min_outcomes must be >= 0; got {min_outcomes}"
-        )
+        raise ValueError(f"min_outcomes must be >= 0; got {min_outcomes}")
     if downgrade_threshold < 1:
-        raise ValueError(
-            f"downgrade_threshold must be >= 1; got {downgrade_threshold}"
-        )
+        raise ValueError(f"downgrade_threshold must be >= 1; got {downgrade_threshold}")
 
     mcap_sha = hashlib.sha256(mcap_path.read_bytes()).hexdigest()
 
@@ -391,12 +368,14 @@ def verify_erur(
         if first_precondition_stamp is None:
             first_precondition_stamp = stamp
 
-        violations.extend(_check_postconditions(
-            c,
-            actuation_by_stamp.get(stamp),
-            stamp=stamp,
-            cycle_index=cycle_index,
-        ))
+        violations.extend(
+            _check_postconditions(
+                c,
+                actuation_by_stamp.get(stamp),
+                stamp=stamp,
+                cycle_index=cycle_index,
+            )
+        )
 
     return ERURVerificationReport(
         mcap_sha256=mcap_sha,

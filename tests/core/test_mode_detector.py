@@ -65,9 +65,7 @@ def _new_detector(
     return det, sink
 
 
-def _push_motion_entry(
-    det: PerceptionModeDetector, *, t_start: int = 0
-) -> int:
+def _push_motion_entry(det: PerceptionModeDetector, *, t_start: int = 0) -> int:
     """Inyecta `aggressive_k_consecutive` observaciones de entrada espaciadas."""
     cfg = det.config
     step = cfg.aggressive_window_ns // cfg.aggressive_k_consecutive
@@ -84,9 +82,7 @@ def _push_motion_entry(
     return t
 
 
-def _enter_motion_aggressive(
-    det: PerceptionModeDetector, *, t_start: int = 0
-) -> int:
+def _enter_motion_aggressive(det: PerceptionModeDetector, *, t_start: int = 0) -> int:
     """Lleva el detector NOMINAL → MOTION_AGGRESSIVE. Devuelve el `now_ns` del tick."""
     cfg = det.config
     _push_motion_entry(det, t_start=t_start)
@@ -99,9 +95,7 @@ def _enter_motion_aggressive(
     return tick_ns
 
 
-def _push_motion_recovery(
-    det: PerceptionModeDetector, *, t_start: int, window_ns: int
-) -> int:
+def _push_motion_recovery(det: PerceptionModeDetector, *, t_start: int, window_ns: int) -> int:
     """Inyecta `nominal_k_consecutive` observaciones limpias y devuelve el último stamp."""
     cfg = det.config
     step = window_ns // cfg.nominal_k_consecutive
@@ -361,13 +355,11 @@ def test_fsm_no_oscillation_under_alternating_signal() -> None:
     # Alternar observaciones en envelope y fuera; espaciado pequeño.
     for i in range(40):
         t = (i + 1) * 10
-        in_envelope = (i % 2 == 0)
+        in_envelope = i % 2 == 0
         det.record_motion_observation(
             producer_id="imu.0",
             stamp_sim_ns=t,
-            commanded_rate_rps_max=(
-                cfg.aggressive_rate_threshold_rps if in_envelope else 0.0
-            ),
+            commanded_rate_rps_max=(cfg.aggressive_rate_threshold_rps if in_envelope else 0.0),
             measured_accel_mps2_excl_g=0.0,
             degraded_producers_in_window=("vo.front",) if in_envelope else (),
         )
@@ -407,9 +399,7 @@ def test_motion_aggressive_recovery_completes_when_sustained() -> None:
     cfg = det.config
 
     # K observaciones limpias.
-    last_stamp = _push_motion_recovery(
-        det, t_start=t, window_ns=cfg.nominal_hold_ns * 2
-    )
+    last_stamp = _push_motion_recovery(det, t_start=t, window_ns=cfg.nominal_hold_ns * 2)
     # Tick con ventana×2 cumplida desde el inicio de la racha.
     tick_ns = last_stamp + cfg.nominal_hold_ns * 2
     det.tick(tick_ns)

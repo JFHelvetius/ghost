@@ -115,22 +115,16 @@ class Event:
         if not self.source:
             raise ValueError("Event.source no puede ser vacío")
         if self.stamp_sim_ns < 0:
-            raise ValueError(
-                f"Event.stamp_sim_ns debe ser >= 0; recibido {self.stamp_sim_ns}"
-            )
+            raise ValueError(f"Event.stamp_sim_ns debe ser >= 0; recibido {self.stamp_sim_ns}")
         if self.stamp_wall_ns < 0:
-            raise ValueError(
-                f"Event.stamp_wall_ns debe ser >= 0; recibido {self.stamp_wall_ns}"
-            )
+            raise ValueError(f"Event.stamp_wall_ns debe ser >= 0; recibido {self.stamp_wall_ns}")
         if self.sequence < 0:
             raise ValueError(
                 f"Event.sequence debe ser >= 0; recibido {self.sequence}. "
                 f"Publishers pasan 0; el bus lo sobrescribe."
             )
         if self.schema_version < 1:
-            raise ValueError(
-                f"Event.schema_version debe ser >= 1; recibido {self.schema_version}"
-            )
+            raise ValueError(f"Event.schema_version debe ser >= 1; recibido {self.schema_version}")
 
 
 __all__ = ["Event", "EventSeverity", "EventType"]

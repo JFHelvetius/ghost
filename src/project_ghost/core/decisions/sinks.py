@@ -21,9 +21,7 @@ class NullDecisionSink:
     """Descarta. Útil cuando el caller invoca ``decide_and_publish``
     pero no quiere persistir."""
 
-    def publish(
-        self, decision: Decision, rationale: DecisionRationale
-    ) -> None:
+    def publish(self, decision: Decision, rationale: DecisionRationale) -> None:
         del decision, rationale  # explicit unused
 
 
@@ -41,13 +39,10 @@ class RecordingDecisionSink:
     def __init__(self) -> None:
         self._records: list[tuple[Decision, DecisionRationale]] = []
 
-    def publish(
-        self, decision: Decision, rationale: DecisionRationale
-    ) -> None:
+    def publish(self, decision: Decision, rationale: DecisionRationale) -> None:
         if rationale.decision != decision:
             raise ValueError(
-                "RecordingDecisionSink.publish: rationale.decision must "
-                "equal decision"
+                "RecordingDecisionSink.publish: rationale.decision must equal decision"
             )
         self._records.append((decision, rationale))
 
