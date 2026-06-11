@@ -22,8 +22,8 @@ authors:
     given-names: J. M.
     email: jfhelvetius@gmail.com
     affiliation: Independent
-version: 0.1.1
-date-released: 2026-06-09
+version: 0.2.0
+date-released: 2026-06-10
 url: "https://github.com/JFHelvetius/ghost"
 repository-code: "https://github.com/JFHelvetius/ghost"
 repository-artifact: "https://pypi.org/project/project-ghost/"
@@ -48,8 +48,8 @@ preferred-citation:
     - family-names: Mateos
       given-names: J. M.
       email: jfhelvetius@gmail.com
-  version: 0.1.1
-  date-released: 2026-06-09
+  version: 0.2.0
+  date-released: 2026-06-10
   url: "https://github.com/JFHelvetius/ghost"
   license: Apache-2.0
 references:

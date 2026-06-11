@@ -2,7 +2,13 @@
 
 ## Status
 
-Proposed.
+Accepted (2026-06-10). TLC verification confirmed green in CI on the
+[``tla-plus`` job](https://github.com/JFHelvetius/ghost/actions/workflows/ci.yml)
+of commit `aa6c804` and every commit after. All five invariants
+(``INV_BAUD``, ``INV_ERUR``, ``INV_PARTITION``,
+``INV_NO_INVENTED_CONFIDENCE``, ``INV_HISTORY_BOUND``) hold over the
+full reachable state space of the abstract model at the bounded
+constants ``M=2, K=1, W=3``.
 
 ## Context
 

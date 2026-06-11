@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-10
+
+Major addition: a fourth layer of evidence for the property set —
+mechanical verification by TLA+ / TLC, **proved continuously green in
+CI**.
+
+### Added
+
+- **ADR-0036 — TLA+ Mechanical Verification of BAUD-v1 / ERUR-v1 /
+  Partition (Accepted)**. The TLA+ specification at
+  [`docs/proofs/BaudErur.tla`](docs/proofs/BaudErur.tla) is exhaustively
+  model-checked by TLC over the full reachable state space of the
+  abstract model (bounded constants `M=2, K=1, W=3`). Five invariants
+  hold:
+  - `INV_BAUD` — formal statement of BAUD-v1's precondition →
+    postconditions implication.
+  - `INV_ERUR` — formal statement of ERUR-v1's precondition →
+    postconditions implication.
+  - `INV_PARTITION` — the BAUD + ERUR partition theorem proven on the
+    abstract model (promoted from "observed on smoke trace" to
+    "proven everywhere"); the first project claim to make that
+    promotion.
+  - `INV_NO_INVENTED_CONFIDENCE` — formal statement of MD-v1.
+  - `INV_HISTORY_BOUND` — structural sliding-window sanity.
+- **CI self-enforcement of TLA+**: `.github/workflows/ci.yml`'s new
+  `tla-plus` job downloads `tla2tools.jar`, runs TLC on every push,
+  fails the build on any invariant violation, uploads `tlc_output.log`
+  as a build artifact.
+- **Drift-then-recovery smoke**
+  (`closed_loop_smoke_with_recovery.py`): engineered so RLB-v1 fires
+  exactly one recovery transition at the bound `L = peak + W - 1`
+  (38 = 7 + 32 − 1), proving the bound is tight. Strong RLB witness
+  in CI complementing the vacuous sustained-drift smoke.
+- 12 integration tests for the recovery smoke pinning the per-property
+  shape and cross-property invariants.
+- Docs site `proofs/` section with the formal artifacts, plus
+  `docs/properties/proofs.md` surfacing TLA+ as the fourth evidence
+  layer.
+
+### Changed
+
+- `run_closed_loop_smoke()` accepts a private `_ground_truth_fn`
+  parameter. Byte determinism of the sustained-drift smoke is
+  preserved exactly by the default.
+- README and docs site `index.md` updated to mention the TLA+ proof
+  alongside the verifier + property tests.
+
+### Fixed
+
+- Multi-layer CI lint cleanup: 119 files reformatted by `ruff format`,
+  31 C408 dict-literal rewrites, plotly added to mypy missing-imports
+  override, several real bugs surfaced in the process (covariance
+  attribute typo, unused type-ignore comments, untyped streamlit
+  decorator).
+- `pytest -m conformance` now treats exit code 5 ("no tests
+  collected") as success — the conformance marker is reserved for
+  HAL backend suites that will be added later.
+
+### Honest scope of the new layer
+
+Read [ADR-0036 §4](docs/adr/0036-tla-plus-mechanical-verification-of-baud-erur.md#4-what-this-does-and-does-not-claim)
+for the full framing. Summary of what TLA+ DOES NOT prove:
+
+- That the Python implementation faithfully mirrors the TLA+ model
+  (the bridge is by human inspection).
+- That the bounded constants prove the unbounded case (TLC is
+  exhaustive within bounds; property tests cover production scale).
+- Any property of non-reference policy pairs.
+
 ## [0.1.1] - 2026-06-09
 
 First release published through the automated PyPI workflow
@@ -103,6 +172,7 @@ safety property set as the project's central contribution.
 - All property reports are deterministic: same MCAP bytes produce
   byte-identical JSON output across machines.
 
-[Unreleased]: https://github.com/JFHelvetius/ghost/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/JFHelvetius/ghost/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/JFHelvetius/ghost/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/JFHelvetius/ghost/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/JFHelvetius/ghost/releases/tag/v0.1.0

@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "project-ghost"
-version = "0.1.1"
-description = "Autonomy under uncertainty: closed-loop reference pipeline + 5 formal safety properties verifiable byte-exact from any MCAP."
+version = "0.2.0"
+description = "Autonomy under uncertainty: closed-loop reference pipeline + 5 formal safety properties verifiable byte-exact from any MCAP + TLA+ mechanically-verified BAUD/ERUR/MD/partition over the abstract state space."
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
