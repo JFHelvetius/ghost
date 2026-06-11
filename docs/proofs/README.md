@@ -16,8 +16,10 @@ property statements in the ADRs is surfaced by *some* layer breaking.
 
 | File | Property | Tool | Status |
 |---|---|---|---|
-| [`BaudErur.tla`](BaudErur.tla) | BAUD-v1, ERUR-v1, Partition, MD-v1 bonus | TLA+ / TLC | Proposed (ADR-0036) |
+| [`BaudErur.tla`](BaudErur.tla) | BAUD-v1, ERUR-v1, Partition, MD-v1 bonus | TLA+ / TLC | Accepted (ADR-0036) |
 | [`BaudErur.cfg`](BaudErur.cfg) | TLC config for the above | TLC | — |
+| [`Rlb.tla`](Rlb.tla) | RLB-v1 / Theorem 1 (tight recovery latency bound) | TLA+ / TLC | Accepted (paper §6) |
+| [`Rlb.cfg`](Rlb.cfg) | TLC config for the above | TLC | — |
 
 ## Running TLC locally
 
@@ -34,6 +36,10 @@ property statements in the ADRs is surfaced by *some* layer breaking.
 java -cp /path/to/tla2tools.jar tlc2.TLC \
     -config docs/proofs/BaudErur.cfg \
     docs/proofs/BaudErur.tla
+
+java -cp /path/to/tla2tools.jar tlc2.TLC \
+    -config docs/proofs/Rlb.cfg \
+    docs/proofs/Rlb.tla
 ```
 
 Expected output on a clean spec:
@@ -88,8 +94,10 @@ for the full honest framing.
 
 ## Future work
 
-- Specs for MD-v1, RLB-v1, FPB-v1 (the MD invariant is included as a
-  bonus in `BaudErur.tla` since it is trivial given the policy
-  encoding, but RLB and FPB warrant their own modules).
-- CI job that runs TLC on every push to `main`.
-- TLAPS proof of the partition theorem for unbounded W, M, K.
+- Spec for FPB-v1 (the empirical fire-fraction observer). FPB is
+  probabilistic in nature; the TLA+ encoding would need a different
+  shape than the structural BAUD/ERUR/RLB invariants.
+- TLAPS proof of the unbounded version of the partition theorem
+  (any finite `W, M, K`) and of Theorem 1 (RLB).
+- Extending the `tla-plus` CI job to run both `BaudErur.tla` and
+  `Rlb.tla` on every push.

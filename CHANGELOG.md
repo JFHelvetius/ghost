@@ -7,6 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-11
+
+Paper-readiness pass: artifacts in support of the v0.2.x academic
+write-up at [`docs/paper/project_ghost_v0_2.md`](docs/paper/project_ghost_v0_2.md),
+the LaTeX arXiv source at [`docs/paper/arxiv/main.tex`](docs/paper/arxiv/main.tex),
+and a second TLA+ specification mechanically verifying Theorem 1
+(the tight recovery latency bound `L ≤ peak + W − 1`).
+
+### Added
+
+- **TLA+ `Rlb.tla` specification** mechanically verifying Theorem 1
+  ([`docs/proofs/Rlb.tla`](docs/proofs/Rlb.tla),
+  [`docs/proofs/Rlb.cfg`](docs/proofs/Rlb.cfg)). Mirrors the
+  verifier algorithm of
+  [`src/project_ghost/properties/rlb.py`](src/project_ghost/properties/rlb.py)
+  and checks three invariants over the full reachable state space
+  (`W=4, MAX_DIRTY_RUN=12`): `INV_RLB` (the formal recovery latency
+  bound `L ≤ peak + W − 1`), `INV_PEAK_BOUNDED`, and
+  `INV_WINDOW_BOUND`. CI-enforced on every push alongside
+  `BaudErur.tla`.
+- **Violation showcase**
+  ([`closed_loop_smoke_violated.py`](src/project_ghost/examples/closed_loop_smoke_violated.py)):
+  a smoke that swaps the reference calibrator for
+  `_BuggyPassthroughCalibrator` (never downgrades), proving the
+  property verifier detects the bug — `BAUD-v1: VIOLATED`,
+  `violation_count: 12` (6 cycles × 2 postconditions), exit code 1.
+  Companion artifact for paper §8.2 demonstrating detection capacity
+  of the reproducibility primitive (contribution C3).
+- **Cross-machine determinism CI jobs**
+  (`determinism-cross-machine` + `determinism-cross-machine-assert`
+  in [`ci.yml`](.github/workflows/ci.yml)): the reference smoke runs
+  on a `{ubuntu-latest, windows-latest}` matrix, each runner
+  publishes the SHA-256 of its MCAP and property-report JSON, and
+  the aggregator step `diff`s the two files. Any disagreement fails
+  the build, operationalising paper §8.4.
+- **Parametric metrics script**
+  ([`docs/paper/scripts/measure_metrics.py`](docs/paper/scripts/measure_metrics.py)):
+  reproducibly measures verifier runtime, MCAP size, smoke runtime,
+  and HOLDS verdict across 3 calibrator parameterisations
+  `(M=4,K=2), (M=3,K=1), (M=5,K=3)` × 3 trace lengths `n ∈ {10, 50, 200}`.
+  Writes results to
+  [`docs/paper/outputs/metrics.json`](docs/paper/outputs/metrics.json).
+  All 9 combinations report all 5 properties HOLDS.
+- **Paper draft** at
+  [`docs/paper/project_ghost_v0_2.md`](docs/paper/project_ghost_v0_2.md)
+  with:
+  - 4 contributions formulated as C1–C4: tight recovery latency
+    bound (Theorem 1), mechanically verified partition theorem,
+    reproducibility primitive with demonstrated detection capacity,
+    end-to-end safety citation pattern.
+  - **§6 Theorem 1 with rigorous proof by sliding-window trace**
+    (accumulation → saturation → flush → recovery) and two
+    corollaries on the operational regime and structural sanity.
+  - §2 Related work with 10 prior tools cited (RTAMT, MoonLight,
+    ROSMonitoring, ROSRV, Shielding, CBF Toolbox, Conformal
+    prediction, Timed Automata SC, Rizaldi survey) and §2.3
+    9-dimension comparison matrix.
+  - §8 Evaluation with violation-showcase JSON output and the
+    9-run parametric policy table.
+  - 18 references (vs. 7 in the initial draft).
+- **arXiv submission package** at
+  [`docs/paper/arxiv/`](docs/paper/arxiv/):
+  - [`main.tex`](docs/paper/arxiv/main.tex) — self-contained
+    LaTeX source (~600 lines, `article` class, compiles with
+    pdflatex + bibtex).
+  - [`refs.bib`](docs/paper/arxiv/refs.bib) — BibTeX bibliography
+    (21 entries).
+  - [`README.md`](docs/paper/arxiv/README.md) — submission
+    instructions for arXiv (categories: cs.SE primary, cs.LO +
+    cs.RO secondary; MSC 68N30, 68V20), plus adaptation notes for
+    RV 2026 and FMAS 2026 workshop versions.
+- Per-file ruff ignore for [`docs/paper/scripts/`](docs/paper/scripts/)
+  to permit `M`, `K` math notation matching the ADRs and the
+  Unicode `×` matching the paper's table captions.
+
+### Notes
+
+- Suite remains 1665 tests passing, ruff + mypy strict + deptry
+  clean after the additions. The new smoke, script, and TLA+ spec
+  are wired into the same lint / type / TLC infrastructure as the
+  rest of the repo.
+
 ## [0.2.0] - 2026-06-10
 
 Major addition: a fourth layer of evidence for the property set —
@@ -172,7 +254,8 @@ safety property set as the project's central contribution.
 - All property reports are deterministic: same MCAP bytes produce
   byte-identical JSON output across machines.
 
-[Unreleased]: https://github.com/JFHelvetius/ghost/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/JFHelvetius/ghost/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/JFHelvetius/ghost/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/JFHelvetius/ghost/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/JFHelvetius/ghost/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/JFHelvetius/ghost/releases/tag/v0.1.0

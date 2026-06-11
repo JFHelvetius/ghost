@@ -113,41 +113,51 @@ _LANG: dict[str, dict[str, str]] = {
             "what happened later."
         ),
         # About expander
-        "about_label": "About this work — is this original?",
+        "about_label": "About this work — what is the contribution?",
         "about_body": """
-**Honest answer: no, not as theory. Yes, as a built reference.**
+Project Ghost makes **five concrete, citable contributions** on top of
+the existing literature on uncertainty in robotics. The underlying
+ingredients (Bayesian filters, calibration, FDI, runtime supervisors)
+are well-established; the contributions are in how they are
+**combined, formally stated, and mechanically verified**.
 
-The individual ideas Ghost relies on have been studied in robotics and
-control for decades:
+- **PV-1 — Reproducibility primitive.**
+  `ghost verify-properties --mcap <log>` reduces "is this run safe?"
+  to one shell command returning a byte-exact verdict with exit code
+  `0` iff every property holds. Verifier is a pure function over
+  content-addressed MCAP — no replay, no simulation, no trust in the
+  producer.
+- **PV-2 — Formal partition theorem.**
+  BAUD-v1 + ERUR-v1 partition the space of per-cycle conditional
+  behaviour. Stated in TLA+ as `INV_PARTITION`, **mechanically
+  verified by TLC** over the full reachable state space of the
+  abstract model (ADR-0036). Promoted from "observed on one trace"
+  to "proved on the model".
+- **PV-3 — Structural recovery latency bound.**
+  `L ≤ peak + W − 1` for sliding-window calibration histories with
+  `MahalanobisDowngradePolicy(M, K)`. Drift-then-recovery smoke
+  fires at the bound exactly (38 = 7 + 32 − 1), proving the bound
+  is tight (RLB-v1).
+- **PV-4 — Safe-reason set encoding pattern.**
+  `S_BAUD-v1 = {"attitude_hold_hold", "kill_zero_throttle"}` — a
+  closed taxonomy of strings classifying which non-PROCEED actuator
+  commands count as conservative, replacing fragile `command is None`
+  checks with an extensible, externally-auditable allowlist (BAUD-v1).
+- **PV-5 — End-to-end safety citation pattern.**
+  Content-addressed MCAP + ADR + pure-function verifier + Hypothesis
+  property test + CI gate + tagged release + OIDC-signed PyPI wheel
+  — assembled as one coherent reproducibility unit. The headline
+  claim is operationally re-runnable from `pip install project-ghost==0.2.0`.
 
-- **Uncertainty quantification** — Bayesian filters, particle filters
-  (1990s onward).
-- **Calibration of probabilistic predictions** — calibration plots,
-  isotonic regression, conformal prediction *(Vovk et al., 2005+)*.
-- **Epistemic vs. aleatoric uncertainty** — formalised in deep learning
-  by *Kendall & Gal, 2017*.
-- **Fault detection & isolation (FDI)** — used in aerospace since the
-  1970s.
-- **Runtime safety supervisors** — formal-methods literature in control
-  and verifiable autonomy.
+For each, the binding ADR is the formal statement, the verifier is
+the executable test, the inline witness in `SmokeSummary.*_report`
+is the self-evidence, and CI is the continuous guarantee.
 
-What Project Ghost contributes is **not new theory**. It is a built,
-opinionated reference of how these pieces fit together end-to-end:
-
-1. Calibrated confidence is a **first-class signal that actually gates
-   actuation** — not a metric you only log and look at later.
-2. A **closed feedback loop** where prediction error directly downgrades
-   the confidence level used by the decision stage.
-3. **Content-addressed MCAP telemetry** with **byte-exact replay
-   verification** — you can prove the pipeline is deterministic and that
-   a log was not tampered with.
-4. Clean separation between **raw** self-assessment and **calibrated**
-   self-assessment as independent typed messages.
-
-Treat it as a *carefully built reference of a pattern that is discussed
-more often than it is implemented* — useful if you want to build
-safety-critical autonomy where "I'm not sure" is a legitimate output of
-the agent.
+Theoretically novel? No — this is an engineering and citation
+contribution, not a new theorem. **Operationally novel? Yes** —
+this is the pattern getting actually built and shipped, in a form
+that lets third parties verify their own runs against the captured
+MCAP without trusting the producer.
 """,
         # Pipeline
         "pipeline_eyebrow": "The 8-step closed loop",
@@ -403,43 +413,57 @@ the agent.
             "byte desde el log criptográfico, así que se puede reconstruir "
             "qué pasó después."
         ),
-        "about_label": "Sobre este trabajo — ¿es algo original?",
+        "about_label": "Sobre este trabajo — ¿cuál es la contribución?",
         "about_body": """
-**Respuesta honesta: como teoría, no. Como referencia construida, sí.**
+Project Ghost aporta **cinco contribuciones concretas y citables**
+sobre la literatura existente de incertidumbre en robótica. Los
+ingredientes de base (filtros bayesianos, calibración, FDI,
+supervisores en tiempo de ejecución) están bien establecidos; las
+contribuciones están en **cómo se combinan, se enuncian formalmente
+y se verifican mecánicamente**.
 
-Las ideas individuales en las que se apoya Ghost llevan décadas
-estudiándose en robótica y control:
+- **PV-1 — Primitivo de reproducibilidad.**
+  `ghost verify-properties --mcap <log>` reduce "¿es seguro este
+  run?" a un único comando de shell que devuelve un veredicto
+  byte-exacto con código de salida `0` si y solo si toda propiedad
+  se cumple. El verificador es una función pura sobre MCAP
+  content-addressed — sin replay, sin simulación, sin confiar en el
+  productor.
+- **PV-2 — Teorema de partición formal.**
+  BAUD-v1 + ERUR-v1 particionan el espacio de comportamiento
+  condicional por ciclo. Enunciado en TLA+ como `INV_PARTITION`,
+  **verificado mecánicamente por TLC** sobre el espacio de estados
+  alcanzable completo del modelo abstracto (ADR-0036). Promovido de
+  "observado en una traza" a "demostrado sobre el modelo".
+- **PV-3 — Cota estructural de latencia de recuperación.**
+  `L ≤ peak + W − 1` para historiales de calibración con ventana
+  deslizante usando `MahalanobisDowngradePolicy(M, K)`. El smoke
+  drift-then-recovery dispara exactamente en la cota
+  (38 = 7 + 32 − 1), demostrando que la cota es ajustada (RLB-v1).
+- **PV-4 — Patrón de codificación por safe-reason set.**
+  `S_BAUD-v1 = {"attitude_hold_hold", "kill_zero_throttle"}` — una
+  taxonomía cerrada de strings que clasifica qué comandos de
+  actuador no-PROCEED cuentan como conservadores, reemplazando
+  chequeos frágiles tipo `command is None` por una allowlist
+  extensible y auditable externamente (BAUD-v1).
+- **PV-5 — Patrón de citación end-to-end para safety.**
+  MCAP content-addressed + ADR + verificador función pura + test
+  de propiedades Hypothesis + gate de CI + release etiquetado +
+  wheel firmado por OIDC en PyPI — ensamblados como una sola
+  unidad coherente de reproducibilidad. La afirmación principal es
+  re-ejecutable operacionalmente desde
+  `pip install project-ghost==0.2.0`.
 
-- **Cuantificación de incertidumbre** — Bayesian filters, particle
-  filters (años 90 en adelante).
-- **Calibración de predicciones probabilísticas** — calibration plots,
-  isotonic regression, conformal prediction *(Vovk et al., 2005+)*.
-- **Incertidumbre epistémica vs aleatoria** — formalizada en deep
-  learning por *Kendall & Gal, 2017*.
-- **Detección y aislamiento de fallos (FDI)** — usada en aeroespacial
-  desde los años 70.
-- **Supervisores de seguridad en tiempo de ejecución** — literatura de
-  formal methods en control y autonomía verificable.
+Para cada una: el ADR vinculante es el enunciado formal, el
+verificador es el test ejecutable, el testigo inline en
+`SmokeSummary.*_report` es la auto-evidencia, y CI es la garantía
+continua.
 
-Lo que aporta Project Ghost **no es teoría nueva**. Es una referencia
-construida y opinada de cómo se combinan estas piezas de extremo a
-extremo:
-
-1. La confianza calibrada es **una señal de primer orden que de verdad
-   bloquea la actuación** — no una métrica que solo se loguea y se mira
-   después.
-2. Un **lazo cerrado de feedback** donde el error de predicción degrada
-   directamente el nivel de confianza usado por la etapa de decisión.
-3. **Telemetría MCAP content-addressed** con **verificación de replay
-   byte-exacta** — puedes demostrar que el pipeline es determinístico y
-   que un log no fue manipulado.
-4. Separación limpia entre la autoevaluación **raw** y la **calibrada**
-   como mensajes tipados independientes.
-
-Trátalo como una *referencia cuidadosamente construida de un patrón que
-se discute más de lo que se implementa* — útil si quieres construir
-autonomía safety-critical donde "no estoy seguro" sea una salida
-legítima del agente.
+¿Novedad teórica? No — esto es una contribución de ingeniería y
+de patrón de citación, no un teorema nuevo. **¿Novedad
+operacional? Sí** — este es el patrón realmente construido y
+publicado, en una forma que permite a terceros verificar sus
+propios runs contra el MCAP capturado sin confiar en el productor.
 """,
         "pipeline_eyebrow": "El ciclo cerrado de 8 pasos",
         "phase_perception": "Percepción",

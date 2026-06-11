@@ -87,19 +87,51 @@ shows the five property veredictos inline. Same code that
 
 [See the full overview →](properties/index.md)
 
-## Honest framing
+## Contributions
 
-The individual ideas Ghost relies on — uncertainty calibration,
-action gating on confidence, fault detection and isolation,
-calibrated probabilistic predictions — are well-established robotics
-research, much of it decades old. **The contribution of Project
-Ghost is not new theory.** It is the specific opinionated combination,
-end-to-end, with byte-exact replay verification and a CLI-grade
-external surface that third parties can use against any captured run
-without trusting the producer.
+The underlying ingredients (Bayesian filters, calibration, FDI,
+runtime supervisors) are well-established. Project Ghost makes five
+concrete, citable contributions in **how they are combined, stated,
+and verified**:
 
-In other words: a *carefully built reference of a pattern that is
-discussed more often than it is implemented*.
+- **PV-1 — Reproducibility primitive.**
+  `ghost verify-properties --mcap <log>` reduces "is this run safe?"
+  to one shell command returning a byte-exact verdict with exit code
+  `0` iff every property holds. Verifier is a pure function over
+  content-addressed MCAP — no replay, no simulation, no trust in the
+  producer.
+- **PV-2 — Formal partition theorem.**
+  BAUD-v1 + ERUR-v1 partition the space of per-cycle conditional
+  behaviour. Stated in TLA+ as `INV_PARTITION`, **mechanically
+  verified by TLC** over the full reachable state space of the
+  abstract model ([ADR-0036](adr/0036-tla-plus-mechanical-verification-of-baud-erur.md)).
+  Promoted from "observed on one trace" to "proved on the model".
+- **PV-3 — Structural recovery latency bound.**
+  `L ≤ peak + W − 1` for sliding-window calibration histories with
+  `MahalanobisDowngradePolicy(M, K)`. Drift-then-recovery smoke fires
+  at the bound exactly (38 = 7 + 32 − 1), proving the bound is tight
+  ([ADR-0034](adr/0034-recovery-latency-bound-property-v1.md)).
+- **PV-4 — Safe-reason set encoding pattern.**
+  `S_BAUD-v1 = {"attitude_hold_hold", "kill_zero_throttle"}` — a
+  closed taxonomy of strings classifying which non-PROCEED actuator
+  commands count as conservative, replacing fragile `command is None`
+  checks with an extensible, externally-auditable allowlist
+  ([ADR-0031](adr/0031-bounded-action-under-drift-property-v1.md)).
+- **PV-5 — End-to-end safety citation pattern.**
+  Content-addressed MCAP + ADR + pure-function verifier + Hypothesis
+  property test + CI gate + tagged release + OIDC-signed PyPI wheel
+  — assembled as one coherent reproducibility unit. The headline
+  claim is operationally re-runnable from `pip install project-ghost==0.2.0`.
+
+For each, the binding ADR is the formal statement, the verifier is
+the executable test, the inline witness in `SmokeSummary.*_report`
+is the self-evidence, and CI is the continuous guarantee.
+
+Theoretically novel? No — this is an engineering and citation
+contribution, not a new theorem. **Operationally novel? Yes** —
+this is the pattern getting actually built and shipped, in a form
+that lets third parties verify their own runs against the captured
+MCAP without trusting the producer.
 
 ## Architecture in one diagram
 

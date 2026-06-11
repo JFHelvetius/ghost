@@ -78,15 +78,20 @@ BAUD + ERUR alone could be vacuously satisfied by a degenerate
 **RLB and FPB are quantitative**, complementing the three qualitative
 claims with measurable bounds.
 
-## Honest scope
+## Scope
 
-The five properties **do** establish:
+The five properties **establish**:
 
-- A deterministic, byte-exact verdict per MCAP
-- A complete decomposition of the conditional behaviour space
-- An unconditional structural witness on the calibrator
-- A quantitative recovery bound when transitions are observed
-- An empirical fire rate observer for regression gating
+- A deterministic, byte-exact verdict per MCAP (PV-1)
+- A complete decomposition of the conditional behaviour space —
+  proved on the abstract model by TLC (PV-2)
+- An unconditional structural witness on the calibrator (MD-v1)
+- A quantitative recovery bound `L ≤ peak + W − 1`, shown tight by
+  the drift-then-recovery smoke (PV-3)
+- An empirical fire rate observer for regression gating (FPB-v1)
+- A safe-reason set encoding pattern for safety properties (PV-4)
+- A citation pattern for safety claims: MCAP + ADR + verifier +
+  test + CI + tagged release + signed wheel as one unit (PV-5)
 
 The five properties **do not** establish:
 

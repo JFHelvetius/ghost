@@ -18,12 +18,12 @@ abstract: >-
   and self-enforced on every push by CI.
 type: software
 authors:
-  - family-names: Mateos
-    given-names: J. M.
+  - family-names: Menéndez Mateos
+    given-names: Javier
     email: jfhelvetius@gmail.com
     affiliation: Independent
-version: 0.2.0
-date-released: 2026-06-10
+version: 0.2.1
+date-released: 2026-06-11
 url: "https://github.com/JFHelvetius/ghost"
 repository-code: "https://github.com/JFHelvetius/ghost"
 repository-artifact: "https://pypi.org/project/project-ghost/"
@@ -45,8 +45,8 @@ preferred-citation:
   type: software
   title: "Project Ghost: Autonomy under uncertainty"
   authors:
-    - family-names: Mateos
-      given-names: J. M.
+    - family-names: Menéndez Mateos
+      given-names: Javier
       email: jfhelvetius@gmail.com
   version: 0.2.0
   date-released: 2026-06-10
@@ -56,8 +56,8 @@ references:
   - type: software
     title: "ADR-0031 — Bounded Action Under Drift Property v1 (BAUD)"
     authors:
-      - family-names: Mateos
-        given-names: J. M.
+      - family-names: Menéndez Mateos
+        given-names: Javier
     url: "https://github.com/JFHelvetius/ghost/blob/main/docs/adr/0031-bounded-action-under-drift-property-v1.md"
     notes: >-
       Formal statement of the BAUD-v1 property: when prediction
@@ -66,8 +66,8 @@ references:
   - type: software
     title: "ADR-0032 — Eventual Reactivation Under Recovery Property v1 (ERUR)"
     authors:
-      - family-names: Mateos
-        given-names: J. M.
+      - family-names: Menéndez Mateos
+        given-names: Javier
     url: "https://github.com/JFHelvetius/ghost/blob/main/docs/adr/0032-eventual-reactivation-under-recovery-property-v1.md"
     notes: >-
       Formal statement of the ERUR-v1 property: when drift is
@@ -75,8 +75,8 @@ references:
   - type: software
     title: "ADR-0033 — Monotonic Degradation Property v1 (MD)"
     authors:
-      - family-names: Mateos
-        given-names: J. M.
+      - family-names: Menéndez Mateos
+        given-names: Javier
     url: "https://github.com/JFHelvetius/ghost/blob/main/docs/adr/0033-monotonic-degradation-property-v1.md"
     notes: >-
       Formal statement of the MD-v1 property: the reference
@@ -84,8 +84,8 @@ references:
   - type: software
     title: "ADR-0034 — Recovery Latency Bound Property v1 (RLB)"
     authors:
-      - family-names: Mateos
-        given-names: J. M.
+      - family-names: Menéndez Mateos
+        given-names: Javier
     url: "https://github.com/JFHelvetius/ghost/blob/main/docs/adr/0034-recovery-latency-bound-property-v1.md"
     notes: >-
       Formal statement of the RLB-v1 property: dirty-run length
@@ -93,8 +93,8 @@ references:
   - type: software
     title: "ADR-0035 — False Positive Bound Property v1 (FPB)"
     authors:
-      - family-names: Mateos
-        given-names: J. M.
+      - family-names: Menéndez Mateos
+        given-names: Javier
     url: "https://github.com/JFHelvetius/ghost/blob/main/docs/adr/0035-false-positive-bound-property-v1.md"
     notes: >-
       Formal statement of the FPB-v1 property: empirical BAUD

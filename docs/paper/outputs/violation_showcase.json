@@ -1,0 +1,55 @@
+﻿{
+  "all_properties_hold": false,
+  "mcap_path": "closed_loop_smoke_violated.mcap",
+  "properties": {
+    "BAUD-v1": {
+      "cycles_precondition_held": 6,
+      "cycles_total": 10,
+      "downgrade_threshold": 2,
+      "holds": false,
+      "mcap_sha256": "934dde1c46007c50c9cba667ab4344143b4e4801ab7321ff8e53641b13aa2920",
+      "min_outcomes": 4,
+      "property_version": "BAUD-v1",
+      "violation_count": 12
+    },
+    "ERUR-v1": {
+      "cycles_precondition_held": 4,
+      "cycles_total": 10,
+      "downgrade_threshold": 2,
+      "holds": true,
+      "mcap_sha256": "934dde1c46007c50c9cba667ab4344143b4e4801ab7321ff8e53641b13aa2920",
+      "min_outcomes": 4,
+      "property_version": "ERUR-v1",
+      "violation_count": 0
+    },
+    "FPB-v1": {
+      "cycles_precondition_held": 6,
+      "cycles_total": 10,
+      "downgrade_threshold": 2,
+      "fire_fraction": 0.6,
+      "holds": true,
+      "max_fire_fraction": 1.0,
+      "mcap_sha256": "934dde1c46007c50c9cba667ab4344143b4e4801ab7321ff8e53641b13aa2920",
+      "min_outcomes": 4,
+      "property_version": "FPB-v1",
+      "violation_count": 0
+    },
+    "MD-v1": {
+      "cycles_precondition_held": 10,
+      "cycles_total": 10,
+      "holds": true,
+      "mcap_sha256": "934dde1c46007c50c9cba667ab4344143b4e4801ab7321ff8e53641b13aa2920",
+      "property_version": "MD-v1",
+      "violation_count": 0
+    },
+    "RLB-v1": {
+      "cycles_precondition_held": 0,
+      "cycles_total": 10,
+      "holds": true,
+      "max_history": 32,
+      "mcap_sha256": "934dde1c46007c50c9cba667ab4344143b4e4801ab7321ff8e53641b13aa2920",
+      "property_version": "RLB-v1",
+      "violation_count": 0
+    }
+  }
+}

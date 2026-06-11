@@ -1,0 +1,655 @@
+% Project Ghost — arXiv submission (v0.2.0, 2026-06-10)
+% Author: Javier Menéndez Mateos <jfhelvetius@gmail.com>
+% Compiles with pdflatex + bibtex (or biber if you switch \bibliographystyle).
+%
+%   pdflatex main
+%   bibtex main
+%   pdflatex main
+%   pdflatex main
+%
+% This source is also the basis for RV 2026 / FMAS 2026 workshop
+% submissions; swap \documentclass to the venue's required template
+% (e.g. lncs.cls for Springer LNCS workshops).
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{microtype}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=blue!50!black,urlcolor=blue!60!black]{hyperref}
+
+% --- Listings (Python / shell / JSON) -----------------------------------
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{black!20},
+  numbers=none,
+  breaklines=true,
+  showstringspaces=false,
+  columns=fullflexible,
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+}
+
+% --- Theorem environments -----------------------------------------------
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+
+% --- Title block --------------------------------------------------------
+\title{Project Ghost: A Verifiable Safety-Property Surface\\
+       for Autonomy Under Uncertainty}
+\author{Javier Menéndez Mateos\\
+        \texttt{jfhelvetius@gmail.com}\\
+        \small Independent}
+\date{v0.2.0 --- \today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We describe \textbf{Project Ghost}, an open-source reference
+implementation of five formal safety properties for autonomy under
+uncertainty, verifiable byte-exact from any captured run via a single
+shell command: \texttt{ghost verify-properties --mcap <log>}. The
+property set (BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1) covers four
+distinct natures of safety claim --- conditional behaviour in both
+drift directions, an unconditional structural property of the
+calibrator, a quantitative recovery latency bound, and an empirical
+regression-gating observer --- each stated in a binding architectural
+decision record (ADR), verified by a pure function over
+content-addressed MCAP telemetry, exercised by approximately 50
+property tests within a 1665-test suite, witnessed inline in every
+reference smoke run, and self-enforced on every push by CI. The
+BAUD/ERUR partition and the monotonic-degradation property are
+additionally \textbf{mechanically verified} by TLA+/TLC over the
+abstract state space of the reference policy pair. We make four
+claimable contributions: (1) a closed-form, tight structural recovery
+latency bound $L \le \mathrm{peak} + W - 1$ for sliding-window
+count-of-$K$-in-$W$ calibration filters (Theorem~\ref{thm:rlb}); (2) a
+formal partition theorem $\mathrm{BAUD} \oplus \mathrm{ERUR}$ over the
+conditional behaviour space, mechanically verified by TLC; (3) a
+reproducibility primitive --- a content-addressed verifier reachable
+from \texttt{pip install project-ghost==0.2.0} that detects injected
+bugs (\S\ref{sec:violation}) and produces deterministic JSON output
+across machines; and (4) an end-to-end safety citation pattern. The
+verifier completes in 21\,ms for 10-cycle runs and 406\,ms for
+200-cycle runs (linear in trace length), with the property set
+holding across all three reference policy parameterisations evaluated.
+\end{abstract}
+
+\medskip
+\noindent\textbf{Keywords:} verifiable autonomy, formal safety
+properties, runtime verification, calibrated confidence, byte-exact
+replay verification, TLA+, MCAP, sliding-window monitors.
+
+\medskip
+\noindent\textbf{Artifact availability:}
+\begin{itemize}[noitemsep,topsep=0pt]
+  \item Source: \url{https://github.com/JFHelvetius/ghost}
+  \item Distribution: \url{https://pypi.org/project/project-ghost/}
+  \item Documentation: \url{https://JFHelvetius.github.io/ghost/}
+  \item License: Apache-2.0
+\end{itemize}
+
+% =======================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Safety claims in robotics are routinely supported by hand-written
+prose in design documents and by simulation videos that the reader
+cannot re-run. The literature on uncertainty in autonomy is rich ---
+Bayesian filters~\cite{thrun2005probabilistic}, calibration of
+probabilistic predictions~\cite{vovk2005algorithmic}, epistemic
+versus aleatoric uncertainty~\cite{kendall2017uncertainties}, fault
+detection and isolation (FDI)~\cite{isermann2006fdi}, runtime safety
+supervisors~\cite{bartocci2018lectures} --- but the gap between
+\emph{the theory exists} and \emph{this specific run, on this
+specific code, satisfies the property} is rarely operationally
+closed. A third party who wants to verify a safety claim against a
+recorded run typically cannot: there is no shell command, no
+content-addressed log, no pure-function verifier they can re-run on
+their own machine.
+
+We describe Project Ghost, an opinionated reference platform built
+around exactly this gap. Ghost is sim-first, written in Python, and
+ships as a \texttt{pip}-installable package with a CLI subcommand
+(\texttt{ghost verify-properties}) that takes a captured MCAP log
+and returns a byte-exact verdict on five formal safety properties.
+Each property is stated as a binding ADR; verified by a pure function
+over the log; exercised by Hypothesis-based property tests;
+witnessed inline in every reference closed-loop smoke; and
+self-enforced on every push by CI. Two of the properties (BAUD-v1 and
+ERUR-v1) are additionally \textbf{mechanically verified} by TLA+/TLC
+over the abstract state space of the reference policy pair, along
+with the partition theorem that the two properties together cover
+the full conditional behaviour space. The tight recovery-latency
+bound RLB-v1 is mechanically verified by a separate TLA+ spec
+mirroring the verifier algorithm.
+
+\subsection{Contributions}
+\label{sec:contributions}
+
+We make \textbf{four claimable contributions}, two formal and two
+operational:
+
+\begin{itemize}
+  \item \textbf{C1 --- Theorem~\ref{thm:rlb} (tight recovery latency
+        bound).} A closed-form upper bound $L \le \mathrm{peak} + W - 1$
+        on the recovery latency of any closed-loop autonomy supervisor
+        using a sliding window of size $W$ and a count-of-$K$-in-$W$
+        threshold over $M$-minimum outcomes, formalised in
+        \S\ref{sec:theorem} and shown tight by a witness trace where
+        equality is attained ($L = 38 = 7 + 32 - 1$).
+  \item \textbf{C2 --- Mechanically verified partition theorem.} The
+        conditional behaviour of the reference closed loop partitions
+        into $\mathrm{BAUD} \oplus \mathrm{ERUR}$. Stated in TLA+ as
+        \texttt{INV\_PARTITION} and verified by TLC over the full
+        reachable state space of the abstract model.
+  \item \textbf{C3 --- Reproducibility primitive with demonstrated
+        detection capacity.} A one-line CLI verifier
+        \texttt{ghost verify-properties} over content-addressed MCAP
+        logs, distributed via PyPI with OIDC trusted publishing.
+        Bug-detection capacity demonstrated in \S\ref{sec:violation}:
+        a smoke with an injected buggy calibrator yields
+        \texttt{BAUD-v1: VIOLATED}, exit code 1,
+        \texttt{violation\_count: 12} on the unmodified verifier.
+  \item \textbf{C4 --- End-to-end safety citation pattern.}
+        Content-addressed MCAP + ADR + pure-function verifier +
+        Hypothesis property test + CI gate + tagged release +
+        OIDC-signed PyPI wheel, assembled as a single reproducibility
+        unit so a third party can verify any cited safety claim
+        against the captured run without trusting the producer.
+\end{itemize}
+
+C1 and C2 are formal contributions, novel to the best of our
+knowledge after a deliberate prior-art review (\S\ref{sec:related}).
+C3 and C4 are operational and pattern contributions; their novelty
+rests on the comparison matrix of \S\ref{sec:comparison}.
+
+\subsection{What this paper is and is not}
+
+This paper is not a paper introducing new estimation theory; the
+filtering, calibration, and FDI ingredients Ghost rests on are well
+established. C1's mathematics is elementary in hindsight but not, to
+our knowledge, previously stated as a closed-form bound in the
+peer-reviewed runtime-verification literature. C2's novelty is in
+mechanising the partition for sliding-window autonomy supervisors
+specifically; analogous TLA+ patterns exist for distributed
+algorithms but not for this domain.
+
+% =======================================================================
+\section{Background and related work}
+\label{sec:related}
+
+\subsection{Underlying ingredients}
+
+Project Ghost builds on standard practice in robotics and control:
+Bayesian and particle filtering~\cite{thrun2005probabilistic};
+calibration of probabilistic
+predictions~\cite{vovk2005algorithmic}; epistemic vs.\ aleatoric
+uncertainty~\cite{kendall2017uncertainties}; fault detection and
+isolation~\cite{isermann2006fdi}; runtime
+verification~\cite{bartocci2018lectures}; TLA+ and TLC for
+explicit-state model checking~\cite{lamport2002specifying}; MCAP for
+content-addressable robotics telemetry~\cite{foxglove2022mcap}.
+
+\subsection{Closest tooling prior work}
+
+\begin{itemize}
+  \item \textbf{RTAMT}~\cite{nikovic2020rtamt,nikovic2023rtamt}: STL
+        monitors over CPS logs with online/offline algorithms and a
+        Python API. STL-defined properties, no mechanically verified
+        proof layer, no content-addressed reproducibility chain.
+  \item
+        \textbf{MoonLight}~\cite{bartocci2020moonlight,bartocci2023moonlight}:
+        STREL (spatio-temporal logic) monitor in Java with a CLI.
+        Spatial focus; no formal verification of monitor semantics.
+  \item
+        \textbf{ROSMonitoring}~\cite{ferrando2020rosmonitoring} and
+        \textbf{ROSRV}~\cite{huang2014rosrv}: live ROS-middleware
+        monitors. Both online; neither performs post-hoc log
+        verification with a one-line CLI.
+  \item \textbf{Safe RL via
+        shielding}~\cite{jansen2020shielding,jansen2024shielding}:
+        runtime enforcement of safety via action filters. Online,
+        action-blocking; Ghost is offline and log-verifying.
+  \item \textbf{Control Barrier Functions}~\cite{mitll2023cbf}:
+        controller synthesis for continuous safety constraints.
+        Complementary, not competing.
+  \item \textbf{Conformal prediction for robot
+        safety}~\cite{chakraborty2024conformal}: forward-looking
+        distribution-free uncertainty bounds for gating actions.
+        Predictive; Ghost is retrospective.
+  \item \textbf{Supervisory control of timed
+        automata}~\cite{flordal2022timedsupervisory}: synthesises
+        timed supervisors. Constructs new supervisors; Ghost verifies
+        existing traces. Prior timed-automata recovery results do
+        not give the closed-form bound of Theorem~\ref{thm:rlb}.
+  \item \textbf{Surveys of formal verification for
+        autonomy}~\cite{rizaldi2020survey}: catalogue
+        Coq/Lean/Isabelle/Alloy work. Note the absence of
+        mechanically-verified TLA+ specs for autonomy supervisors
+        specifically.
+\end{itemize}
+
+\subsection{Comparison matrix}
+\label{sec:comparison}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{l X X X X X}
+\toprule
+\textbf{Dimension} & \textbf{Ghost} & \textbf{RTAMT} & \textbf{MoonLight} & \textbf{Shielding} & \textbf{Timed Aut.~SC} \\
+\midrule
+Verification mode             & Post-hoc log              & On/offline      & On/offline      & Online enforce & Offline synth.\\
+Distribution                  & PyPI + OIDC               & Source          & Source          & Framework       & Synth. tool   \\
+Content-addressed input       & \textbf{Yes} (SHA-256)    & No              & No              & N/A             & No            \\
+One-line CLI verifier         & \textbf{Yes}              & No              & No              & No              & No            \\
+Property nature               & Behavioural + latency     & STL             & STREL           & Invariants      & Discrete/timed\\
+Mechanical proof              & \textbf{TLA+/TLC}         & None            & None            & Informal        & Timed-aut.    \\
+Multi-property output         & \textbf{5 reports/run}    & 1/spec          & 1/spec          & Modular         & 1/synth.      \\
+Partition theorem             & \textbf{BAUD$\oplus$ERUR} & N/A             & N/A             & N/A             & N/A           \\
+Closed-form recovery bound    & \textbf{$L\le \mathrm{peak}+W-1$} & N/A     & N/A             & N/A             & None          \\
+Bug-detection demo            & \textbf{Yes (\S\ref{sec:violation})} & N/A  & N/A             & N/A             & N/A           \\
+\bottomrule
+\end{tabularx}
+\caption{Comparison of Project Ghost with the closest runtime
+         verification and supervisory-control tooling. To our
+         knowledge, no prior tool ships a content-addressed,
+         pure-function safety-property verifier via \texttt{pip
+         install} with mechanically verified underlying invariants.}
+\label{tab:comparison}
+\end{table}
+
+% =======================================================================
+\section{The property set}
+\label{sec:properties}
+
+The five properties are stated in binding ADRs (immutable once
+accepted) and verified by pure functions in
+\texttt{src/project\_ghost/properties/}. Each verifier returns a
+typed report with \texttt{holds: bool}, structured per-cycle
+metadata, and the MCAP's SHA-256.
+
+\begin{itemize}
+  \item \textbf{BAUD-v1 (ADR-0031): Bounded Action Under Drift.}
+        Over a sliding window of size $W=32$, at least $M=4$
+        calibration outcomes observed and at least $K=2$ in the
+        dirty band. Postcondition: adjusted level strictly lower
+        than raw in the lattice; emitted decision is not PROCEED;
+        emitted actuator command, if any, belongs to a closed
+        safe-reason set
+        $S_{\mathrm{BAUD}} = \{\texttt{attitude\_hold\_hold}, \texttt{kill\_zero\_throttle}\}$.
+  \item \textbf{ERUR-v1 (ADR-0032): Eventual Reactivation Under
+        Recovery.} Drift absent and raw belief is KNOWN.
+        Postcondition: adjusted level is KNOWN and decision is
+        PROCEED. Together with BAUD, ERUR forms the
+        \textbf{partition theorem}.
+  \item \textbf{MD-v1 (ADR-0033): Monotonic Degradation.} For every
+        cycle, $\mathrm{adjusted} \preceq \mathrm{raw}$ in the
+        confidence lattice. The calibration policy never \emph{invents}
+        confidence.
+  \item \textbf{RLB-v1 (ADR-0034): Recovery Latency Bound.} See
+        Theorem~\ref{thm:rlb}.
+  \item \textbf{FPB-v1 (ADR-0035): False Positive Bound observer.}
+        Empirical BAUD fire rate over the run, exposed as a
+        structured metric for regression gating.
+\end{itemize}
+
+% =======================================================================
+\section{Verifier architecture}
+\label{sec:verifier}
+
+Each property has a verifier
+\texttt{src/project\_ghost/properties/verify\_<id>.py} that opens the
+MCAP read-only, walks the channels of interest in cycle order,
+computes the precondition and postcondition per cycle from the
+stored messages alone, and returns a typed report. No replay, no
+simulation. The report dataclasses
+(\texttt{BAUDVerificationReport}, \texttt{ERURViolation}, etc.) are
+public API; their JSON serialisation is the wire format the CLI
+emits with \texttt{--json}.
+
+\begin{lstlisting}[language=bash]
+$ pip install project-ghost==0.2.0
+$ python -m project_ghost.examples.closed_loop_smoke
+$ ghost verify-properties --mcap closed_loop_smoke.mcap
+BAUD-v1: HOLDS  (M=4, K=2, 6/10 cycles evaluated)
+ERUR-v1: HOLDS  (M=4, K=2, 4/10 cycles evaluated)
+MD-v1:   HOLDS  (10/10 cycles evaluated)
+RLB-v1:  HOLDS  (W=32, 0/10 cycles evaluated)
+FPB-v1:  HOLDS  (fire_fraction=0.60, 6/10 cycles evaluated)
+$ echo $?
+0
+\end{lstlisting}
+
+Exit code conventions: \texttt{0} iff every property holds, \texttt{1}
+if any property violates or the verifier crashes, \texttt{2} for
+argument errors. \texttt{--json} emits a deterministic JSON object
+suitable for CI consumption.
+
+\paragraph{CI as continuous guarantee.}
+\texttt{.github/workflows/ci.yml} includes a
+\texttt{verify-properties} job that runs the smoke and the verifier
+on every push; a \texttt{tla-plus} job that runs TLC on the
+mechanical specs (\S\ref{sec:mechanical}) on every push; a
+\texttt{determinism-cross-machine} job that asserts byte-equality of
+the smoke MCAP and the verifier JSON output across Linux and Windows
+runners; and a \texttt{release} workflow that builds the wheel,
+installs it in a fresh venv, re-runs the verifier against the
+bundled smoke MCAP from the \emph{installed} wheel, and publishes
+to PyPI via OIDC trusted publishing only if everything is green.
+
+% =======================================================================
+\section{Mechanical verification}
+\label{sec:mechanical}
+
+\subsection{Why TLA+}
+Property-based testing with Hypothesis (200+ examples per property)
+provides strong evidence at production scale, but proves the property
+holds on the inputs the generator sampled, not on all inputs.
+Mechanical verification over a finite abstract model closes the
+remaining gap. We pick TLA+ with TLC over theorem
+proving~\cite{lamport2002specifying} on a cost/benefit argument: TLC
+is exhaustive over a finite state space in seconds, where a Lean
+proof would be weeks.
+
+\subsection{Two specifications}
+\textbf{\texttt{BaudErur.tla}} (\texttt{docs/proofs/BaudErur.tla},
+bounds $M{=}2, K{=}1, W{=}3$) models the closed loop as a state
+machine with one transition per cycle. It checks five invariants:
+\texttt{INV\_BAUD}, \texttt{INV\_ERUR}, \texttt{INV\_PARTITION}
+(contribution C2), \texttt{INV\_NO\_INVENTED\_CONFIDENCE} (MD-v1),
+and \texttt{INV\_HISTORY\_BOUND}.
+
+\textbf{\texttt{Rlb.tla}} (\texttt{docs/proofs/Rlb.tla}, bounds
+$W{=}4, \mathrm{MAX\_DIRTY\_RUN}{=}12$) mirrors the verifier
+algorithm of \texttt{src/project\_ghost/properties/rlb.py} and
+checks three invariants: \texttt{INV\_RLB} (the mechanical witness
+of Theorem~\ref{thm:rlb}), \texttt{INV\_PEAK\_BOUNDED}, and
+\texttt{INV\_WINDOW\_BOUND}.
+
+\subsection{Scope}
+The mechanical proofs do not claim that the Python implementation
+faithfully mirrors the TLA+ model (the bridge is by inspection),
+nor that the bounded constants prove the unbounded case. Behaviour
+at production-scale constants is covered by the property tests.
+
+% =======================================================================
+\section{A closed-form recovery latency bound}
+\label{sec:theorem}
+
+\subsection{Setting}
+Let $(o_t)_{t\ge 1}$ be the stream of per-cycle prediction
+outcomes, classified into a binary partition
+$\mathrm{dirty}(o) \in \{0,1\}$ where $\mathrm{dirty}(o) = 1$ when
+the Mahalanobis verdict is at or above the BAUD threshold. Let
+$H_t$ denote the sliding window of the last $W$ outcomes available
+at cycle $t$:
+\begin{equation}
+H_t = (o_{\max(1, t-W+1)}, \ldots, o_t), \qquad |H_t| \le W.
+\end{equation}
+The reference calibrator (\texttt{MahalanobisDowngradePolicy}$(M,K)$)
+downgrades the adjusted self-assessment level on any cycle where
+\begin{equation}\label{eq:cond1}
+|H_t| \ge M \quad \text{and} \quad \sum_{o \in H_t} \mathrm{dirty}(o) \ge K.
+\end{equation}
+
+\subsection{Theorem 1 and proof}
+
+\begin{theorem}[Tight Recovery Latency Bound; transient regime]\label{thm:rlb}
+Let the outcome stream contain a transient drift interval of
+$N \le W$ consecutive dirty outcomes followed by clean outcomes,
+under a sliding window of size $W$. Define
+\begin{itemize}[noitemsep,topsep=2pt]
+\item $\mathrm{peak} = \min(N, W) = N$, the maximum dirty count
+      observed in the window during the drift run;
+\item $L$, the dirty-run length: the number of consecutive cycles
+      where the window contains at least one dirty outcome.
+\end{itemize}
+Then $L = \mathrm{peak} + W - 1$. Equivalently, the bound
+$L \le \mathrm{peak} + W - 1$ is attained with equality.
+\end{theorem}
+
+\begin{proof}
+Trace the window state cycle by cycle, noting the sliding-window
+invariant: at cycle $t$, the window contains the last
+$\min(t, W)$ outcomes.
+\begin{itemize}
+  \item \textbf{Accumulation} (cycles $1..N$). Each cycle adds one
+        dirty outcome; the window is not yet full ($N \le W$), so
+        no expulsion. The dirty count rises from $1$ to
+        $N = \mathrm{peak}$. All $N$ cycles are dirty (count $\ge 1$).
+  \item \textbf{Saturation} (cycles $N+1..W$). Each cycle adds one
+        clean outcome; the window is still not full, so no
+        expulsion. Dirty count stays at $\mathrm{peak}$. All
+        $W - N$ cycles are dirty.
+  \item \textbf{Flush} (cycles $W+1..W+\mathrm{peak}-1$). The
+        window is now full; each new clean outcome expels the
+        oldest entry. By construction, the oldest entries are the
+        dirty outcomes that arrived first. Dirty count decreases
+        by 1 per cycle, from $\mathrm{peak}$ to $1$. All
+        $\mathrm{peak} - 1$ cycles are dirty.
+  \item \textbf{Recovery} (cycle $W+\mathrm{peak}$). The last
+        dirty outcome is expelled. Dirty count is $0$. This cycle
+        is clean.
+\end{itemize}
+Summing dirty cycles: $N + (W - N) + (\mathrm{peak} - 1) = W + \mathrm{peak} - 1$.
+Since $\mathrm{peak} = N$ in the transient regime,
+$L = \mathrm{peak} + W - 1$. \qedhere
+\end{proof}
+
+\begin{corollary}[Operational regime]\label{cor:regime}
+When $N > W$, the drift outlasts the window; $\mathrm{peak} = W$
+and $L = N + W - 1$. The bound $\mathrm{peak} + W - 1 = 2W - 1$ is
+exceeded whenever $N > W$. The bound therefore operationally
+characterises the \emph{transient} regime; in the sustained-drift
+regime, no recovery transition occurs \emph{during the drift} and
+the verifier records the property vacuously.
+\end{corollary}
+
+\begin{corollary}[Structural sanity]\label{cor:structural}
+A trace where $L > \mathrm{peak} + W - 1$ on a recovery transition
+is impossible under a correctly implemented sliding window of
+size $W$. The verifier's \texttt{RLBViolation} therefore also
+serves as a structural-integrity check on the window
+implementation.
+\end{corollary}
+
+\subsection{Operational tightness check}
+The drift-then-recovery smoke
+\texttt{closed\_loop\_smoke\_with\_recovery.py} is engineered to
+exhibit Theorem~\ref{thm:rlb} at the production constants
+($N = \mathrm{peak} = 7$, $W = 32$):
+$L_{\mathrm{observed}} = 38 = 7 + 32 - 1$. The integration test
+\texttt{tests/integration/test\_closed\_loop\_smoke\_with\_recovery.py}
+asserts the recovery transition fires at exactly cycle 39 and
+nowhere earlier or later.
+
+% =======================================================================
+\section{Reproducibility surface}
+\label{sec:reproducibility}
+
+The headline claim is that a third party can verify the property
+set against a captured run \emph{without trusting the producer}.
+The reproducibility surface has five layers: (1) content-addressed
+MCAP with SHA-256 in every property report; (2) deterministic
+pipeline (ADR-0030 Replay Verification v1); (3) pure-function
+verifiers with no I/O beyond reading the MCAP; (4) approximately 50
+Hypothesis-based property tests; (5) TLA+ continuous self-check on
+every push.
+
+A reader who wishes to cite a Project Ghost safety claim can write:
+\begin{quote}\small
+Project Ghost v0.2.0 satisfies BAUD-v1 on the bundled reference
+smoke MCAP \texttt{SHA-256:<hash>}, as verified by
+\texttt{ghost verify-properties --mcap closed\_loop\_smoke.mcap}
+from \texttt{pip install project-ghost==0.2.0}, and additionally
+satisfies \texttt{INV\_BAUD}, \texttt{INV\_ERUR},
+\texttt{INV\_PARTITION} over the abstract model
+\texttt{BaudErur.tla} at bounds $M{=}2, K{=}1, W{=}3$, and
+\texttt{INV\_RLB} (Theorem~\ref{thm:rlb}) over
+\texttt{Rlb.tla} at $W{=}4$.
+\end{quote}
+This is contribution C4 in action.
+
+% =======================================================================
+\section{Evaluation}
+\label{sec:evaluation}
+
+\subsection{Tests, CI, and mechanical verification}
+At v0.2.0, the test suite contains 1665 tests passing (ruff +
+mypy strict + deptry clean), of which approximately 50 are
+dedicated property tests. The CI matrix runs on
+\texttt{ubuntu-latest} and \texttt{windows-latest} with Python
+3.11 and 3.12, plus a \texttt{tla-plus} job that runs TLC on both
+mechanical specs on every push and uploads
+\texttt{tlc\_output\_*.log} as a build artifact.
+
+\subsection{Bug-detection capability (Violation Showcase)}
+\label{sec:violation}
+
+A standalone smoke \texttt{closed\_loop\_smoke\_violated.py}
+replaces the reference calibrator with a deliberately broken
+passthrough policy. The captured MCAP is fed to the unmodified
+verifier:
+
+\begin{lstlisting}[language=bash]
+$ ghost verify-properties --mcap closed_loop_smoke_violated.mcap --json
+{
+  "all_properties_hold": false,
+  "properties": {
+    "BAUD-v1": { "holds": false, "violation_count": 12,
+                 "cycles_precondition_held": 6, "cycles_total": 10 },
+    "ERUR-v1": { "holds": true,  ... },
+    "MD-v1":   { "holds": true,  ... },
+    "RLB-v1":  { "holds": true,  ... },
+    "FPB-v1":  { "holds": true,  ... }
+  }
+}
+$ echo $?
+1
+\end{lstlisting}
+
+The verifier detects 12 individual postcondition violations across
+6 cycles where BAUD's precondition fires (6 cycles $\times$ 2
+postconditions). Exit code 1. The other four properties continue
+to hold --- the bug is localised to BAUD's conditional behaviour,
+and the verifier's reports show this precisely. This demonstrates
+detection capacity for contribution C3 and differential
+failure-mode visibility across the property set.
+
+\subsection{Parametric policy evaluation}
+\label{sec:parametric}
+
+To demonstrate stability under variation of the reference
+calibrator parameters, we ran the closed-loop smoke under three
+$(M, K)$ pairs and three trace lengths
+$n \in \{10, 50, 200\}$. All 9 combinations pass all 5 properties.
+Verifier runtime is linear in trace length and policy-insensitive.
+Reproducible via
+\texttt{docs/paper/scripts/measure\_metrics.py}.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrrrrrc}
+\toprule
+\textbf{Policy $(M,K)$} & $n$ & \textbf{MCAP (B)} & \textbf{Smoke (ms)} & \textbf{Verifier total (ms)} & \textbf{BAUD fire frac} & \textbf{All HOLDS} \\
+\midrule
+$(4,2)$ reference   & 10  & 6\,552  &  15.3 & 20.8  & 0.60 & \checkmark\\
+$(4,2)$ reference   & 50  & 18\,481 &  24.3 & 99.7  & 0.92 & \checkmark\\
+$(4,2)$ reference   & 200 & 64\,699 & 100.5 & 405.8 & 0.98 & \checkmark\\
+$(3,1)$ sensitive   & 10  & 6\,542  &   5.6 & 20.6  & 0.70 & \checkmark\\
+$(3,1)$ sensitive   & 50  & 18\,475 &  34.0 & 100.2 & 0.94 & \checkmark\\
+$(3,1)$ sensitive   & 200 & 64\,717 & 102.7 & 399.1 & 0.99 & \checkmark\\
+$(5,3)$ lax         & 10  & 6\,553  &   5.6 & 20.6  & 0.50 & \checkmark\\
+$(5,3)$ lax         & 50  & 18\,484 &  23.4 & 100.7 & 0.90 & \checkmark\\
+$(5,3)$ lax         & 200 & 64\,700 & 104.4 & 406.2 & 0.98 & \checkmark\\
+\bottomrule
+\end{tabular}
+\caption{Parametric evaluation across three calibrator
+         parameterisations and three trace lengths. Verifier
+         timing is the mean of 5 replicates with one warm-up.
+         All 9 combinations report all 5 properties HOLDS.}
+\label{tab:parametric}
+\end{table}
+
+\subsection{Determinism across replicates and machines}
+Within a single machine, replicate runs produce byte-identical
+MCAPs. \textbf{Cross-machine byte-equality} is enforced by a CI job
+\texttt{determinism-cross-machine}: the reference smoke runs on a
+\{\texttt{ubuntu-latest}, \texttt{windows-latest}\} matrix, each
+runner publishes the SHA-256 of its MCAP and property-report JSON,
+and the aggregator step \texttt{diff}s the two files. Any
+disagreement fails the build.
+
+% =======================================================================
+\section{Limitations and threats to validity}
+
+\begin{itemize}
+  \item \textbf{Sim, not hardware.} MCAPs come from a simulated
+        overconfidence trap, not real flight logs. Real-world
+        claims require a HAL backend and hardware campaign,
+        deferred to a later phase.
+  \item \textbf{Reference policies only.} The TLA+ proofs and
+        property semantics target specific reference policies.
+        Non-reference policies would need their own ADRs, verifier
+        specialisations, and TLA+ specs.
+  \item \textbf{Bounded TLC.} The TLA+ proofs are exhaustive over
+        finite state spaces at small constants; behaviour at
+        production-scale constants rests on the property tests.
+  \item \textbf{Python\,$\leftrightarrow$\,TLA+ bridge by
+        inspection.} A future divergence could silently weaken the
+        claim. Mitigation: review and re-run TLC on every change
+        to the reference policies.
+  \item \textbf{Statistical FPB out of scope.} FPB-v1 is
+        observational; a statistical FPB-v2 with Monte Carlo
+        bounds is a candidate future ADR.
+\end{itemize}
+
+% =======================================================================
+\section{Future work}
+
+\begin{itemize}
+  \item TLA+ spec for FPB-v1 closing the formal-verification
+        coverage of the full property set.
+  \item TLAPS proof of the unbounded version of the partition
+        theorem and of Theorem~\ref{thm:rlb}.
+  \item HAL backend campaign lifting the reproducibility surface
+        from simulation to flight logs.
+  \item Conformance suite populating the \texttt{conformance}
+        pytest marker with the HAL contract.
+\end{itemize}
+
+% =======================================================================
+\section{Conclusion}
+Project Ghost is not a new theory of autonomy under uncertainty.
+It is a \emph{reference of the citation pattern} that the existing
+theory deserves: a content-addressed log, a pure-function verifier
+on a CLI, a formal property statement in a binding ADR, a
+Hypothesis property test, a CI gate, two TLA+ specs mechanically
+checked by TLC (including Theorem~\ref{thm:rlb}), a tagged
+release, and an OIDC-signed wheel --- all in one artifact, all on
+one shell command. The contribution is in the assembly; the
+evidence is re-runnable from
+\texttt{pip install project-ghost==0.2.0}.
+
+% =======================================================================
+\bibliographystyle{plainurl}
+\bibliography{refs}
+
+\end{document}

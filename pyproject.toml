@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "project-ghost"
-version = "0.2.0"
+version = "0.2.1"
 description = "Autonomy under uncertainty: closed-loop reference pipeline + 5 formal safety properties verifiable byte-exact from any MCAP + TLA+ mechanically-verified BAUD/ERUR/MD/partition over the abstract state space."
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -141,6 +141,12 @@ ignore = [
 # four are idiomatic in the framework; the fifth is intentional
 # typography.
 "src/project_ghost/app/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "TC003", "TRY003", "TRY301", "RUF001"]
+# Paper reproducibility scripts: capital M, K mirror the
+# (min_outcomes, downgrade_threshold) math notation of ADRs 0031..0034
+# and Theorem 1 (docs/paper/project_ghost_v0_2.md §6). The × in summary
+# output is intentional Unicode matching the paper's table captions
+# ("3 policies × 3 cycle counts").
+"docs/paper/scripts/**/*.py" = ["N803", "N806", "RUF001", "PLR2004"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["project_ghost"]

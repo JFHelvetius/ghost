@@ -33,7 +33,31 @@ Five properties, five citable claims, exit code `0` iff every property holds. Ea
 | **RLB-v1** | Recovery Latency Bound ([ADR-0034](docs/adr/0034-recovery-latency-bound-property-v1.md)) | Dirty-run length is bounded by `peak + W - 1` where W is the window size |
 | **FPB-v1** | False Positive Bound observer ([ADR-0035](docs/adr/0035-false-positive-bound-property-v1.md)) | Empirical BAUD fire rate is exposed and bounded for regression gating |
 
-The honest part: the individual ideas (uncertainty calibration, action gating on confidence, fault detection) are decades-old robotics research. The contribution of Ghost is not new theory — it's **the specific combination, end-to-end, with byte-exact replay verification and a CLI-grade external surface**. See [ADR-0031 §Context](docs/adr/0031-bounded-action-under-drift-property-v1.md) for the honest framing.
+### Contributions
+
+Project Ghost makes five concrete, citable contributions on top of the
+existing literature on uncertainty in robotics. The underlying
+ingredients (Bayesian filters, calibration, FDI, runtime supervisors)
+are well-established; **the contributions are in how they are
+combined, stated, and verified**:
+
+| # | Contribution | Status |
+|---|---|---|
+| **PV-1** | A **reproducibility primitive** — `ghost verify-properties --mcap <log>` reduces "is this run safe?" to a single shell command returning a byte-exact verdict with exit code `0` iff every property holds. Verifier is a pure function over content-addressed MCAP; no replay, no simulation, no trust in the producer. | Shipped (CLI v0.2.0) |
+| **PV-2** | A **formal partition theorem**: BAUD-v1 + ERUR-v1 partition the space of per-cycle conditional behaviour. Stated in TLA+ as `INV_PARTITION`, **mechanically verified by TLC** over the full reachable state space of the abstract model ([ADR-0036](docs/adr/0036-tla-plus-mechanical-verification-of-baud-erur.md)). Promoted from "observed on one trace" to "proved on the model". | Shipped (CI green) |
+| **PV-3** | A **structural recovery latency bound** `L ≤ peak + W − 1` for sliding-window calibration histories with `MahalanobisDowngradePolicy(M, K)` ([ADR-0034](docs/adr/0034-recovery-latency-bound-property-v1.md)). Drift-then-recovery smoke fires at the bound exactly (38 = 7 + 32 − 1), proving the bound is tight. | Shipped (RLB-v1) |
+| **PV-4** | A **safe-reason set encoding pattern** for safety properties: `S_BAUD-v1 = {"attitude_hold_hold", "kill_zero_throttle"}` — a closed taxonomy of strings classifying which non-PROCEED actuator commands count as conservative, replacing fragile `command is None` checks with an extensible, externally-auditable allowlist. | Shipped (ADR-0031) |
+| **PV-5** | A **citation pattern** for safety claims: content-addressed MCAP + ADR + pure-function verifier + Hypothesis property test + CI gate + tagged release + OIDC-signed PyPI wheel — assembled as one coherent reproducibility unit. The headline claim is operationally re-runnable from `pip install project-ghost==0.2.0`. | Shipped (this release) |
+
+For each, the binding ADR is the formal statement; the verifier is
+the executable test; the inline witness in `SmokeSummary.*_report`
+is the self-evidence; and CI is the continuous guarantee.
+
+Theoretically novel? No: this is an engineering and citation
+contribution, not a new theorem. **Operationally novel? Yes** —
+this is the pattern getting actually built and shipped, in a form
+that lets third parties verify their own runs without trusting
+the producer.
 
 ## Try it without installing anything
 

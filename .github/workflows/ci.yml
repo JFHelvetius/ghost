@@ -149,15 +149,87 @@ jobs:
             closed_loop_smoke.mcap
             closed_loop_smoke_with_recovery.mcap
 
+  determinism-cross-machine:
+    # Paper §8.4 self-enforcement: the reference smoke must produce
+    # byte-identical MCAPs and property-report JSON across Linux and
+    # Windows runners. This job runs the smoke + verifier on a matrix
+    # and uploads a single-line SHA-256 + JSON SHA-256 per runner;
+    # the aggregator step downloads both artifacts and asserts equality.
+    # If the assertion ever fires, some non-determinism leaked into
+    # either the pipeline (smoke MCAP) or the verifier (report JSON).
+    name: Cross-machine determinism (paper §8.4)
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Smoke + verify + hash
+        shell: bash
+        run: |
+          python -m project_ghost.examples.closed_loop_smoke
+          ghost verify-properties \
+            --mcap closed_loop_smoke.mcap --json \
+            > property_report.json
+          python -c "import hashlib, sys; print('MCAP', hashlib.sha256(open('closed_loop_smoke.mcap','rb').read()).hexdigest()); print('JSON', hashlib.sha256(open('property_report.json','rb').read()).hexdigest())" \
+            > determinism_${{ matrix.os }}.txt
+          cat determinism_${{ matrix.os }}.txt
+      - name: Upload determinism hash
+        uses: actions/upload-artifact@v4
+        with:
+          name: determinism-${{ matrix.os }}
+          path: determinism_${{ matrix.os }}.txt
+
+  determinism-cross-machine-assert:
+    # Downloads both runners' hash files and asserts byte-equality of
+    # the MCAP and JSON SHA-256 across Linux and Windows.
+    name: Cross-machine determinism assert (paper §8.4)
+    needs: determinism-cross-machine
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux hash
+        uses: actions/download-artifact@v4
+        with:
+          name: determinism-ubuntu-latest
+          path: linux/
+      - name: Download Windows hash
+        uses: actions/download-artifact@v4
+        with:
+          name: determinism-windows-latest
+          path: windows/
+      - name: Assert byte-equality
+        run: |
+          set -eo pipefail
+          echo "== Linux =="
+          cat linux/determinism_ubuntu-latest.txt
+          echo "== Windows =="
+          cat windows/determinism_windows-latest.txt
+          diff linux/determinism_ubuntu-latest.txt windows/determinism_windows-latest.txt
+          echo "::notice::Smoke MCAP and property-report JSON are byte-identical across Linux and Windows runners."
+
   tla-plus:
-    # ADR-0036 self-enforcement: every push must keep the TLA+
-    # specification's invariants satisfiable. TLC enumerates the full
-    # reachable state space (bounded by M=2, K=1, W=3) and asserts
-    # INV_BAUD, INV_ERUR, INV_PARTITION, INV_NO_INVENTED_CONFIDENCE
-    # and INV_HISTORY_BOUND all hold. Any violation indicates a bug
-    # in the spec, the policy encoding, or the property statements
-    # themselves — release-blocking.
-    name: TLA+ mechanical verification (ADR-0036)
+    # ADR-0036 + paper §6 self-enforcement: every push must keep both
+    # TLA+ specifications' invariants satisfiable. TLC enumerates the
+    # full reachable state space and asserts every invariant. Any
+    # violation indicates a bug in the spec, the policy encoding, or
+    # the property statements themselves — release-blocking.
+    #
+    # BaudErur.tla (M=2, K=1, W=3): INV_BAUD, INV_ERUR, INV_PARTITION,
+    #   INV_NO_INVENTED_CONFIDENCE, INV_HISTORY_BOUND.
+    # Rlb.tla (W=4, MAX_DIRTY_RUN=12): INV_RLB (Theorem 1),
+    #   INV_PEAK_BOUNDED, INV_WINDOW_BOUND.
+    name: TLA+ mechanical verification (ADR-0036 + paper §6)
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -186,14 +258,23 @@ jobs:
           # non-zero exit from java OR a broken pipe fails this step.
           java -cp ../../tla2tools.jar tlc2.TLC \
             -config BaudErur.cfg \
-            BaudErur.tla 2>&1 | tee tlc_output.log
+            BaudErur.tla 2>&1 | tee tlc_output_baud_erur.log
           # Belt-and-braces success check: TLC exit code already gated
           # by pipefail, this just asserts the canonical success
           # signature is in the log we are about to archive.
-          grep -q "Model checking completed" tlc_output.log
+          grep -q "Model checking completed" tlc_output_baud_erur.log
+      - name: Run TLC on Rlb spec (Theorem 1)
+        working-directory: docs/proofs
+        run: |
+          java -cp ../../tla2tools.jar tlc2.TLC \
+            -config Rlb.cfg \
+            Rlb.tla 2>&1 | tee tlc_output_rlb.log
+          grep -q "Model checking completed" tlc_output_rlb.log
       - name: Upload TLC output
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tlc-output
-          path: docs/proofs/tlc_output.log
+          path: |
+            docs/proofs/tlc_output_baud_erur.log
+            docs/proofs/tlc_output_rlb.log
