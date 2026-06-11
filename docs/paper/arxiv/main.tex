@@ -590,12 +590,13 @@ $(5,3)$ lax         & 200 & 64\,700 & 104.4 & 406.2 & 0.98 & \checkmark\\
 
 \subsection{Determinism across replicates and machines}
 Within a single machine, replicate runs produce byte-identical
-MCAPs. \textbf{Cross-machine byte-equality} is enforced by a CI job
-\texttt{determinism-cross-machine}: the reference smoke runs on a
-\{\texttt{ubuntu-latest}, \texttt{windows-latest}\} matrix, each
-runner publishes the SHA-256 of its MCAP and property-report JSON,
-and the aggregator step \texttt{diff}s the two files. Any
-disagreement fails the build.
+MCAPs. \textbf{Cross-machine byte-equality of the MCAP} is enforced
+by a CI job: the reference smoke runs on a \{\texttt{ubuntu-latest},
+\texttt{windows-latest}\} matrix, each runner publishes the SHA-256
+of its MCAP and of its canonicalised property-report JSON (sorted
+keys, \texttt{mcap\_path} dropped to absorb platform path-separator
+differences), and the aggregator step \texttt{diff}s the two files.
+Any disagreement fails the build.
 
 % =======================================================================
 \section{Limitations and threats to validity}

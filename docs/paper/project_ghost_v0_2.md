@@ -724,14 +724,17 @@ replicate runs of the same policy/n, confirming determinism.
 Within a single machine, replicate runs of the same `(M, K, n)`
 combination produce byte-identical MCAPs (verified by SHA-256
 equality across 5 replicates per combination). **Cross-machine
-byte-equality** is enforced by a dedicated CI job
+byte-equality of the MCAP** is enforced by a dedicated CI job
 (`determinism-cross-machine` + `determinism-cross-machine-assert`
 in `.github/workflows/ci.yml`): the reference smoke runs on a
 `{ubuntu-latest, windows-latest}` matrix, each runner publishes
-the SHA-256 of its produced MCAP and its property-report JSON, and
-the aggregator step `diff`s the two files. Any disagreement fails
-the build. This automates the byte-equality assertion that the
-paper's reproducibility claim depends on.
+the SHA-256 of its produced MCAP and of its property-report JSON
+(after canonicalisation: `sort_keys=True`, drop `mcap_path` which
+holds a platform-dependent path), and the aggregator step `diff`s
+the two files. Any disagreement fails the build. The MCAP byte
+identity is the load-bearing claim; the report-content identity
+(after canonicalisation) is a derivative check that the verifier
+itself produces equivalent verdicts cross-platform.
 
 ---
 

@@ -179,11 +179,22 @@ jobs:
         shell: bash
         run: |
           python -m project_ghost.examples.closed_loop_smoke
+          # Normalise the JSON output before hashing: parse, drop
+          # platform-dependent fields (mcap_path; path separators differ
+          # between Linux / Windows), and re-serialise canonically.
           ghost verify-properties \
             --mcap closed_loop_smoke.mcap --json \
-            > property_report.json
-          python -c "import hashlib, sys; print('MCAP', hashlib.sha256(open('closed_loop_smoke.mcap','rb').read()).hexdigest()); print('JSON', hashlib.sha256(open('property_report.json','rb').read()).hexdigest())" \
-            > determinism_${{ matrix.os }}.txt
+            > property_report_raw.json
+          python -c "
+          import hashlib, json, sys
+          mcap_sha = hashlib.sha256(open('closed_loop_smoke.mcap','rb').read()).hexdigest()
+          report = json.load(open('property_report_raw.json'))
+          report.pop('mcap_path', None)
+          canonical = json.dumps(report, sort_keys=True, separators=(',', ':'))
+          report_sha = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+          with open('determinism_${{ matrix.os }}.txt', 'w', newline='\n') as f:
+              f.write(f'MCAP {mcap_sha}\nREPORT {report_sha}\n')
+          "
           cat determinism_${{ matrix.os }}.txt
       - name: Upload determinism hash
         uses: actions/upload-artifact@v4
