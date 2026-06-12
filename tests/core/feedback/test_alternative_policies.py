@@ -236,7 +236,7 @@ def test_ewma_is_pure() -> None:
 def test_ewma_satisfies_md_monotonicity_under_random_input() -> None:
     """MD-v1 (paper §3.3): adjusted is never strictly more confident than raw."""
     # Seeded local rng — not global state; the property-tests pattern.
-    rng = np.random.default_rng(42)
+    rng = np.random.default_rng(42)  # noqa: PG-RNG
     policy = EWMADowngradePolicy()
     raw = _make_raw_known()
     level_num = {
@@ -330,7 +330,7 @@ def test_per_axis_is_pure() -> None:
 
 def test_per_axis_satisfies_md_monotonicity_under_random_input() -> None:
     # Seeded local rng — same pattern as test_ewma_satisfies_md above.
-    rng = np.random.default_rng(43)
+    rng = np.random.default_rng(43)  # noqa: PG-RNG
     policy = PerAxisHysteresisDowngradePolicy()
     raw = _make_raw_known()
     level_num = {
