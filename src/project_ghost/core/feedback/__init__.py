@@ -24,6 +24,10 @@ reabrir el envelope.
 
 from __future__ import annotations
 
+from .alternative_policies import (
+    EWMADowngradePolicy,
+    PerAxisHysteresisDowngradePolicy,
+)
 from .orchestration import assess_with_feedback, build_calibration_history
 from .protocols import CalibrationAdjustmentPolicy
 from .reference_policy import MahalanobisDowngradePolicy
@@ -38,7 +42,9 @@ __all__ = [
     "CalibratedSelfAssessment",
     "CalibrationAdjustmentPolicy",
     "CalibrationHistory",
+    "EWMADowngradePolicy",
     "MahalanobisDowngradePolicy",
+    "PerAxisHysteresisDowngradePolicy",
     "assess_with_feedback",
     "build_calibration_history",
 ]

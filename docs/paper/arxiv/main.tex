@@ -634,6 +634,63 @@ $(5,3)$ lax         & 200 & 64\,700 & 104.4 & 406.2 & 0.98 & \checkmark\\
 \label{tab:parametric}
 \end{table}
 
+\subsection{Policy-agnostic verifier, policy-specific preconditions}
+\label{sec:multi-policy}
+
+To probe whether the verifier generalises beyond the reference
+calibration policy, we ran the closed-loop smoke under two
+structurally distinct calibrators in addition to the reference:
+
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item \texttt{MahalanobisDowngradePolicy}$(M{=}4, K{=}2)$ ---
+        reference; Theorem~\ref{thm:rlb} applies.
+  \item \texttt{EWMADowngradePolicy}$(\alpha{=}0.5, \min{=}3, \mathrm{thr}{=}0.3)$
+        --- exponentially-weighted moving average over the dirty
+        indicator. Theorem~\ref{thm:rlb} does not apply.
+  \item \texttt{PerAxisHysteresisDowngradePolicy}$(\mathrm{up}{=}3.0)$
+        --- per-axis Mahalanobis distance with hysteresis.
+\end{itemize}
+
+The verifier was executed unchanged on all three resulting MCAPs.
+Per-property results (verifier parameterised with the
+\emph{reference's} $M{=}4, K{=}2$):
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Policy} & \textbf{BAUD} & \textbf{ERUR} & \textbf{MD} & \textbf{RLB} & \textbf{FPB} \\
+\midrule
+\texttt{MahalanobisDowngradePolicy}$(M{=}4, K{=}2)$ ref. & OK & OK & OK & OK & OK \\
+\texttt{EWMADowngradePolicy}$(\alpha{=}0.5)$            & OK & \textbf{VIOL} & OK & OK & OK \\
+\texttt{PerAxisHysteresisDowngradePolicy}              & OK & \textbf{VIOL} & OK & OK & OK \\
+\bottomrule
+\end{tabular}
+\caption{Policy-comparison matrix. The verifier reads each MCAP
+without modification; ERUR-v1 violations on the alternative
+policies are informative, not bugs (see discussion).}
+\label{tab:policy-comparison}
+\end{table}
+
+\textbf{The ERUR violations are informative, not bugs.} Three
+observations: (1) the verifier is genuinely policy-agnostic ---
+all three policies share the same Protocol and MCAP schema;
+(2) MD-v1 holds on all three policies by independent obligation
+(monotonicity is enforced per-policy); (3) BAUD-v1 and ERUR-v1
+are parameterised on the reference policy's $(M, K)$, so running
+the verifier with reference parameters against EWMA / PerAxis
+traces asks ``did this trace behave like a reference $(M{=}4,
+K{=}2)$ policy would have?'' --- the alternative policies do not
+always agree, and ERUR therefore sometimes violates.
+
+The contribution that flows from this observation: the verifier
+remains useful as a third-party safety check for any calibrator,
+\emph{but the property parameters must match the operator's policy
+contract}, not blindly inherit the reference's. A future ADR-0037
+could state ERUR abstractly over \texttt{policy.precondition(history)};
+v0.2.x keeps the property concrete and visible.
+
 \subsection{Determinism across replicates and machines}
 Within a single machine, replicate runs produce byte-identical
 MCAPs. \textbf{Cross-machine byte-equality of the MCAP} is enforced

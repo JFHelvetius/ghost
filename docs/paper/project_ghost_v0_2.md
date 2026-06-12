@@ -767,7 +767,67 @@ linearly with cycle count. The MCAP SHA-256 differs across policies
 (distinct calibrated levels written) but is byte-identical across
 replicate runs of the same policy/n, confirming determinism.
 
-### 8.4 Determinism across replicates and machines
+### 8.4 Policy-agnostic verifier, policy-specific preconditions
+
+To probe whether the verifier generalises beyond the reference
+calibration policy, we ran the closed-loop smoke under two
+structurally distinct calibrators in addition to the reference:
+
+- `MahalanobisDowngradePolicy(M=4, K=2)` — reference (count-of-K-in-W
+  threshold). Theorem 1 (§6.3) applies.
+- `EWMADowngradePolicy(α=0.5, min=3, threshold=0.3)` —
+  exponentially-weighted moving average over the dirty indicator.
+  A genuinely different downgrade mechanism. Theorem 1 does not
+  apply.
+- `PerAxisHysteresisDowngradePolicy(upper=3.0)` — examines
+  per-axis Mahalanobis distance with hysteresis. A third mechanism.
+
+The verifier was executed unchanged on all three resulting MCAPs.
+Per-property results (verifier parameterised with the **reference's**
+`M=4, K=2`):
+
+| Policy | BAUD | ERUR | MD | RLB | FPB |
+|---|:---:|:---:|:---:|:---:|:---:|
+| `MahalanobisDowngradePolicy(M=4,K=2)` reference | OK | OK | OK | OK | OK |
+| `EWMADowngradePolicy(α=0.5,min=3,thr=0.3)` | OK | **VIOL** | OK | OK | OK |
+| `PerAxisHysteresisDowngradePolicy(up=3.0)` | OK | **VIOL** | OK | OK | OK |
+
+Reproducible via
+[`docs/paper/scripts/compare_policies.py`](docs/paper/scripts/compare_policies.py);
+machine-readable output in
+[`docs/paper/outputs/policy_comparison.json`](docs/paper/outputs/policy_comparison.json).
+
+**The ERUR violations are informative, not bugs.** Three observations
+flow from this matrix:
+
+1. **The verifier is genuinely policy-agnostic.** All three
+   policies satisfy the same `CalibrationAdjustmentPolicy` Protocol
+   and produce the same MCAP schema; the verifier reads each MCAP
+   without modification and emits a typed report per property.
+2. **MD-v1 is policy-agnostic by construction.** It holds on all
+   three policies because each policy is independently obligated to
+   satisfy the monotonicity contract (`adjusted ≼ raw` in the
+   lattice). Both alternative policies are proved to satisfy MD-v1
+   by tests in `tests/core/feedback/test_alternative_policies.py`.
+3. **BAUD-v1 and ERUR-v1 are parameterised on the *reference*
+   policy's `(M, K)`.** When the verifier is run with `M=4, K=2` on
+   a trace produced by EWMA or PerAxis, the verifier asks
+   "did this trace behave like a reference policy with `M=4, K=2`
+   would have?". The alternative policies do not always agree with
+   that hypothetical reference on which cycles count as "drift
+   clean and KNOWN", so ERUR sometimes violates: the alternative
+   downgrades on cycles where the reference would have proceeded.
+
+The third observation is a contribution rather than a defect.
+**The verifier remains useful as a third-party safety check for any
+calibrator** — but the property parameters must match the operator's
+policy contract, not blindly inherit the reference's. A future
+ADR-0037 could state the ERUR property abstractly over
+`policy.precondition(history)` instead of the concrete count-of-K
+predicate, generalising the property to the contract; for v0.2.x we
+prefer to keep the property statement concrete and visible.
+
+### 8.5 Determinism across replicates and machines
 
 Within a single machine, replicate runs of the same `(M, K, n)`
 combination produce byte-identical MCAPs (verified by SHA-256

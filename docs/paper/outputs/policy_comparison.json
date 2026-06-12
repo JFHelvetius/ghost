@@ -1,0 +1,92 @@
+{
+  "baud_downgrade_threshold": 2,
+  "baud_min_outcomes": 4,
+  "max_history_W": 32,
+  "n_cycles": 10,
+  "rows": [
+    {
+      "baud_fire_fraction": 0.6,
+      "baud_holds": true,
+      "calibrated_levels_observed": [
+        "known",
+        "known",
+        "known",
+        "known",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain"
+      ],
+      "decisions_by_kind": {
+        "hold": 6,
+        "proceed": 4
+      },
+      "erur_holds": true,
+      "fpb_holds": true,
+      "mcap_sha256": "2986ee9dfd1240e2c37258cacc47b5dd7f5359b22c808f5d815104d39d92f412",
+      "md_holds": true,
+      "n_cycles": 10,
+      "policy_id": "mahalanobis_downgrade_v1_min4_thr2",
+      "policy_label": "MahalanobisDowngradePolicy (reference)",
+      "rlb_holds": true
+    },
+    {
+      "baud_fire_fraction": 0.6,
+      "baud_holds": true,
+      "calibrated_levels_observed": [
+        "known",
+        "known",
+        "known",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain"
+      ],
+      "decisions_by_kind": {
+        "hold": 7,
+        "proceed": 3
+      },
+      "erur_holds": false,
+      "fpb_holds": true,
+      "mcap_sha256": "7994a41c742193a9dc06882aa0d713b4e121e74839336bf1312f33dd54737852",
+      "md_holds": true,
+      "n_cycles": 10,
+      "policy_id": "ewma_downgrade_v1_a050_min3_thr030",
+      "policy_label": "EWMADowngradePolicy",
+      "rlb_holds": true
+    },
+    {
+      "baud_fire_fraction": 0.6,
+      "baud_holds": true,
+      "calibrated_levels_observed": [
+        "known",
+        "known",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain"
+      ],
+      "decisions_by_kind": {
+        "hold": 8,
+        "proceed": 2
+      },
+      "erur_holds": false,
+      "fpb_holds": true,
+      "mcap_sha256": "300d6bf7b945e0c1f8b28326c3a926f787efee2a2ded48e59d26ac455cd2f79b",
+      "md_holds": true,
+      "n_cycles": 10,
+      "policy_id": "per_axis_hysteresis_v1_min2_up030_lo010",
+      "policy_label": "PerAxisHysteresisDowngradePolicy",
+      "rlb_holds": true
+    }
+  ]
+}
