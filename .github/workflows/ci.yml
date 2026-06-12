@@ -238,8 +238,11 @@ jobs:
     #
     # BaudErur.tla (M=2, K=1, W=3): INV_BAUD, INV_ERUR, INV_PARTITION,
     #   INV_NO_INVENTED_CONFIDENCE, INV_HISTORY_BOUND.
-    # Rlb.tla (W=4, MAX_DIRTY_RUN=12): INV_RLB (Theorem 1),
+    # Rlb.tla (W=4, MAX_DRIFT=4): INV_RLB (Theorem 1),
     #   INV_PEAK_BOUNDED, INV_WINDOW_BOUND.
+    # Fpb.tla (MAX_CYCLES=8, MAX_FIRE_NUMER=BOUND_DENOM=1):
+    #   INV_FPB_RATIO_BOUNDED, INV_FPB_FIRE_IMPLIES_TOTAL,
+    #   INV_FPB_OBSERVATIONAL_DEFAULT.
     name: TLA+ mechanical verification (ADR-0036 + paper §6)
     needs: test
     runs-on: ubuntu-latest
@@ -281,6 +284,13 @@ jobs:
             -config Rlb.cfg \
             Rlb.tla 2>&1 | tee tlc_output_rlb.log
           grep -q "Model checking completed" tlc_output_rlb.log
+      - name: Run TLC on Fpb spec (FPB-v1 counter well-formedness)
+        working-directory: docs/proofs
+        run: |
+          java -cp ../../tla2tools.jar tlc2.TLC \
+            -config Fpb.cfg \
+            Fpb.tla 2>&1 | tee tlc_output_fpb.log
+          grep -q "Model checking completed" tlc_output_fpb.log
       - name: Upload TLC output
         if: always()
         uses: actions/upload-artifact@v4
@@ -289,3 +299,4 @@ jobs:
           path: |
             docs/proofs/tlc_output_baud_erur.log
             docs/proofs/tlc_output_rlb.log
+            docs/proofs/tlc_output_fpb.log

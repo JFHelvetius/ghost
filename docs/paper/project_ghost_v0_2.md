@@ -425,10 +425,11 @@ are mirrored as TLA+ definitions.
 
 ### 5.3 Invariants checked
 
-TLC checks two specifications continuously in CI.
+TLC checks three specifications continuously in CI, jointly covering
+all five properties of the set.
 
 **`BaudErur.tla`** (`docs/proofs/BaudErur.tla`, bounds `M=2, K=1, W=3`)
-checks five invariants:
+checks five invariants covering BAUD-v1, ERUR-v1, and MD-v1:
 
 - `INV_BAUD` — BAUD-v1's precondition implies its postconditions.
 - `INV_ERUR` — ERUR-v1's precondition implies its postconditions.
@@ -438,9 +439,10 @@ checks five invariants:
 - `INV_NO_INVENTED_CONFIDENCE` — formal statement of MD-v1.
 - `INV_HISTORY_BOUND` — structural sliding-window sanity.
 
-**`Rlb.tla`** (`docs/proofs/Rlb.tla`, bounds `W=4, MAX_DIRTY_RUN=12`)
+**`Rlb.tla`** (`docs/proofs/Rlb.tla`, bounds `W=4, MAX_DRIFT=4`)
 mirrors the verifier algorithm in `src/project_ghost/properties/rlb.py`
-and checks three invariants:
+under the consecutive-drift hypothesis of Theorem 1 and checks three
+invariants covering RLB-v1:
 
 - `INV_RLB` — on every reachable state where the next CLEAN outcome
   would yield a fully-clean window (a recovery transition), the
@@ -449,6 +451,28 @@ and checks three invariants:
 - `INV_PEAK_BOUNDED` — `peak_in_run ≤ W` (the window cannot hold
   more dirty entries than its capacity).
 - `INV_WINDOW_BOUND` — `Len(window) ≤ W` (structural sanity).
+
+**`Fpb.tla`** (`docs/proofs/Fpb.tla`, bounds `MAX_CYCLES=8`,
+`MAX_FIRE_NUMER=BOUND_DENOM=1`) models the FPB-v1 counter
+automaton (mirroring `src/project_ghost/properties/fpb.py`) and
+checks three invariants covering FPB-v1's structural semantics:
+
+- `INV_FPB_RATIO_BOUNDED` — `cycles_fires ≤ cycles_total` in every
+  reachable state, so the implied fire fraction is well-defined in
+  `[0, 1]`.
+- `INV_FPB_FIRE_IMPLIES_TOTAL` — the counter never fires more than
+  it observes (equivalent restatement in delta form).
+- `INV_FPB_OBSERVATIONAL_DEFAULT` — under the default observational
+  threshold (`max_fire_fraction = 1.0`), the bound holds in every
+  reachable state. This formalises the *purely observational*
+  contract of ADR-0035 §1.
+
+The Fpb spec deliberately does **not** verify a probabilistic upper
+bound on the fire rate under noise models — that would require Monte
+Carlo infrastructure and is the scope of a future FPB-v2 (§10).
+Together, the three specs constitute **5/5 properties with at least
+a structural TLC invariant in CI**, raising the mechanical coverage
+from 3/5 in v0.2.1 to 5/5 in this draft.
 
 ### 5.4 Bounds and what they prove
 

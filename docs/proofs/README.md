@@ -20,6 +20,12 @@ property statements in the ADRs is surfaced by *some* layer breaking.
 | [`BaudErur.cfg`](BaudErur.cfg) | TLC config for the above | TLC | — |
 | [`Rlb.tla`](Rlb.tla) | RLB-v1 / Theorem 1 (tight recovery latency bound) | TLA+ / TLC | Accepted (paper §6) |
 | [`Rlb.cfg`](Rlb.cfg) | TLC config for the above | TLC | — |
+| [`Fpb.tla`](Fpb.tla) | FPB-v1 (counter automaton well-formedness) | TLA+ / TLC | Accepted (paper §5.3) |
+| [`Fpb.cfg`](Fpb.cfg) | TLC config for the above | TLC | — |
+
+The three specs together provide **5/5 properties with at least a
+structural TLC invariant in CI** (BAUD/ERUR/MD via `BaudErur.tla`,
+RLB via `Rlb.tla`, FPB via `Fpb.tla`).
 
 ## Running TLC locally
 
@@ -40,6 +46,10 @@ java -cp /path/to/tla2tools.jar tlc2.TLC \
 java -cp /path/to/tla2tools.jar tlc2.TLC \
     -config docs/proofs/Rlb.cfg \
     docs/proofs/Rlb.tla
+
+java -cp /path/to/tla2tools.jar tlc2.TLC \
+    -config docs/proofs/Fpb.cfg \
+    docs/proofs/Fpb.tla
 ```
 
 Expected output on a clean spec:
@@ -94,10 +104,11 @@ for the full honest framing.
 
 ## Future work
 
-- Spec for FPB-v1 (the empirical fire-fraction observer). FPB is
-  probabilistic in nature; the TLA+ encoding would need a different
-  shape than the structural BAUD/ERUR/RLB invariants.
 - TLAPS proof of the unbounded version of the partition theorem
   (any finite `W, M, K`) and of Theorem 1 (RLB).
-- Extending the `tla-plus` CI job to run both `BaudErur.tla` and
-  `Rlb.tla` on every push.
+- Statistical FPB-v2 with Monte Carlo bounds (the current `Fpb.tla`
+  verifies counter well-formedness only; a probabilistic upper bound
+  on the fire rate under arbitrary noise models is out of scope for
+  TLC and would need a different formalisation).
+- Automating the bridge between the TLA+ specs and the Python
+  reference policies (currently by human inspection).

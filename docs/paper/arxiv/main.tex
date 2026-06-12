@@ -367,7 +367,7 @@ proving~\cite{lamport2002specifying} on a cost/benefit argument: TLC
 is exhaustive over a finite state space in seconds, where a Lean
 proof would be weeks.
 
-\subsection{Two specifications}
+\subsection{Three specifications, jointly covering 5/5 properties}
 \textbf{\texttt{BaudErur.tla}} (\texttt{docs/proofs/BaudErur.tla},
 bounds $M{=}2, K{=}1, W{=}3$) models the closed loop as a state
 machine with one transition per cycle. It checks five invariants:
@@ -376,11 +376,26 @@ machine with one transition per cycle. It checks five invariants:
 and \texttt{INV\_HISTORY\_BOUND}.
 
 \textbf{\texttt{Rlb.tla}} (\texttt{docs/proofs/Rlb.tla}, bounds
-$W{=}4, \mathrm{MAX\_DIRTY\_RUN}{=}12$) mirrors the verifier
-algorithm of \texttt{src/project\_ghost/properties/rlb.py} and
-checks three invariants: \texttt{INV\_RLB} (the mechanical witness
-of Theorem~\ref{thm:rlb}), \texttt{INV\_PEAK\_BOUNDED}, and
-\texttt{INV\_WINDOW\_BOUND}.
+$W{=}4, \mathrm{MAX\_DRIFT}{=}4$) mirrors the verifier algorithm of
+\texttt{src/project\_ghost/properties/rlb.py} under the
+consecutive-drift hypothesis and checks three invariants:
+\texttt{INV\_RLB} (the mechanical witness of Theorem~\ref{thm:rlb}),
+\texttt{INV\_PEAK\_BOUNDED}, and \texttt{INV\_WINDOW\_BOUND}.
+
+\textbf{\texttt{Fpb.tla}} (\texttt{docs/proofs/Fpb.tla}, bounds
+$\mathrm{MAX\_CYCLES}{=}8$, $\mathrm{MAX\_FIRE\_NUMER}{=}\mathrm{BOUND\_DENOM}{=}1$)
+models the FPB-v1 counter automaton and checks three invariants on
+the verifier's structural well-formedness:
+\texttt{INV\_FPB\_RATIO\_BOUNDED}
+($\mathrm{cycles\_fires} \le \mathrm{cycles\_total}$),
+\texttt{INV\_FPB\_FIRE\_IMPLIES\_TOTAL}, and
+\texttt{INV\_FPB\_OBSERVATIONAL\_DEFAULT} (the bound trivially holds
+under the default $\mathrm{max\_fire\_fraction} = 1.0$). FPB is
+purely observational; a statistical FPB-v2 with Monte Carlo bounds
+is future work.
+
+Together the three specs constitute \textbf{5/5 properties with at
+least a structural TLC invariant in CI}.
 
 \subsection{Scope}
 The mechanical proofs do not claim that the Python implementation
