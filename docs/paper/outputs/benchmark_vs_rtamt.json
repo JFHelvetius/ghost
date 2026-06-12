@@ -1,0 +1,24 @@
+{
+  "ghost": {
+    "property_language": "Python predicate over MCAP schema",
+    "setup_lines_of_code": 1,
+    "tool": "ghost verify-properties (BAUD-v1)",
+    "verdict_holds": true,
+    "wallclock_ms_mean": 22.881
+  },
+  "honest_caveats": [
+    "RTAMT formula is a qualitative STL analogue of BAUD-v1, not the exact ADR predicate (STL cannot natively count K-of-M occurrences).",
+    "Ghost's verifier has full knowledge of the Ghost message schema; RTAMT receives the signals pre-extracted by 12 lines of glue code.",
+    "Wall-clock times measure the verification step only, not the signal-extraction step that RTAMT requires."
+  ],
+  "replicas": 5,
+  "rtamt": {
+    "property_language": "STL: G[0:0.4] (error>3 -> proceed<0.5)",
+    "setup_lines_of_code": 12,
+    "tool": "RTAMT (STL dense-time)",
+    "verdict_holds": false,
+    "wallclock_ms_mean": 0.155
+  },
+  "smoke_mcap_sha256": "a1c9a3d7c170499dc2bafcc75e5df17a41400cd86ed6c066b91d0201321f6991",
+  "smoke_n_cycles": 50
+}

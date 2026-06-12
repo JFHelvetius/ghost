@@ -22,6 +22,7 @@ property statements in the ADRs is surfaced by *some* layer breaking.
 | [`Rlb.cfg`](Rlb.cfg) | TLC config for the above | TLC | — |
 | [`Fpb.tla`](Fpb.tla) | FPB-v1 (counter automaton well-formedness) | TLA+ / TLC | Accepted (paper §5.3) |
 | [`Fpb.cfg`](Fpb.cfg) | TLC config for the above | TLC | — |
+| [`Rlb_unbounded.tla`](Rlb_unbounded.tla) | Theorem 1 unbounded (any finite `W`) | TLA+ / TLAPS | Proof outline; see [`TLAPS_roadmap.md`](TLAPS_roadmap.md) |
 
 The three specs together provide **5/5 properties with at least a
 structural TLC invariant in CI** (BAUD/ERUR/MD via `BaudErur.tla`,
