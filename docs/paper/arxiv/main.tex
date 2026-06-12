@@ -691,6 +691,51 @@ contract}, not blindly inherit the reference's. A future ADR-0037
 could state ERUR abstractly over \texttt{policy.precondition(history)};
 v0.2.x keeps the property concrete and visible.
 
+\subsection{Realistic-shape scenarios}
+\label{sec:realistic}
+
+To demonstrate the verifier handles drift profiles beyond the
+sustained-drift / single-recovery patterns, we run three additional
+scenarios whose ground-truth functions are shaped after failure
+modes documented in the VIO/SLAM evaluation literature.
+
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item \texttt{gps\_denial}: 6 drift cycles + 44 recovery
+        (transient regime; Theorem~\ref{thm:rlb} applies).
+  \item \texttt{slow\_biased\_drift}: 50 cycles of low-magnitude
+        chronic drift; FPB fire fraction climbs to 0.92.
+  \item \texttt{cascading\_failure}: 30 cycles in three phases —
+        stationary, position-drift, position+yaw-drift.
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrcccccr}
+\toprule
+\textbf{Scenario} & \textbf{Cycles} & \textbf{BAUD} & \textbf{ERUR} & \textbf{MD} & \textbf{RLB} & \textbf{FPB} & \textbf{fire\_frac} \\
+\midrule
+\texttt{gps\_denial}         & 50 & OK & OK & OK & OK & OK & 0.64 \\
+\texttt{slow\_biased\_drift} & 50 & OK & OK & OK & OK & OK & 0.92 \\
+\texttt{cascading\_failure}  & 30 & OK & OK & OK & OK & OK & 0.60 \\
+\bottomrule
+\end{tabular}
+\caption{Realistic-shape scenarios: all five properties hold under
+the reference policy. Reproducible via
+\texttt{python -m project\_ghost.examples.realistic\_scenarios}.}
+\label{tab:realistic}
+\end{table}
+
+\textbf{Honest scope: shape-realistic, not data-real.} The
+scenarios are deterministic synthetic profiles informed by the
+literature, not extracted from real flight telemetry. A genuine
+flight-data evaluation requires an adapter from PX4 ULog or
+ROSBag to the Ghost pipeline inputs; the roadmap is
+\texttt{docs/paper/venues/dataset\_integration.md}. The scenarios
+here establish that the verifier and property set generalise to
+non-trivial failure shapes; full flight-data validation is future
+work.
+
 \subsection{Determinism across replicates and machines}
 Within a single machine, replicate runs produce byte-identical
 MCAPs. \textbf{Cross-machine byte-equality of the MCAP} is enforced

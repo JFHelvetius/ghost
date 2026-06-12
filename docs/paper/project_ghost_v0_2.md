@@ -827,7 +827,51 @@ ADR-0037 could state the ERUR property abstractly over
 predicate, generalising the property to the contract; for v0.2.x we
 prefer to keep the property statement concrete and visible.
 
-### 8.5 Determinism across replicates and machines
+### 8.5 Realistic-shape scenarios
+
+To demonstrate the verifier handles drift profiles beyond the
+sustained-drift / single-recovery patterns of the basic smokes, we
+run three additional scenarios whose ground-truth functions are
+shaped after failure modes documented in the VIO/SLAM evaluation
+literature. All three use the unmodified closed-loop pipeline and
+the reference calibration policy; only the ground-truth function
+differs from the basic smoke.
+
+- **`gps_denial`**: 6 cycles of sustained drift (GPS-denial proxy)
+  followed by 44 recovery cycles. The drift duration is short
+  enough that Theorem 1's transient regime applies; the recovery
+  phase is long enough to flush the calibration window and witness
+  ERUR.
+- **`slow_biased_drift`**: 50 cycles of low-magnitude chronic drift.
+  The per-cycle Mahalanobis is smaller than the basic smoke, so the
+  count-of-K-in-W window takes longer to fire BAUD's precondition.
+  FPB fire fraction climbs to 0.92.
+- **`cascading_failure`**: 30 cycles partitioned into three phases —
+  stationary, position-drift, and position+yaw-drift. Tests the
+  pipeline against a multi-axis failure shape that no basic smoke
+  exercises.
+
+| Scenario | Cycles | BAUD | ERUR | MD | RLB | FPB | fire_frac |
+|---|---:|:---:|:---:|:---:|:---:|:---:|---:|
+| `gps_denial` | 50 | OK | OK | OK | OK | OK | 0.64 |
+| `slow_biased_drift` | 50 | OK | OK | OK | OK | OK | 0.92 |
+| `cascading_failure` | 30 | OK | OK | OK | OK | OK | 0.60 |
+
+All three scenarios pass the full property set under the reference
+calibration policy. Reproducible via
+`python -m project_ghost.examples.realistic_scenarios`.
+
+**Honest scope: shape-realistic, not data-real.** These scenarios
+are deterministic synthetic profiles, not extracted from real
+flight telemetry. A genuine flight-data evaluation would require an
+adapter from PX4 ULog or ROSBag formats to the Ghost pipeline
+inputs. We treat that integration as a candidate
+ADR — see `docs/paper/venues/dataset_integration.md` for the
+roadmap. The scenarios here establish that the verifier and the
+property set generalise to non-trivial failure shapes; full
+flight-data validation is future work.
+
+### 8.6 Determinism across replicates and machines
 
 Within a single machine, replicate runs of the same `(M, K, n)`
 combination produce byte-identical MCAPs (verified by SHA-256
