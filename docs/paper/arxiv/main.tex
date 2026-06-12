@@ -534,13 +534,44 @@ dedicated property tests. The CI matrix runs on
 mechanical specs on every push and uploads
 \texttt{tlc\_output\_*.log} as a build artifact.
 
-\subsection{Bug-detection capability (Violation Showcase)}
+\subsection{Bug-detection capability (Violation Matrix)}
 \label{sec:violation}
 
 A standalone smoke \texttt{closed\_loop\_smoke\_violated.py}
-replaces the reference calibrator with a deliberately broken
-passthrough policy. The captured MCAP is fed to the unmodified
-verifier:
+demonstrates the verifier detects \emph{a} bug. To demonstrate that
+detection is \textbf{systematic, not anecdotal}, we extend this to
+a violation matrix of six bug categories, one mini-smoke per
+category, each engineered to break exactly one component of the
+closed loop.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lll c}
+\toprule
+\textbf{Category} & \textbf{Buggy component} & \textbf{Property expected} & \textbf{Detected?} \\
+\midrule
+\texttt{calibrator\_no\_downgrade}        & calibration policy           & BAUD-v1               & YES \\
+\texttt{calibrator\_invents\_confidence}  & calibration policy           & MD-v1 (and BAUD-v1)   & YES \\
+\texttt{decision\_proceeds\_anyway}       & decision policy              & BAUD-v1               & YES \\
+\texttt{decision\_never\_proceeds}        & decision policy              & ERUR-v1               & YES \\
+\texttt{actuation\_non\_safe\_reason}     & actuation policy             & BAUD-v1               & YES \\
+\texttt{fpb\_threshold\_exceeded}         & verifier \texttt{max\_fire\_fraction} & FPB-v1     & YES \\
+\bottomrule
+\end{tabular}
+\caption{Violation matrix: six bug categories, each engineered to
+break exactly one component of the closed loop, all six detected
+by the unmodified verifier. The matrix covers BAUD-v1, ERUR-v1,
+MD-v1, and FPB-v1; RLB-v1 is structural to the sliding-window
+implementation and is exercised by the drift-then-recovery smoke at
+the bound (\S\ref{sec:theorem}). Reproducible via
+\texttt{python -m project\_ghost.examples.violation\_matrix};
+the script's exit code is 1 iff any false negative occurs.}
+\label{tab:violation-matrix}
+\end{table}
+
+The simpler single-bug showcase remains a useful pedagogical
+artifact, and its full JSON capture is reproduced below:
 
 \begin{lstlisting}[language=bash]
 $ ghost verify-properties --mcap closed_loop_smoke_violated.mcap --json

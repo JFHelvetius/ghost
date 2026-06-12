@@ -672,13 +672,37 @@ ubuntu-latest and windows-latest with Python 3.11 and 3.12, plus a
 `tla-plus` job that runs TLC on the spec described in §5 on every
 push and uploads `tlc_output.log` as a build artifact.
 
-### 8.2 Bug-detection capability (Violation Showcase)
+### 8.2 Bug-detection capability (Violation Matrix)
 
-A standalone smoke `closed_loop_smoke_violated.py` replaces the
-reference calibrator with `_BuggyPassthroughCalibrator`, a policy
-deliberately broken to never downgrade regardless of evidence. The
-pipeline is otherwise identical to the reference smoke. The captured
-MCAP is then fed to the unmodified verifier:
+A standalone smoke
+[`closed_loop_smoke_violated.py`](src/project_ghost/examples/closed_loop_smoke_violated.py)
+demonstrates the verifier detects *a* bug. To demonstrate that
+detection is **systematic, not anecdotal**, we extend this to a
+**violation matrix** of six bug categories, one mini-smoke per
+category, each engineered to break exactly one component of the
+closed loop:
+
+| Bug category | Buggy component | Property expected to violate | Detected? |
+|---|---|:---:|:---:|
+| `calibrator_no_downgrade` | calibration policy | BAUD-v1 | YES |
+| `calibrator_invents_confidence` | calibration policy | MD-v1 (and BAUD-v1) | YES |
+| `decision_proceeds_anyway` | decision policy | BAUD-v1 | YES |
+| `decision_never_proceeds` | decision policy | ERUR-v1 | YES |
+| `actuation_non_safe_reason` | actuation policy | BAUD-v1 | YES |
+| `fpb_threshold_exceeded` | verifier `max_fire_fraction` | FPB-v1 | YES |
+
+All six categories produce the expected violation on the unmodified
+verifier. Reproducible via
+`python -m project_ghost.examples.violation_matrix`; the script's
+exit code is 1 iff any false negative occurs. Raw matrix capture in
+[`docs/paper/outputs/violation_matrix.md`](docs/paper/outputs/violation_matrix.md).
+The matrix covers BAUD-v1, ERUR-v1, MD-v1, and FPB-v1; RLB-v1 is
+structural to the sliding-window implementation and is exercised by
+the drift-then-recovery smoke at the bound (§6.4) rather than by an
+injected bug.
+
+The simpler single-bug showcase remains a useful pedagogical
+artifact and its full JSON capture is reproduced below:
 
 ```
 $ python -m project_ghost.examples.closed_loop_smoke_violated
