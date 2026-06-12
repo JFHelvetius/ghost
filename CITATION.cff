@@ -22,8 +22,8 @@ authors:
     given-names: Javier
     email: jfhelvetius@gmail.com
     affiliation: Independent
-version: 0.2.1
-date-released: 2026-06-11
+version: 0.2.2
+date-released: 2026-06-12
 url: "https://github.com/JFHelvetius/ghost"
 repository-code: "https://github.com/JFHelvetius/ghost"
 repository-artifact: "https://pypi.org/project/project-ghost/"

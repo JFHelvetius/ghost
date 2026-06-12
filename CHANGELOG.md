@@ -7,6 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-06-12
+
+Excellence pass: six follow-up workstreams (D/F/A/B/E/C) that
+strengthen the paper-grade evidence around the property set, the
+reproducibility primitive, and the comparison with prior work.
+
+### Added
+
+- **Violation matrix** (Action D,
+  [`closed_loop_smoke_violated.py` extended to `violation_matrix.py`](src/project_ghost/examples/violation_matrix.py)):
+  systematic taxonomy of six bug categories, one mini-smoke per
+  category, each engineered to break exactly one component of the
+  closed loop. All six categories produce the expected violation
+  on the unmodified verifier. Captured to
+  [`docs/paper/outputs/violation_matrix.md`](docs/paper/outputs/violation_matrix.md).
+  Demonstrates contribution C3's detection capacity is systematic,
+  not anecdotal (paper §8.2).
+- **Two alternative calibration policies** (Action F,
+  [`src/project_ghost/core/feedback/alternative_policies.py`](src/project_ghost/core/feedback/alternative_policies.py)):
+  - `EWMADowngradePolicy(alpha, min_outcomes, threshold)` — EWMA over
+    dirty indicator.
+  - `PerAxisHysteresisDowngradePolicy(min_outcomes, upper, lower)` —
+    per-axis Mahalanobis with hysteresis.
+
+  Both satisfy the `CalibrationAdjustmentPolicy` Protocol and
+  MD-v1 by construction. 22 dedicated tests in
+  [`tests/core/feedback/test_alternative_policies.py`](tests/core/feedback/test_alternative_policies.py).
+  Policy-comparison script
+  [`docs/paper/scripts/compare_policies.py`](docs/paper/scripts/compare_policies.py)
+  runs the closed-loop smoke under all three policies; the
+  verifier is policy-agnostic in code but ERUR violates on the
+  alternative policies when verified with the reference's
+  `(M=4, K=2)`, revealing that BAUD/ERUR are parameter-specific
+  even though the verifier itself generalises (paper §8.4).
+- **Three realistic-shape scenarios** (Action B,
+  [`src/project_ghost/examples/realistic_scenarios.py`](src/project_ghost/examples/realistic_scenarios.py)):
+  `gps_denial`, `slow_biased_drift`, `cascading_failure`. All
+  five properties hold under the reference policy on each. Honest
+  scope: shape-realistic, not flight-data-real. Roadmap for PX4
+  ULog / ROSBag / EuRoC MAV integration documented at
+  [`docs/paper/venues/dataset_integration.md`](docs/paper/venues/dataset_integration.md)
+  as a future ADR-0037 (paper §8.5).
+- **Quantitative benchmark vs RTAMT** (Action E,
+  [`docs/paper/scripts/benchmark_vs_rtamt.py`](docs/paper/scripts/benchmark_vs_rtamt.py)):
+  head-to-head wall-clock + verdict comparison on the reference
+  50-cycle smoke. Ghost (BAUD-v1 exact): HOLDS, 23 ms. RTAMT
+  (STL approximation): VIOLATED, 0.15 ms. Verdict difference is
+  informative — STL cannot express K-of-M-in-W as a single
+  formula. Output captured to
+  [`docs/paper/outputs/benchmark_vs_rtamt.json`](docs/paper/outputs/benchmark_vs_rtamt.json).
+  Paper §8.6 documents the honest three-point reading.
+- **TLAPS proof outline** for Theorem 1 unbounded (Action C,
+  [`docs/proofs/Rlb_unbounded.tla`](docs/proofs/Rlb_unbounded.tla)):
+  TLA+ module that compiles under TLAPS, declares the four
+  supporting lemmas with `PROOF OMITTED` placeholders, and the
+  main theorem as the composition target. Discharge plan
+  documented at
+  [`docs/proofs/TLAPS_roadmap.md`](docs/proofs/TLAPS_roadmap.md)
+  (install steps, lemma-by-lemma proof sketches, estimated 5-10
+  days for a TLAPS-fluent contributor). Lifting the outline to a
+  verified proof is candidate ADR-0038.
+- **Pre-submission outreach emails** (Action A,
+  [`docs/paper/venues/outreach_emails.md`](docs/paper/venues/outreach_emails.md)):
+  four short individual emails drafted for Bartocci (MoonLight),
+  Niković (RTAMT), Ferrando (ROSMonitoring), Falcone (RV
+  Lectures co-editor) with venue-specific questions and explicit
+  do-not-do reminders to avoid academic faux pas.
+
+### Changed
+
+- New `rtamt>=0.3.5` is a paper-script dependency only
+  (`docs/paper/scripts/benchmark_vs_rtamt.py`); not a runtime
+  dependency of `project_ghost` itself.
+- Suite expanded from 1665 to 1687 tests (22 new in
+  `test_alternative_policies.py`).
+
+### Notes
+
+- The pyproject `version` bumps to `0.2.2`; `CITATION.cff` and
+  release tag synchronise to the same. The publishable wheel via
+  OIDC trusted publishing is the artifact pinned by the new tag.
+
 ## [0.2.1] - 2026-06-11
 
 Paper-readiness pass: artifacts in support of the v0.2.x academic
@@ -254,7 +336,8 @@ safety property set as the project's central contribution.
 - All property reports are deterministic: same MCAP bytes produce
   byte-identical JSON output across machines.
 
-[Unreleased]: https://github.com/JFHelvetius/ghost/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/JFHelvetius/ghost/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/JFHelvetius/ghost/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/JFHelvetius/ghost/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/JFHelvetius/ghost/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/JFHelvetius/ghost/compare/v0.1.0...v0.1.1
