@@ -528,8 +528,7 @@ propios runs contra el MCAP capturado sin confiar en el productor.
         "paper_view_github": "Ver en GitHub",
         "paper_download_md": "Descargar Markdown",
         "paper_loading_error": (
-            "No se pudo cargar el archivo del paper. "
-            "El paper también está disponible en: "
+            "No se pudo cargar el archivo del paper. El paper también está disponible en: "
         ),
         "run_intro": (
             "Cada clic en <strong>Ejecutar</strong> corre el pipeline "
@@ -2124,19 +2123,17 @@ def _paper_tab() -> None:
             f'<div class="paper-meta-bar">'
             f'<a href="{github_url}" target="_blank" rel="noopener" '
             f'style="text-decoration:none;color:#0c4a6e;font-size:0.92rem">'
-            f'↗ {t("paper_view_github")}</a>'
+            f"↗ {t('paper_view_github')}</a>"
             f'<span style="color:#94a3b8;font-size:0.92rem">·</span>'
             f'<a href="{raw_url}" target="_blank" rel="noopener" '
             f'style="text-decoration:none;color:#0c4a6e;font-size:0.92rem">'
-            f'⤓ {t("paper_download_md")}</a>'
+            f"⤓ {t('paper_download_md')}</a>"
             f"</div>",
             unsafe_allow_html=True,
         )
 
     if not ok:
-        st.warning(
-            t("paper_loading_error") + f"[{github_url}]({github_url})"
-        )
+        st.warning(t("paper_loading_error") + f"[{github_url}]({github_url})")
         return
 
     # Render the markdown inside a typography-tuned container.
@@ -2162,9 +2159,7 @@ _language_picker()
 
 _hero()
 
-_tab_run, _tab_inspect, _tab_paper = st.tabs(
-    [t("tab_run"), t("tab_inspect"), t("tab_paper")]
-)
+_tab_run, _tab_inspect, _tab_paper = st.tabs([t("tab_run"), t("tab_inspect"), t("tab_paper")])
 
 with _tab_run:
     _run_tab()
