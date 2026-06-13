@@ -258,9 +258,36 @@ SHA-256 del MCAP.
 
 Las cinco son self-contained: cada una está enunciada formalmente en
 un ADR, verificada por una función Python en `properties/`, y
-testimoniada inline en cada smoke. Las descripciones detalladas y
-sus pre/postcondiciones formales viven en los ADRs respectivos
-0031–0035.
+testimoniada inline en cada smoke.
+
+### 3.1 BAUD-v1 — Bounded Action Under Drift
+
+Cuando el drift se detecta (≥M outcomes en window con ≥K dirty), el
+adjusted level baja en el lattice, la decisión no es PROCEED, y el
+actuator command (si lo hay) pertenece al safe-reason set cerrado
+`S_BAUD = {attitude_hold_hold, kill_zero_throttle}`. ADR-0031.
+
+### 3.2 ERUR-v1 — Eventual Reactivation Under Recovery
+
+Cuando drift está ausente y raw belief es KNOWN, adjusted level es
+KNOWN y decisión es PROCEED. Forma con BAUD el teorema de partición
+(C2). ADR-0032.
+
+### 3.3 MD-v1 — Monotonic Degradation
+
+Para todo ciclo, `adjusted ≼ raw` en el confidence lattice. El
+calibrador nunca *inventa* confianza. ADR-0033.
+
+### 3.4 RLB-v1 — Recovery Latency Bound
+
+`L ≤ peak + W − 1` para sliding-window count-of-K-in-W filters. Es
+Theorem 1 (§6.3). ADR-0034.
+
+### 3.5 FPB-v1 — False Positive Bound observer
+
+Empirical BAUD fire rate sobre el run, exposed como métrica
+estructurada para regression gating. Observacional por defecto
+(`max_fire_fraction = 1.0`). ADR-0035.
 
 ---
 
@@ -544,43 +571,57 @@ Esa es la contribución C4 en acción.
 
 ## 8. Evaluación
 
-(Resumen interno. Para detalles cuantitativos consultar la versión
-inglesa, secciones §8.1 a §8.7.)
+Resumen interno. Para detalles cuantitativos completos (tablas,
+JSONs reproducibles) consultar la versión inglesa.
 
-- **§8.1** Tests + CI + verificación mecánica: 1687 tests passing,
-  ruff + mypy strict + deptry clean, CI matrix 4 combinaciones, 3
-  specs TLA+ en CI continuo.
-- **§8.2** Violation matrix: 6 categorías de bugs, todas detectadas
-  por el verificador no modificado. BAUD-v1 dispara en
-  calibrator_no_downgrade, decision_proceeds_anyway,
-  actuation_non_safe_reason; MD-v1 en calibrator_invents_confidence;
-  ERUR-v1 en decision_never_proceeds; FPB-v1 en
-  fpb_threshold_exceeded.
-- **§8.3** Evaluación paramétrica: 9 corridas (3 policies × 3
-  longitudes de trace), las 5 propiedades HOLD en todas. Verificador
-  lineal en longitud del trace: 21 ms para n=10, 100 ms para n=50,
-  406 ms para n=200.
-- **§8.4** Verificador policy-agnostic, precondiciones
-  policy-specific: corriendo el smoke bajo
-  `MahalanobisDowngradePolicy`, `EWMADowngradePolicy`, y
-  `PerAxisHysteresisDowngradePolicy`, el verificador procesa los
-  tres MCAPs sin cambios. ERUR-v1 viola en EWMA y PerAxis porque se
-  evalúa con los parámetros del reference, no de la policy. Insight
-  importante: la propiedad es policy-agnostic en código pero
-  policy-specific en su parametrización.
-- **§8.5** Escenarios shape-realistic: 3 perfiles inspirados en
-  literatura VIO/SLAM (gps_denial, slow_biased_drift,
-  cascading_failure). Las 5 propiedades HOLD en los 3. Honesto:
-  shape-realistic, no data-real; integración con datos reales de
-  PX4/ROSBag es roadmap futuro.
-- **§8.6** Benchmark cuantitativo vs RTAMT: Ghost (BAUD-v1 exacto)
-  HOLDS en 23 ms; RTAMT (STL aproximación) VIOLATED en 0.15 ms.
-  Diferencia de veredictos refleja gap de expresividad: STL no
-  puede expresar K-of-M-in-W como single formula. Los tools son
-  complementarios.
-- **§8.7** Determinismo cross-machine: enforced por CI con matrix
-  ubuntu+windows que diff-ea SHA-256 del MCAP y del JSON
-  canonicalizado.
+### 8.1 Tests, CI y verificación mecánica
+
+1687 tests passing, ruff + mypy strict + deptry clean, CI matrix de
+4 combinaciones (ubuntu/windows × py 3.11/3.12), 3 specs TLA+ en
+CI continuo.
+
+### 8.2 Capacidad de detección de bugs (Violation Matrix)
+
+6 categorías de bugs, todas detectadas por el verificador no
+modificado: `calibrator_no_downgrade` → BAUD-v1;
+`calibrator_invents_confidence` → MD-v1; `decision_proceeds_anyway`
+→ BAUD-v1; `decision_never_proceeds` → ERUR-v1;
+`actuation_non_safe_reason` → BAUD-v1; `fpb_threshold_exceeded` →
+FPB-v1.
+
+### 8.3 Evaluación paramétrica de policy
+
+9 corridas (3 policies × 3 longitudes de trace), las 5 propiedades
+HOLD en todas. Verificador lineal en longitud del trace: 21 ms para
+n=10, 100 ms para n=50, 406 ms para n=200.
+
+### 8.4 Verificador policy-agnostic, precondiciones policy-specific
+
+Corriendo el smoke bajo `MahalanobisDowngradePolicy`,
+`EWMADowngradePolicy`, y `PerAxisHysteresisDowngradePolicy`, el
+verificador procesa los tres MCAPs sin cambios. ERUR-v1 viola en
+EWMA y PerAxis porque se evalúa con los parámetros del reference, no
+de la policy. Insight importante: la propiedad es policy-agnostic en
+código pero policy-specific en su parametrización.
+
+### 8.5 Escenarios shape-realistic
+
+3 perfiles inspirados en literatura VIO/SLAM (gps_denial,
+slow_biased_drift, cascading_failure). Las 5 propiedades HOLD en
+los 3. Honesto: shape-realistic, no data-real; integración con
+datos reales de PX4/ROSBag es roadmap futuro.
+
+### 8.6 Benchmark cuantitativo vs RTAMT
+
+Ghost (BAUD-v1 exacto) HOLDS en 23 ms; RTAMT (STL aproximación)
+VIOLATED en 0.15 ms. Diferencia de veredictos refleja gap de
+expresividad: STL no puede expresar K-of-M-in-W como single formula.
+Los tools son complementarios.
+
+### 8.7 Determinismo cross-replicates y cross-machine
+
+Enforced por CI con matrix ubuntu+windows que diff-ea SHA-256 del
+MCAP y del JSON canonicalizado.
 
 ---
 
@@ -650,3 +691,11 @@ re-ejecutable desde `pip install project-ghost==0.2.2`.
 Mismo conjunto de 18 referencias que la versión inglesa. Para evitar
 duplicación y deriva, consultar
 [`docs/paper/project_ghost_v0_2.md` § References](../project_ghost_v0_2.md#references).
+
+## Índice de artefactos
+
+Mismo conjunto de artefactos (ADRs, specs TLA+, verificadores,
+scripts de reproducibilidad, tests, CI workflows, citation file)
+que la versión inglesa. Ver
+[`docs/paper/project_ghost_v0_2.md` § Artifact index](../project_ghost_v0_2.md#artifact-index)
+para la lista canónica.

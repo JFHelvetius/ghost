@@ -190,6 +190,21 @@ MCAP without trusting the producer.
         # Tabs
         "tab_run": "Try the simulation",
         "tab_inspect": "Inspect a run",
+        "tab_paper": "Read the paper",
+        # Paper tab
+        "paper_eyebrow": "Technical paper",
+        "paper_h1": "A Verifiable Safety-Property Surface for Autonomy Under Uncertainty",
+        "paper_lang_label": "Paper language",
+        "paper_intro": (
+            "The full technical paper — abstract, contributions, proof of "
+            "Theorem 1, evaluation, and references — available in three "
+            "languages. The English version is canonical for arXiv and "
+            "FMAS 2026 submission; the Spanish and Chinese versions are "
+            "internal translations for collaborators."
+        ),
+        "paper_view_github": "View on GitHub",
+        "paper_download_md": "Download Markdown",
+        "paper_loading_error": "Could not load the paper file. The paper is also available at: ",
         # Run tab
         "run_intro": (
             "Every click of <strong>Run</strong> executes the complete "
@@ -495,6 +510,27 @@ propios runs contra el MCAP capturado sin confiar en el productor.
         ),
         "tab_run": "Probar la simulación",
         "tab_inspect": "Inspeccionar una ejecución",
+        "tab_paper": "Leer el paper",
+        # Paper tab
+        "paper_eyebrow": "Paper técnico",
+        "paper_h1": (
+            "Una superficie de propiedades de seguridad verificable "
+            "para autonomía bajo incertidumbre"
+        ),
+        "paper_lang_label": "Idioma del paper",
+        "paper_intro": (
+            "El paper técnico completo — abstract, contribuciones, prueba "
+            "del Theorem 1, evaluación y referencias — disponible en tres "
+            "idiomas. La versión inglesa es la canónica para arXiv y para "
+            "la submission a FMAS 2026; las versiones española y china son "
+            "traducciones internas para colaboradores."
+        ),
+        "paper_view_github": "Ver en GitHub",
+        "paper_download_md": "Descargar Markdown",
+        "paper_loading_error": (
+            "No se pudo cargar el archivo del paper. "
+            "El paper también está disponible en: "
+        ),
         "run_intro": (
             "Cada clic en <strong>Ejecutar</strong> corre el pipeline "
             "completo de 8 pasos en tu navegador: fusión del oráculo → "
@@ -1848,6 +1884,268 @@ def _inspect_tab() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Paper tab — typography-first markdown render in three languages
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+_PAPER_FILES: dict[str, tuple[str, str]] = {
+    # (display label, repo-relative path)
+    "EN": ("English (canonical)", "docs/paper/project_ghost_v0_2.md"),
+    "ES": ("Español (interno)", "docs/paper/es/proyecto_ghost_v0_2_ES.md"),
+    "ZH": ("中文 (内部)", "docs/paper/zh/project_ghost_v0_2_ZH.md"),
+}
+
+_PAPER_GITHUB_BASE = "https://github.com/JFHelvetius/ghost/blob/main/"
+
+# Typography CSS tuned for long-form reading (max-width, generous line-height,
+# zebra-striped tables, monospace code with subtle background). Scoped under
+# `.paper-prose` so the rest of the app keeps its own styling.
+_PAPER_CSS = """
+<style>
+.paper-prose {
+    max-width: 760px;
+    margin: 0 auto;
+    font-size: 1.02rem;
+    line-height: 1.72;
+    color: #1a1d23;
+}
+.paper-prose h1 {
+    font-size: 1.95rem;
+    line-height: 1.2;
+    margin-top: 2.4rem;
+    margin-bottom: 1.0rem;
+    color: #0c1014;
+    letter-spacing: -0.01em;
+}
+.paper-prose h2 {
+    font-size: 1.55rem;
+    line-height: 1.25;
+    margin-top: 2.5rem;
+    margin-bottom: 0.8rem;
+    color: #0c1014;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.35rem;
+}
+.paper-prose h3 {
+    font-size: 1.22rem;
+    line-height: 1.3;
+    margin-top: 2.0rem;
+    margin-bottom: 0.6rem;
+    color: #1a1d23;
+}
+.paper-prose h4 {
+    font-size: 1.05rem;
+    margin-top: 1.6rem;
+    margin-bottom: 0.4rem;
+    color: #1a1d23;
+}
+.paper-prose p {
+    margin: 0.7rem 0;
+}
+.paper-prose blockquote {
+    border-left: 3px solid #94a3b8;
+    padding: 0.3rem 1.0rem;
+    margin: 1.2rem 0;
+    color: #475569;
+    background: #f8fafc;
+    border-radius: 0 4px 4px 0;
+}
+.paper-prose code {
+    background: #f1f5f9;
+    color: #1e293b;
+    padding: 0.12rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.92em;
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+.paper-prose pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 0.9rem 1.1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    line-height: 1.55;
+    margin: 1.0rem 0;
+}
+.paper-prose pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: 0.88rem;
+}
+.paper-prose ul, .paper-prose ol {
+    margin: 0.6rem 0 0.9rem 1.3rem;
+}
+.paper-prose li {
+    margin: 0.25rem 0;
+}
+.paper-prose table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.1rem 0;
+    font-size: 0.94rem;
+}
+.paper-prose th, .paper-prose td {
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem 0.7rem;
+    text-align: left;
+    vertical-align: top;
+}
+.paper-prose th {
+    background: #f1f5f9;
+    font-weight: 600;
+    color: #0c1014;
+}
+.paper-prose tbody tr:nth-child(even) {
+    background: #fafafa;
+}
+.paper-prose a {
+    color: #0c4a6e;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.paper-prose a:hover {
+    color: #0369a1;
+}
+.paper-prose hr {
+    border: 0;
+    border-top: 1px solid #e5e7eb;
+    margin: 2.0rem 0;
+}
+.paper-prose strong {
+    color: #0c1014;
+    font-weight: 600;
+}
+.paper-prose em {
+    color: #1a1d23;
+}
+.paper-meta-bar {
+    max-width: 760px;
+    margin: 0 auto 1.5rem auto;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+</style>
+"""
+
+
+def _find_repo_root() -> Path | None:
+    """Locate the repo root from the running module's path.
+
+    Used by ``_paper_tab`` to read the markdown source from the same
+    repository the app is shipped from. Returns ``None`` when the app
+    is installed as a wheel without source — in that case the paper
+    is fetched from the GitHub raw URL instead.
+    """
+    here = Path(__file__).resolve()
+    for parent in (here, *here.parents):
+        if (parent / "docs" / "paper").is_dir():
+            return parent
+    return None
+
+
+def _load_paper_markdown(rel_path: str) -> tuple[str, bool]:
+    """Return (text, ok) for the paper at ``rel_path``.
+
+    First tries the local repo; falls back to the GitHub raw URL when
+    the app is running from an installed wheel without source.
+    """
+    root = _find_repo_root()
+    if root is not None:
+        candidate = root / rel_path
+        if candidate.exists():
+            try:
+                return candidate.read_text(encoding="utf-8"), True
+            except OSError:
+                pass
+    # Fall back to fetching from GitHub raw (best effort).
+    raw_url = "https://raw.githubusercontent.com/JFHelvetius/ghost/main/" + rel_path
+    try:
+        import urllib.request
+
+        with urllib.request.urlopen(raw_url, timeout=10) as resp:
+            return resp.read().decode("utf-8"), True
+    except Exception:
+        return "", False
+
+
+def _paper_tab() -> None:
+    st.markdown(_PAPER_CSS, unsafe_allow_html=True)
+
+    # Eyebrow + title + intro.
+    st.markdown(
+        f'<p class="section-eyebrow" style="text-align:center;'
+        f'margin-top:2.5rem">{t("paper_eyebrow")}</p>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<h1 style="text-align:center;font-size:1.8rem;line-height:1.25;'
+        f'max-width:760px;margin:0.4rem auto 1.0rem auto">{t("paper_h1")}</h1>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<p style="text-align:center;max-width:680px;margin:0 auto 2.0rem auto;'
+        f'color:#475569;line-height:1.6">{t("paper_intro")}</p>',
+        unsafe_allow_html=True,
+    )
+
+    # Language picker (independent of the global UI language).
+    if "paper_lang" not in st.session_state:
+        st.session_state["paper_lang"] = "EN"
+
+    _centre_l, centre_c, _centre_r = st.columns([1, 2, 1])
+    with centre_c:
+        choice = st.radio(
+            t("paper_lang_label"),
+            list(_PAPER_FILES.keys()),
+            horizontal=True,
+            format_func=lambda k: _PAPER_FILES[k][0],
+            index=list(_PAPER_FILES.keys()).index(st.session_state["paper_lang"]),
+            key="_paper_lang_radio",
+        )
+        if choice != st.session_state["paper_lang"]:
+            st.session_state["paper_lang"] = choice
+            st.rerun()
+
+    lang_key = st.session_state["paper_lang"]
+    _, rel_path = _PAPER_FILES[lang_key]
+
+    text, ok = _load_paper_markdown(rel_path)
+
+    # Action bar: GitHub link + download.
+    github_url = _PAPER_GITHUB_BASE + rel_path
+    raw_url = "https://raw.githubusercontent.com/JFHelvetius/ghost/main/" + rel_path
+
+    _bar_l, bar_c, _bar_r = st.columns([1, 2, 1])
+    with bar_c:
+        st.markdown(
+            f'<div class="paper-meta-bar">'
+            f'<a href="{github_url}" target="_blank" rel="noopener" '
+            f'style="text-decoration:none;color:#0c4a6e;font-size:0.92rem">'
+            f'↗ {t("paper_view_github")}</a>'
+            f'<span style="color:#94a3b8;font-size:0.92rem">·</span>'
+            f'<a href="{raw_url}" target="_blank" rel="noopener" '
+            f'style="text-decoration:none;color:#0c4a6e;font-size:0.92rem">'
+            f'⤓ {t("paper_download_md")}</a>'
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+    if not ok:
+        st.warning(
+            t("paper_loading_error") + f"[{github_url}]({github_url})"
+        )
+        return
+
+    # Render the markdown inside a typography-tuned container.
+    st.markdown('<div class="paper-prose">', unsafe_allow_html=True)
+    st.markdown(text, unsafe_allow_html=False)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Page layout
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1864,10 +2162,15 @@ _language_picker()
 
 _hero()
 
-_tab_run, _tab_inspect = st.tabs([t("tab_run"), t("tab_inspect")])
+_tab_run, _tab_inspect, _tab_paper = st.tabs(
+    [t("tab_run"), t("tab_inspect"), t("tab_paper")]
+)
 
 with _tab_run:
     _run_tab()
 
 with _tab_inspect:
     _inspect_tab()
+
+with _tab_paper:
+    _paper_tab()

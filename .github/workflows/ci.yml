@@ -39,6 +39,18 @@ jobs:
         run: deptry src
       - name: No global random
         run: python scripts/check_no_global_random.py
+      - name: Paper translations structural sync
+        # Verify the three paper translations (EN/ES/ZH) agree on
+        # top-level section count, subsection counts (±2), and
+        # version strings. Surfaces translation drift before it
+        # reaches the Streamlit Paper tab. Soft check: emits a
+        # GitHub Actions warning instead of failing the build,
+        # since translations naturally drift in prose between
+        # major paper revisions.
+        run: |
+          python scripts/check_paper_translations.py || \
+            echo "::warning::Paper translations have structural drift; \
+                  see docs/paper/{es,zh}/ and reconcile against the EN source"
 
   test:
     name: Tests (${{ matrix.os }}, py${{ matrix.python }})
