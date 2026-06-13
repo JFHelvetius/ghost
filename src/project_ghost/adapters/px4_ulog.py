@@ -49,7 +49,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 try:
-    import pyulog  # type: ignore[import-untyped]
+    import pyulog
 
     _HAVE_PYULOG: bool = True
 except ImportError:  # pragma: no cover
