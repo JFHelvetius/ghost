@@ -34,7 +34,7 @@ calibration filters, demonstrated tight by a smoke that fires at
 partition theorem `BAUD ⊕ ERUR` over the conditional behaviour
 space of the closed loop, mechanically verified by TLC; **(3)** a
 reproducibility primitive — a content-addressed verifier reachable
-from `pip install project-ghost==0.2.0` that detects injected bugs
+from `pip install project-ghost==0.2.2` that detects injected bugs
 (§7.2) and produces deterministic JSON output across machines; and
 **(4)** an end-to-end safety citation pattern — MCAP + ADR + verifier
 + Hypothesis test + CI gate + tagged release + OIDC-signed wheel as
@@ -363,7 +363,7 @@ CLI emits with `--json`.
 ### 4.3 CLI surface
 
 ```bash
-$ pip install project-ghost==0.2.0
+$ pip install project-ghost==0.2.2
 $ python -m project_ghost.examples.closed_loop_smoke
 $ ghost verify-properties --mcap closed_loop_smoke.mcap
 BAUD-v1: HOLDS  (M=4, K=2, 6/10 cycles evaluated)
@@ -409,19 +409,32 @@ provides strong evidence at production scale, but it proves the
 property holds *on the inputs the generator sampled*, not on all
 inputs. The next rung of evidence is **mechanical verification over a
 finite abstract model**. We pick TLA+ with TLC over theorem proving
-(Lean, Coq) on a cost/benefit argument: TLC is exhaustive over a
-finite state space in hours, where a Lean proof would be weeks.
+(Lean, Coq) on a cost/benefit argument: TLC is exhaustive over the
+bounded state space in seconds, where a Lean proof would be weeks.
 
-### 5.2 The spec
+### 5.2 The specifications
 
-`docs/proofs/BaudErur.tla` models the closed loop as a state machine
-with one transition per cycle. State variables include the calibration
-history (a bounded sequence of outcomes with at most `W` entries), the
-raw assessment level, and the derived adjusted level, decision kind,
-and actuator-safety flag. The reference calibrator
-(`MahalanobisDowngradePolicy`), decision policy
-(`UncertaintyAwareReferencePolicy`), and actuator safety classifier
-are mirrored as TLA+ definitions.
+Three TLA+ specifications jointly cover the five properties; each
+mirrors the Python source line-for-line for its in-scope policies.
+
+- **`docs/proofs/BaudErur.tla`** models the closed loop as a state
+  machine with one transition per cycle. State variables include the
+  calibration history (bounded sequence of outcomes ≤ `W` entries),
+  the raw assessment level, and the derived adjusted level, decision
+  kind, and actuator-safety flag. The reference calibrator
+  (`MahalanobisDowngradePolicy`), decision policy
+  (`UncertaintyAwareReferencePolicy`), and actuator safety classifier
+  are mirrored as TLA+ definitions.
+- **`docs/proofs/Rlb.tla`** restricts the model to the
+  consecutive-drift hypothesis of Theorem 1 (§6.3) via two phases
+  (`ACCUMULATING`, `RECOVERING`). It mirrors the verifier algorithm
+  of `src/project_ghost/properties/rlb.py` and tracks the dirty-run
+  counter and peak observed during the run.
+- **`docs/proofs/Fpb.tla`** models the FPB-v1 counter automaton in
+  integer arithmetic (two counters: `cycles_total`, `cycles_fires`).
+  It verifies the structural well-formedness of the counter rather
+  than a probabilistic bound on the fire rate (the latter is FPB-v2
+  scope, §10).
 
 ### 5.3 Invariants checked
 
@@ -476,13 +489,21 @@ from 3/5 in v0.2.1 to 5/5 in this draft.
 
 ### 5.4 Bounds and what they prove
 
-For tractability, TLC runs with bounded constants `M=2, K=1, W=3` —
-the *boundary cases* of the precondition are exhausted at any positive
-`M`, and `W ≥ M` is sufficient for the window mechanism to be
-exercised. These bounds prove the invariants on the abstract model.
-Behaviour at production-scale constants (`M=4, K=2, W=32`) is covered
-by the property tests; TLA+ fills in the *small but exhaustive*
-corner.
+For tractability, each spec runs with deliberately small bounded
+constants:
+
+| Spec | Bounds | Why these bounds are sufficient |
+|---|---|---|
+| `BaudErur.tla` | `M=2, K=1, W=3` | Precondition *boundary cases* exhausted at any positive `M`; `W ≥ M` exercises the sliding-window mechanism. |
+| `Rlb.tla` | `W=4, MAX_DRIFT=4` | Exercises all four phases of Theorem 1's proof (accumulation, saturation, flush, recovery); `MAX_DRIFT = W` covers the transient regime (Corollary 1). |
+| `Fpb.tla` | `MAX_CYCLES=8, MAX_FIRE_NUMER=BOUND_DENOM=1` | Eight cycles enumerate the counter automaton through every fire/non-fire alternation; the unit-ratio bound exercises the default observational threshold. |
+
+These bounds prove the invariants on each abstract model. Behaviour
+at production-scale constants (`M=4, K=2, W=32`) is covered by the
+property tests; TLA+ fills in the *small but exhaustive* corner.
+Lifting Theorem 1 to *any finite W* (an unbounded proof) is the
+candidate ADR-0038 documented at
+[`docs/proofs/TLAPS_roadmap.md`](docs/proofs/TLAPS_roadmap.md).
 
 ### 5.5 What this does and does not claim
 
@@ -660,7 +681,7 @@ write, for example:
 > Project Ghost v0.2.0 satisfies BAUD-v1 on the bundled reference
 > smoke MCAP `SHA-256:<hash>`, as verified by
 > `ghost verify-properties --mcap closed_loop_smoke.mcap` from
-> `pip install project-ghost==0.2.0`, and additionally satisfies
+> `pip install project-ghost==0.2.2`, and additionally satisfies
 > `INV_BAUD`, `INV_ERUR`, and `INV_PARTITION` over the abstract
 > model `BaudErur.tla` at bounds `M=2, K=1, W=3`.
 
@@ -990,11 +1011,23 @@ per-property §Scope sections of the ADRs.
 
 ## 10. Future work
 
-- **ADR-0037 (candidate)**: TLA+ specs for MD-v1, RLB-v1, FPB-v1
-  closing the formal-verification coverage of the full property set.
+- **ADR-0037 (candidate)**: real-flight data integration. PX4 ULog
+  / ROSBag / EuRoC MAV adapter from flight telemetry to the Ghost
+  pipeline. Roadmap documented at
+  [`docs/paper/venues/dataset_integration.md`](docs/paper/venues/dataset_integration.md).
 - **ADR-0038 (candidate)**: TLAPS proof of the unbounded version of
-  the partition theorem — replacing TLC's "exhaustive over bounded
-  state space" with "proved for any finite W, M, K".
+  Theorem 1 and of the partition theorem — replacing TLC's
+  "exhaustive over bounded state space" with "proved for any
+  finite W, M, K". Proof outline already at
+  [`docs/proofs/Rlb_unbounded.tla`](docs/proofs/Rlb_unbounded.tla);
+  discharge plan at
+  [`docs/proofs/TLAPS_roadmap.md`](docs/proofs/TLAPS_roadmap.md).
+- **ADR-0039 (candidate)**: statistical FPB-v2. Monte-Carlo bound on
+  the empirical fire rate under noise models, generalising the
+  current observational FPB-v1.
+- **ADR-0040 (candidate)**: ERUR-v2 stated abstractly over
+  `policy.precondition(history)`, generalising the property
+  parameterisation across calibration policies (§8.4).
 - **HAL backend campaign.** A first hardware backend (Pixhawk +
   Linux companion computer) would lift the reproducibility surface
   from simulation to flight logs.
@@ -1010,11 +1043,12 @@ per-property §Scope sections of the ADRs.
 Project Ghost is not a new theory of autonomy under uncertainty. It
 is a *reference of the citation pattern* that the existing theory
 deserves: a content-addressed log, a pure-function verifier on a CLI,
-a formal property statement in a binding ADR, a Hypothesis property
-test, a CI gate, a TLA+ spec mechanically checked by TLC, a tagged
-release, and an OIDC-signed wheel — all in one artifact, all on one
-shell command. The contribution is in the assembly; the evidence is
-re-runnable from `pip install project-ghost==0.2.0`.
+formal property statements in binding ADRs, Hypothesis property
+tests, a CI gate, **three TLA+ specifications mechanically checked
+by TLC**, a tagged release, and an OIDC-signed wheel — all in one
+artifact, all on one shell command. The contribution is in the
+assembly; the evidence is re-runnable from
+`pip install project-ghost==0.2.2`.
 
 ---
 

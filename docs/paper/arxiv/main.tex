@@ -80,7 +80,7 @@ count-of-$K$-in-$W$ calibration filters (Theorem~\ref{thm:rlb}); (2) a
 formal partition theorem $\mathrm{BAUD} \oplus \mathrm{ERUR}$ over the
 conditional behaviour space, mechanically verified by TLC; (3) a
 reproducibility primitive --- a content-addressed verifier reachable
-from \texttt{pip install project-ghost==0.2.0} that detects injected
+from \texttt{pip install project-ghost==0.2.2} that detects injected
 bugs (\S\ref{sec:violation}) and produces deterministic JSON output
 across machines; and (4) an end-to-end safety citation pattern. The
 verifier completes in 21\,ms for 10-cycle runs and 406\,ms for
@@ -324,7 +324,7 @@ public API; their JSON serialisation is the wire format the CLI
 emits with \texttt{--json}.
 
 \begin{lstlisting}[language=bash]
-$ pip install project-ghost==0.2.0
+$ pip install project-ghost==0.2.2
 $ python -m project_ghost.examples.closed_loop_smoke
 $ ghost verify-properties --mcap closed_loop_smoke.mcap
 BAUD-v1: HOLDS  (M=4, K=2, 6/10 cycles evaluated)
@@ -512,7 +512,7 @@ A reader who wishes to cite a Project Ghost safety claim can write:
 Project Ghost v0.2.0 satisfies BAUD-v1 on the bundled reference
 smoke MCAP \texttt{SHA-256:<hash>}, as verified by
 \texttt{ghost verify-properties --mcap closed\_loop\_smoke.mcap}
-from \texttt{pip install project-ghost==0.2.0}, and additionally
+from \texttt{pip install project-ghost==0.2.2}, and additionally
 satisfies \texttt{INV\_BAUD}, \texttt{INV\_ERUR},
 \texttt{INV\_PARTITION} over the abstract model
 \texttt{BaudErur.tla} at bounds $M{=}2, K{=}1, W{=}3$, and
@@ -844,7 +844,7 @@ checked by TLC (including Theorem~\ref{thm:rlb}), a tagged
 release, and an OIDC-signed wheel --- all in one artifact, all on
 one shell command. The contribution is in the assembly; the
 evidence is re-runnable from
-\texttt{pip install project-ghost==0.2.0}.
+\texttt{pip install project-ghost==0.2.2}.
 
 % =======================================================================
 \bibliographystyle{plainurl}
