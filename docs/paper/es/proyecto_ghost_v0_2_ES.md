@@ -19,6 +19,13 @@
 
 ---
 
+> *Una afirmación de seguridad debe emitirse junto con todo lo que
+> un tercero necesita para rechazarla.*
+>
+> — La tesis del paper, en una línea.
+
+---
+
 ## Resumen
 
 Las afirmaciones de seguridad en investigación de autonomía
@@ -61,7 +68,11 @@ establece que el verificador es policy-agnostic, corre en
 21–406 ms (lineal en longitud del trace), y produce MCAPs y
 property-report JSON canonicalizado byte-idénticos entre runners
 Linux y Windows en CI. El artefacto completo es re-ejecutable
-desde `pip install project-ghost==0.2.2`.
+desde `pip install project-ghost==0.2.2`. Invitamos a los lectores
+a tomar esa verificación como la unidad de análisis: **una
+afirmación de seguridad debe emitirse junto con todo lo que un
+tercero necesita para rechazarla, y creemos que eso es ahora
+operacionalmente posible**.
 
 **Palabras clave:** patrones de citación de seguridad, verificación
 reproducible de seguridad, runtime verification, telemetría
@@ -195,10 +206,13 @@ cada push y el tagging emite un release firmado por OIDC. El
 artefacto citable carga dos mitades: el run (MCAP con SHA-256) y la
 herramienta de verificación (wheel PyPI fijada por versión). Un
 tercero las concatena con un comando de shell y obtiene un JSON
-veredicto determinístico por propiedad. **La contribución del paper
-es el ensamblaje de las siete cajas en una sola unidad shippable**;
-todo lo demás (el conjunto de propiedades, la cota cerrada, los
-specs TLA+) instancia el patrón sobre un supervisor representativo.
+veredicto determinístico por propiedad. **La contribución del paper es el ensamblaje de las siete cajas en
+una sola unidad shippable, de modo que — por primera vez, hasta
+donde sabemos dentro de los venues revisados — una afirmación de
+seguridad puede emitirse junto con todo lo que un tercero necesita
+para rechazarla.** Todo lo demás (el conjunto de propiedades, la
+cota cerrada, los specs TLA+) instancia el patrón sobre un
+supervisor representativo.
 
 ### 1.2 Qué es y qué no es este paper
 

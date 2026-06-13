@@ -59,6 +59,15 @@
 \begin{document}
 \maketitle
 
+\begin{center}
+\itshape\small
+``A safety claim should be issued together with everything a third
+party needs to reject it.''\\
+\upshape\textmd{--- the thesis of this paper, in one line.}
+\end{center}
+
+\vspace{1em}
+
 \begin{abstract}
 Safety claims in autonomy research are typically asserted in prose
 and illustrated by simulation videos that the reader cannot re-run.
@@ -95,7 +104,11 @@ RTAMT establishes that the verifier is policy-agnostic, runs in
 21--406\,ms (linear in trace length), and produces byte-identical
 MCAPs and canonicalised property-report JSON across Linux and
 Windows CI runners. The full artifact is re-runnable from
-\texttt{pip install project-ghost==0.2.2}.
+\texttt{pip install project-ghost==0.2.2}. We invite readers to
+take that verification as the unit of analysis: \textbf{a safety
+claim should be issued together with everything a third party
+needs to reject it, and we believe that is now operationally
+possible.}
 \end{abstract}
 
 \medskip
@@ -268,9 +281,13 @@ specs encode its semantics; CI gates every push and tagging cuts an
 OIDC-signed release. The citable artifact is the pair
 (MCAP SHA-256, PyPI version). A third party concatenates them with
 one shell command and obtains a deterministic JSON verdict per
-property. The contribution is the assembly of the seven boxes into
-one shippable unit; the property set, the closed-form bound, and the
-TLA+ specs instantiate the pattern on a representative supervisor.}
+property. \textbf{The contribution of this paper is the assembly of
+the seven boxes into one shippable unit, so that --- for the first
+time, to the best of our knowledge within the surveyed venues --- a
+safety claim can be issued together with everything a third party
+needs to reject it.} The property set, the closed-form bound, and
+the TLA+ specs instantiate the pattern on a representative
+supervisor.}
 \label{fig:pattern}
 \end{figure}
 
@@ -371,10 +388,13 @@ Bug-detection demo            & \textbf{Yes (\S\ref{sec:violation})} & N/A  & N/
 \bottomrule
 \end{tabularx}
 \caption{Comparison of Project Ghost with the closest runtime
-         verification and supervisory-control tooling. To our
-         knowledge, no prior tool ships a content-addressed,
-         pure-function safety-property verifier via \texttt{pip
-         install} with mechanically verified underlying invariants.}
+         verification and supervisory-control tooling. To the best
+         of our knowledge, and within the scope of the literature
+         review documented in this section, no prior tool ships a
+         content-addressed, pure-function safety-property verifier
+         via \texttt{pip install} with mechanically verified
+         underlying invariants; we welcome correction from readers
+         with broader coverage of the surveyed fields.}
 \label{tab:comparison}
 \end{table}
 
@@ -857,9 +877,12 @@ for reproducibility; its output lives in
 
 Instead, Table~\ref{tab:rtamt-bench} states the \emph{capabilities}
 the two tools offer over the same MCAP, evaluated by their
-published feature sets (RTAMT 0.3.5 from PyPI; Ghost v0.2.2). This
-framing is what a reader can defend without entering an arms race
-about which STL encoding ``really'' represents BAUD-v1.
+published feature sets (RTAMT 0.3.5 from PyPI; Ghost v0.2.2). The
+matrix reflects our reading of each project's documentation and
+source as of mid-2026; a more recent RTAMT release may close some
+rows, and we welcome correction from the RTAMT maintainers. This
+framing is what we believe a reader can defend without entering an
+arms race about which STL encoding ``really'' represents BAUD-v1.
 
 \begin{table}[h]
 \centering

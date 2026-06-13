@@ -10,6 +10,13 @@
 
 ---
 
+> *A safety claim should be issued together with everything a third
+> party needs to reject it.*
+>
+> — The thesis of this paper, in one line.
+
+---
+
 ## Abstract
 
 Safety claims in autonomy research are typically asserted in prose and
@@ -48,7 +55,10 @@ RTAMT establishes that the verifier is policy-agnostic, runs in
 MCAPs and canonicalised property-report JSON across Linux and
 Windows CI runners. The full artifact, including the three TLA+
 specifications and all reproducibility scripts, is re-runnable from
-`pip install project-ghost==0.2.2`.
+`pip install project-ghost==0.2.2`. We invite readers to take that
+verification as the unit of analysis: **a safety claim should be
+issued together with everything a third party needs to reject it,
+and we believe that is now operationally possible**.
 
 **Keywords:** safety citation patterns, reproducible safety
 verification, runtime verification, content-addressed telemetry,
@@ -195,8 +205,11 @@ SHA-256) and the verification tool (PyPI wheel pinned by version).
 A third party concatenates them with one shell command and obtains
 a deterministic JSON verdict per property. **The contribution of
 this paper is the assembly of those seven boxes into a single
-shippable unit**; everything else (the property set, the closed-form
-bound, the TLA+ specs) instantiates the pattern on a representative
+shippable unit, so that — for the first time, to the best of our
+knowledge within the surveyed venues — a safety claim can be
+issued together with everything a third party needs to reject
+it.** Everything else (the property set, the closed-form bound,
+the TLA+ specs) instantiates the pattern on a representative
 supervisor.
 
 ### 1.2 What this paper is and is not
@@ -293,13 +306,16 @@ overlapping concerns, none of which occupies the same niche:
 | Closed-form recovery bound | **L ≤ peak + W − 1** | N/A | N/A | N/A | N/A | Indirect | None |
 | Bug-detection demo | **Yes (§7.2)** | N/A | N/A | N/A | N/A | N/A | N/A |
 
-We have not found a prior tool that ships a content-addressed,
-pure-function safety-property verifier via `pip install` +
-OIDC-signed wheels with mechanically verified underlying invariants
-in the literature we surveyed. We treat that combination as Ghost's
-primary operational claim; the comparison above is the evidence for
-it, and the relevant caveat is the scope of the survey (the venues
-listed in §2.4).
+To the best of our knowledge, and within the scope of the
+literature review documented in §2.4, **we have not found a prior
+tool that ships a content-addressed, pure-function safety-property
+verifier via `pip install` + OIDC-signed wheels with mechanically
+verified underlying invariants**. We treat that combination as
+Ghost's primary operational claim, and we explicitly invite
+correction from readers with broader coverage of the runtime
+verification, conformance testing, or sequential-analysis
+literatures; the comparison above is the evidence we offer, and the
+relevant caveat is the scope of our search.
 
 ### 2.4 What is novel here
 
@@ -312,16 +328,18 @@ methods, sequential analysis, or change-point detection — those
 fields are too large to claim exhaustive coverage from a
 single-author effort. With that scope in mind:
 
-- **C1 (the citation pattern)** — we have not located a prior
-  end-to-end combination of ADR + content-addressed MCAP +
-  pure-function CLI verifier + Hypothesis tests + CI gate +
-  OIDC-signed PyPI wheel + TLA+ checked invariants shipped as one
-  tool, in the surveyed venues. Individual ingredients are
+- **C1 (the citation pattern)** — to the best of our knowledge,
+  within the surveyed venues, no prior tool ships the end-to-end
+  combination of ADR + content-addressed MCAP + pure-function CLI
+  verifier + Hypothesis tests + CI gate + OIDC-signed PyPI wheel +
+  TLA+ checked invariants as one unit. Individual ingredients are
   standard. The novelty we claim is the assembly, not any single
-  component.
+  component. A reader who can point us to a prior assembly we
+  missed is doing us a favour.
 - **C2 (the reproducibility primitive)** — similarly novel as a
-  shipped tool with the demonstrated detection properties of §8.2;
-  the underlying ideas (pure-function verifiers over robotics
+  shipped tool with the demonstrated detection properties of §8.2,
+  to the best of our knowledge within the surveyed venues; the
+  underlying ideas (pure-function verifiers over robotics
   telemetry) are not.
 - **C3's partition theorem `BAUD ⊕ ERUR`** — we did not locate a
   prior TLA+ mechanisation of this exact partition for a
@@ -1030,9 +1048,12 @@ is preserved for reproducibility; its output lives in
 
 Instead, the table below states the **capabilities** the two tools
 offer over the same MCAP, evaluated by their published feature sets
-(RTAMT 0.3.5 from PyPI; Ghost v0.2.2). This framing is what a
-reader can defend without entering an arms race about which STL
-encoding "really" represents BAUD-v1.
+(RTAMT 0.3.5 from PyPI; Ghost v0.2.2). The matrix reflects our
+reading of each project's documentation and source as of
+mid-2026; a more recent RTAMT release may close some of the rows,
+and we welcome correction from the RTAMT maintainers. This framing
+is what we believe a reader can defend without entering an arms
+race about which STL encoding "really" represents BAUD-v1.
 
 | Capability | Ghost v0.2.2 | RTAMT 0.3.5 |
 |---|:---:|:---:|
