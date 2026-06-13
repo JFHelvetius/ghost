@@ -12,41 +12,47 @@
 
 ## Abstract
 
-We describe **Project Ghost**, an open-source reference implementation
-of five formal safety properties for autonomy under uncertainty,
-verifiable byte-exact from any captured run via a single shell command:
-`ghost verify-properties --mcap <log>`. The property set
-(BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1) covers four distinct natures
-of safety claim — conditional behaviour in both drift directions, an
-unconditional structural property of the calibrator, a quantitative
-recovery latency bound, and an empirical regression-gating observer —
-each stated in a binding architectural decision record (ADR), verified
-by a pure function over content-addressed MCAP telemetry, exercised
-by ~50 property tests within a 1665-test suite, witnessed inline in
-every reference smoke run, and self-enforced on every push by CI.
-The BAUD/ERUR partition and the monotonic-degradation property are
-additionally **mechanically verified** by TLA+/TLC over the abstract
-state space of the reference policy pair. We make four claimable
-contributions: **(1)** a closed-form, tight structural recovery
-latency bound `L ≤ peak + W − 1` for sliding-window count-of-K-in-W
-calibration filters, demonstrated tight by a smoke that fires at
-`L = 38 = 7 + 32 − 1` exactly (Theorem 1, §6.4); **(2)** a formal
-partition theorem `BAUD ⊕ ERUR` over the conditional behaviour
-space of the closed loop, mechanically verified by TLC; **(3)** a
-reproducibility primitive — a content-addressed verifier reachable
-from `pip install project-ghost==0.2.2` that detects injected bugs
-(§7.2) and produces deterministic JSON output across machines; and
-**(4)** an end-to-end safety citation pattern — MCAP + ADR + verifier
-+ Hypothesis test + CI gate + tagged release + OIDC-signed wheel as
-one coherent unit. Empirical evaluation on 9 (policy, cycle-count)
-combinations shows the verifier completes in 21 ms for 10-cycle
-runs and 406 ms for 200-cycle runs (linear in trace length), with
-the property set holding across all three reference policy
-parameterisations.
+Safety claims in autonomy research are typically asserted in prose and
+illustrated by simulation videos that the reader cannot re-run. We
+describe **Project Ghost**, an open-source platform whose primary
+contribution is **a citation pattern that lets a third party verify
+any safety claim against the recorded run, byte-exact, via a single
+shell command**: `pip install project-ghost==0.2.2`, then
+`ghost verify-properties --mcap <log>`. The pattern composes seven
+existing ingredients — architectural decision records (ADRs),
+content-addressed MCAP telemetry, pure-function verifiers,
+Hypothesis property tests, CI gating, tagged releases, and
+OIDC-signed PyPI wheels — into one coherent reproducibility unit,
+with the underlying invariants additionally checked by TLA+/TLC.
 
-**Keywords:** verifiable autonomy, formal safety properties, runtime
-verification, calibrated confidence, byte-exact replay verification,
-TLA+, MCAP, sliding-window monitors.
+To exercise the pattern, we instantiate five safety properties for
+the closed loop of a reference autonomy supervisor (BAUD-v1,
+ERUR-v1, MD-v1, RLB-v1, FPB-v1). Each is stated in a binding ADR,
+verified by a pure function over the MCAP, exercised by ~50
+property tests within a 1687-test suite, witnessed inline in every
+reference smoke, and self-enforced on every push by CI. Three TLA+
+specifications jointly cover the five properties; together they
+verify 11 invariants over the bounded state space, including a
+partition theorem `BAUD ⊕ ERUR` and a closed-form recovery latency
+bound `L ≤ peak + W − 1` (Theorem 1), shown tight by a witness
+trace where equality is attained. We acknowledge that the latency
+bound is elementary in hindsight; we present it as supporting
+evidence for the broader citation pattern rather than as a stand-
+alone theoretical contribution.
+
+Empirical evaluation on a violation matrix of six injected bug
+categories, three structurally distinct calibration policies, three
+shape-realistic drift profiles, and a head-to-head benchmark against
+RTAMT establishes that the verifier is policy-agnostic, runs in
+21–406 ms (linear in trace length), and produces byte-identical
+MCAPs and canonicalised property-report JSON across Linux and
+Windows CI runners. The full artifact, including the three TLA+
+specifications and all reproducibility scripts, is re-runnable from
+`pip install project-ghost==0.2.2`.
+
+**Keywords:** safety citation patterns, reproducible safety
+verification, runtime verification, content-addressed telemetry,
+calibrated confidence, TLA+/TLC, MCAP.
 
 ---
 
@@ -87,47 +93,70 @@ demonstration (§8.2) and a parametric policy sweep (§8.3).
 We make **four claimable contributions**, two formal and two
 operational:
 
-- **C1 — Theorem 1 (tight recovery latency bound).** A closed-form
-  upper bound `L ≤ peak + W − 1` on the recovery latency of any
-  closed-loop autonomy supervisor using a sliding window of size
-  `W` and a count-of-K-in-W threshold over `M`-minimum outcomes,
-  formalised in §6.4 and shown tight by a witness trace where
-  equality is attained (`L = 38 = 7 + 32 − 1`).
-- **C2 — Mechanically verified partition theorem.** The conditional
-  behaviour of the reference closed loop partitions into
-  `BAUD ⊕ ERUR`. Stated in TLA+ as `INV_PARTITION` and verified by
-  TLC over the full reachable state space of the abstract model
-  (bounded `M=2, K=1, W=3`), this is the first formalisation we
-  know of for sliding-window safety supervisors.
-- **C3 — Reproducibility primitive with demonstrated detection
-  capacity.** A one-line CLI verifier `ghost verify-properties`
-  over content-addressed MCAP logs, distributed via PyPI with OIDC
-  trusted publishing. Bug-detection capacity demonstrated in §8.2:
-  a smoke with an injected buggy calibrator yields
-  `BAUD-v1: VIOLATED, exit code 1, violation_count: 12` on the
-  unmodified verifier.
-- **C4 — End-to-end safety citation pattern.** Content-addressed
-  MCAP + ADR + pure-function verifier + Hypothesis property test +
-  CI gate + tagged release + OIDC-signed PyPI wheel, assembled as
-  a single reproducibility unit so a third party can verify any
-  cited safety claim against the captured run without trusting the
-  producer.
+We order our contributions **from the most load-bearing
+(an engineering pattern) to the most narrow (a useful supporting
+bound)**:
 
-C1 and C2 are formal contributions, novel to the best of our
-knowledge after a deliberate prior-art review (§2.3). C3 and C4
-are operational and pattern contributions; their novelty rests on
-the comparison matrix of §2.3.
+- **C1 — A safety citation pattern.** A composition of seven
+  existing ingredients — ADR + content-addressed MCAP +
+  pure-function verifier + Hypothesis property test + CI gate +
+  tagged release + OIDC-signed PyPI wheel — assembled as a single
+  reproducibility unit so a third party can verify any cited safety
+  claim against the captured run via one shell command, without
+  trusting the producer. This is the pattern we believe is genuinely
+  differentiating; the rest of the paper is the evidence that it
+  works in practice.
+- **C2 — A reproducibility primitive with demonstrated detection
+  capacity.** A one-line CLI verifier `ghost verify-properties` over
+  content-addressed MCAP logs, distributed via PyPI with OIDC
+  trusted publishing. Bug-detection is demonstrated systematically
+  in §8.2 via a six-category violation matrix (injected calibrator,
+  decision, actuation, and threshold bugs; all six detected). The
+  verifier produces deterministic JSON output across Linux and
+  Windows runners (enforced by CI, §8.7) and remains policy-agnostic
+  across three structurally distinct calibration policies (§8.4).
+- **C3 — A property set with mechanically-checked semantics for a
+  reference autonomy supervisor.** Five properties (BAUD-v1,
+  ERUR-v1, MD-v1, RLB-v1, FPB-v1) instantiating the citation pattern
+  on a representative closed loop. Three TLA+ specifications cover
+  the property set with 11 invariants verified by TLC on a bounded
+  abstract model in CI, including a partition theorem
+  `BAUD ⊕ ERUR` and a monotonic-degradation invariant. The
+  properties themselves are deliberately simple; the contribution
+  is the end-to-end mechanisation, not the formulation.
+- **C4 — A closed-form tight recovery latency bound** for
+  sliding-window count-of-K-in-W filters (Theorem 1, §6.3):
+  `L ≤ peak + W − 1`, attained with equality by a witness trace
+  (`L = 38 = 7 + 32 − 1`). The bound follows directly from the
+  sliding-window mechanism and is elementary in hindsight; we did
+  not locate it stated as a closed form in our literature review
+  (§2.3) but we make no broader novelty claim and treat it as
+  supporting evidence for C3 rather than a stand-alone theoretical
+  result.
+
+C1 and C2 are the contributions we expect to age best. C3
+instantiates them on a representative supervisor; C4 supplies a
+useful bound that the spec `Rlb.tla` verifies mechanically. We
+position the work as a **systems / tools paper, not a theory paper**.
 
 ### 1.2 What this paper is and is not
 
-This paper is not a paper introducing new estimation theory; the
-filtering, calibration, and FDI ingredients Ghost rests on are well
-established (§2.1). C1's mathematics is elementary in hindsight but
-not, to our knowledge, previously stated as a closed-form bound in
-the peer-reviewed runtime-verification literature. C2's novelty is
-in mechanising the partition for sliding-window autonomy supervisors
-specifically; analogous TLA+ patterns exist for distributed
-algorithms but not for this domain.
+This is an engineering and infrastructure paper, not a theory
+paper. The filtering, calibration, and FDI ingredients Ghost rests
+on are well established (§2.1). Theorem 1's mathematics is
+elementary in hindsight, and we present it as evidence that the
+citation pattern can carry a sharp result, not as a stand-alone
+theoretical contribution. The partition theorem of §5.3 is novel
+*in the form we mechanised it* — a TLA+ `INV_PARTITION` over the
+reference closed loop — but the underlying observation that
+"drift fired" and "drift clean and KNOWN" partition the per-cycle
+condition space is structurally simple. We deliberately resist
+overclaiming on either result. The contribution we are most
+willing to defend is **the engineered combination** (C1) and its
+**operational demonstration** (C2): that a third party can issue
+one shell command and obtain a byte-exact verdict against a binding
+ADR — and that this combination, to our knowledge, is not currently
+shipped by any other autonomy-safety tool.
 
 ---
 
@@ -204,34 +233,61 @@ overlapping concerns, none of which occupies the same niche:
 | Closed-form recovery bound | **L ≤ peak + W − 1** | N/A | N/A | N/A | N/A | Indirect | None |
 | Bug-detection demo | **Yes (§7.2)** | N/A | N/A | N/A | N/A | N/A | N/A |
 
-To the best of our knowledge, **no prior tool ships a
-content-addressed, pure-function safety-property verifier via
-`pip install` + OIDC-signed wheels with mechanically verified
-underlying invariants**. We treat that as Ghost's primary
-operational claim; the comparison above is the evidence for it.
+We have not found a prior tool that ships a content-addressed,
+pure-function safety-property verifier via `pip install` +
+OIDC-signed wheels with mechanically verified underlying invariants
+in the literature we surveyed. We treat that combination as Ghost's
+primary operational claim; the comparison above is the evidence for
+it, and the relevant caveat is the scope of the survey (the venues
+listed in §2.4).
 
 ### 2.4 What is novel here
 
-Two of the contributions are operational pattern claims (the
-reproducibility primitive and the end-to-end citation pattern). Two
-are formal claims that, to the best of our knowledge after a
-deliberate prior-art review across CAV, RV, FMAS, TACAS, ICRA, IROS,
-CoRL 2018–2026 and the surveys cited above, do not appear in the
-peer-reviewed literature in the form we state:
+Our novelty claims are scoped, not absolute. Our prior-art review
+covered CAV, RV, FMAS, TACAS, ICRA, IROS, CoRL 2018–2026
+proceedings, the surveys cited above, recent arXiv preprints, and
+the documentation of the runtime-verification tools listed in §2.2.
+We did not perform a systematic review across all of formal
+methods, sequential analysis, or change-point detection — those
+fields are too large to claim exhaustive coverage from a
+single-author effort. With that scope in mind:
 
-- **The closed-form recovery latency bound `L ≤ peak + W − 1`** for
-  count-of-K-in-W sliding-window monitors. Sequential probability
-  ratio tests [Wald 1947; Tartakovsky et al. 2014] give optimal
-  sample-size bounds for hypothesis testing, but not this exact
-  closed form for sliding-window recovery, and timed-automata work
-  prefers qualitative non-blocking guarantees over concrete latency
-  bounds. We formalise the bound as Theorem 1 (§6.4) and demonstrate
-  it tight by construction.
-- **The partition theorem `BAUD ⊕ ERUR`** over the per-cycle
-  conditional behaviour space of a closed-loop autonomy supervisor,
-  proved by TLC over the abstract model. We have not located a prior
-  formalisation of conditional-behaviour partitioning for
-  sliding-window safety supervisors.
+- **C1 (the citation pattern)** — we have not located a prior
+  end-to-end combination of ADR + content-addressed MCAP +
+  pure-function CLI verifier + Hypothesis tests + CI gate +
+  OIDC-signed PyPI wheel + TLA+ checked invariants shipped as one
+  tool, in the surveyed venues. Individual ingredients are
+  standard. The novelty we claim is the assembly, not any single
+  component.
+- **C2 (the reproducibility primitive)** — similarly novel as a
+  shipped tool with the demonstrated detection properties of §8.2;
+  the underlying ideas (pure-function verifiers over robotics
+  telemetry) are not.
+- **C3's partition theorem `BAUD ⊕ ERUR`** — we did not locate a
+  prior TLA+ mechanisation of this exact partition for a
+  sliding-window autonomy supervisor. Analogous TLA+ patterns exist
+  for distributed algorithms. We do not claim that partitions of
+  drift / non-drift behaviour are conceptually novel — the binary
+  partition is structurally obvious — only that the mechanisation
+  in TLA+ over the reference closed loop is new.
+- **C4 (the closed-form recovery latency bound `L ≤ peak + W − 1`)**
+  — we did not locate this exact closed form in the runtime-
+  verification venues we surveyed. Sequential probability ratio
+  tests [Wald 1947; Tartakovsky et al. 2014] give optimal sample-
+  size bounds for hypothesis testing, but not this specific form
+  for sliding-window recovery; timed-automata work prefers
+  qualitative non-blocking guarantees over concrete latency bounds.
+  The bound is elementary in hindsight (it follows directly from
+  the sliding-window mechanism), so we frame it as a useful
+  supporting bound rather than as a stand-alone theoretical
+  contribution. A future contribution would be a TLAPS-checked
+  unbounded version (Rlb_unbounded.tla outline in §5.4).
+
+We invite readers from sequential-analysis or change-point-detection
+backgrounds to point us at prior closed-form bounds we may have
+missed; the framing of C4 as supporting evidence rather than a
+stand-alone result is chosen precisely to keep this from being a
+load-bearing claim.
 
 ---
 
@@ -1040,15 +1096,29 @@ per-property §Scope sections of the ADRs.
 
 ## 11. Conclusion
 
-Project Ghost is not a new theory of autonomy under uncertainty. It
-is a *reference of the citation pattern* that the existing theory
-deserves: a content-addressed log, a pure-function verifier on a CLI,
-formal property statements in binding ADRs, Hypothesis property
-tests, a CI gate, **three TLA+ specifications mechanically checked
-by TLC**, a tagged release, and an OIDC-signed wheel — all in one
-artifact, all on one shell command. The contribution is in the
-assembly; the evidence is re-runnable from
-`pip install project-ghost==0.2.2`.
+Project Ghost is a **citation pattern for safety claims**. Its
+load-bearing contribution is the proposition that a safety claim
+should be issued together with everything a third party needs to
+reject it: a binding written statement (the ADR), a content-
+addressed log (the MCAP), a pure-function verifier exposed as a CLI,
+property tests, mechanical checks on the underlying invariants
+(TLA+/TLC), and a signed distribution channel (OIDC PyPI). We do
+not claim to have discovered the individual ingredients — each is
+standard practice — but we have not located a tool that ships them
+as one coherent unit reachable from a single shell command, and we
+treat that combination as the proper unit of analysis.
+
+The reference instantiation on a five-property autonomy supervisor
+exists as evidence that the pattern is workable, not as the
+contribution itself. The properties are deliberately simple; the
+recovery latency bound is elementary in hindsight; the partition
+theorem is structurally obvious. What is not obvious — what motivated
+the paper — is that the *assembly* makes safety claims operationally
+falsifiable in a way that prose-and-video assertions are not. The
+artifact is re-runnable from `pip install project-ghost==0.2.2`; the
+contribution stands or falls on whether the resulting verdict means
+what the ADR says it means, and on whether a third party can issue
+that verdict without our help. Both, we believe, are now true.
 
 ---
 

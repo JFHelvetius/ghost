@@ -21,47 +21,51 @@
 
 ## Resumen
 
-Describimos **Project Ghost**, una implementación de referencia open
-source de cinco propiedades formales de seguridad para autonomía
-bajo incertidumbre, verificables byte-exact desde cualquier run
-capturado mediante un único comando de shell:
-`ghost verify-properties --mcap <log>`. El conjunto de propiedades
-(BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1) cubre cuatro naturalezas
-distintas de afirmación de seguridad — comportamiento condicional en
-ambas direcciones del drift, una propiedad estructural incondicional
-del calibrador, una cota cuantitativa de latencia de recuperación, y
-un observador empírico para gating de regresión — cada una enunciada
-en un Architectural Decision Record (ADR) vinculante, verificada por
-una función pura sobre telemetría MCAP content-addressed, ejercitada
-por ~50 property tests dentro de una suite de 1687 tests,
+Las afirmaciones de seguridad en investigación de autonomía
+típicamente se enuncian en prosa y se ilustran con vídeos de
+simulación que el lector no puede re-ejecutar. Describimos
+**Project Ghost**, una plataforma open source cuya contribución
+principal es **un patrón de citación que permite a un tercero
+verificar cualquier afirmación de seguridad contra el run grabado,
+byte-exact, mediante un único comando de shell**:
+`pip install project-ghost==0.2.2`, luego
+`ghost verify-properties --mcap <log>`. El patrón compone siete
+ingredientes existentes — Architectural Decision Records (ADRs),
+telemetría MCAP content-addressed, verificadores función-pura,
+property tests con Hypothesis, gating CI, tagged releases, y wheels
+PyPI firmadas con OIDC — en una unidad coherente de reproducibilidad,
+con los invariantes subyacentes adicionalmente verificados por
+TLA+/TLC.
+
+Para ejercitar el patrón, instanciamos cinco propiedades de seguridad
+para el ciclo cerrado de un supervisor de autonomía de referencia
+(BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1). Cada una está enunciada
+en un ADR vinculante, verificada por una función pura sobre el MCAP,
+ejercitada por ~50 property tests dentro de una suite de 1687 tests,
 testimoniada inline en cada smoke de referencia, y self-enforced en
-cada push por CI.
+cada push por CI. Tres specs TLA+ cubren conjuntamente las cinco
+propiedades; juntos verifican 11 invariantes sobre el espacio de
+estados bounded, incluyendo un teorema de partición
+`BAUD ⊕ ERUR` y una cota cerrada de latencia de recuperación
+`L ≤ peak + W − 1` (Theorem 1), mostrada ajustada mediante un trace
+testigo donde se alcanza la igualdad. Reconocemos que la cota es
+elemental en retrospectiva; la presentamos como evidencia de apoyo
+para el patrón más amplio de citación, no como una contribución
+teórica autónoma.
 
-La partición BAUD/ERUR y la propiedad de degradación monótona están
-adicionalmente **verificadas mecánicamente** por TLA+/TLC sobre el
-espacio de estados abstracto del par de policies de referencia.
-Hacemos cuatro contribuciones claimable: **(1)** una cota
-estructural cerrada y ajustada de latencia de recuperación
-`L ≤ peak + W − 1` para filtros de ventana deslizante de
-count-of-K-in-W (Theorem 1, §6.4); **(2)** un teorema de partición
-formal `BAUD ⊕ ERUR` sobre el espacio de comportamiento condicional
-del ciclo cerrado, verificado mecánicamente por TLC; **(3)** un
-primitivo de reproducibilidad — un verificador content-addressed
-alcanzable desde `pip install project-ghost==0.2.2` que detecta bugs
-inyectados (§7.2) y produce JSON output determinístico across
-machines; y **(4)** un patrón end-to-end de citación de seguridad —
-MCAP + ADR + verificador + Hypothesis test + CI gate + tagged
-release + wheel OIDC-firmada como una unidad coherente.
+La evaluación empírica sobre una matriz de violaciones de seis
+categorías de bugs inyectados, tres policies de calibración
+estructuralmente distintas, tres perfiles de drift
+shape-realistic, y un benchmark head-to-head contra RTAMT,
+establece que el verificador es policy-agnostic, corre en
+21–406 ms (lineal en longitud del trace), y produce MCAPs y
+property-report JSON canonicalizado byte-idénticos entre runners
+Linux y Windows en CI. El artefacto completo es re-ejecutable
+desde `pip install project-ghost==0.2.2`.
 
-La evaluación empírica sobre 9 combinaciones (policy, cycle-count)
-muestra que el verificador completa en 21 ms para runs de 10 ciclos
-y 406 ms para runs de 200 ciclos (lineal en la longitud del trace),
-y que el conjunto de propiedades se mantiene en las tres
-parametrizaciones de policy de referencia.
-
-**Palabras clave:** autonomía verificable, propiedades formales de
-seguridad, runtime verification, confianza calibrada, verificación
-de replay byte-exact, TLA+, MCAP, monitores de ventana deslizante.
+**Palabras clave:** patrones de citación de seguridad, verificación
+reproducible de seguridad, runtime verification, telemetría
+content-addressed, confianza calibrada, TLA+/TLC, MCAP.
 
 ---
 
@@ -101,53 +105,73 @@ del verificador.
 
 ### 1.1 Contribuciones
 
-Hacemos **cuatro contribuciones claimable**, dos formales y dos
-operacionales:
+Ordenamos nuestras contribuciones **desde la más load-bearing (un
+patrón de ingeniería) hasta la más estrecha (una cota útil de
+apoyo)**:
 
-- **C1 — Theorem 1 (cota ajustada de latencia de recuperación).**
-  Una cota cerrada superior `L ≤ peak + W − 1` sobre la latencia
-  de recuperación de cualquier supervisor de autonomía closed-loop
-  que use una ventana deslizante de tamaño `W` y un threshold
-  count-of-K-in-W sobre outcomes mínimos `M`, formalizada en §6.4 y
-  mostrada ajustada mediante un trace testigo donde la igualdad se
-  alcanza (`L = 38 = 7 + 32 − 1`).
-- **C2 — Teorema de partición verificado mecánicamente.** El
-  comportamiento condicional del ciclo cerrado de referencia se
-  particiona en `BAUD ⊕ ERUR`. Enunciado en TLA+ como
-  `INV_PARTITION` y verificado por TLC sobre el espacio de estados
-  alcanzable completo del modelo abstracto (constantes bounded
-  `M=2, K=1, W=3`), es la primera formalización que conocemos para
-  supervisores de seguridad de ventana deslizante.
-- **C3 — Primitivo de reproducibilidad con capacidad de detección
-  demostrada.** Un verificador CLI de una línea
+- **C1 — Un patrón de citación de seguridad.** Una composición de
+  siete ingredientes existentes — ADR + MCAP content-addressed +
+  verificador función-pura + Hypothesis property test + CI gate +
+  tagged release + wheel PyPI firmada por OIDC — ensamblados como
+  una sola unidad de reproducibilidad para que un tercero pueda
+  verificar cualquier afirmación de seguridad citada contra el run
+  capturado vía un comando de shell, sin confiar en el productor.
+  Este es el patrón que creemos genuinamente diferenciante; el
+  resto del paper es la evidencia de que funciona en la práctica.
+- **C2 — Un primitivo de reproducibilidad con capacidad de
+  detección demostrada.** Un verificador CLI de una línea
   `ghost verify-properties` sobre logs MCAP content-addressed,
-  distribuido vía PyPI con OIDC trusted publishing. Capacidad de
-  detección de bugs demostrada en §8.2: un smoke con un calibrador
-  buggy inyectado produce `BAUD-v1: VIOLATED`, exit code 1,
-  `violation_count: 12` en el verificador no modificado.
-- **C4 — Patrón end-to-end de citación de seguridad.** MCAP
-  content-addressed + ADR + verificador función-pura + Hypothesis
-  property test + CI gate + tagged release + wheel PyPI firmada por
-  OIDC, ensamblados como una sola unidad de reproducibilidad para
-  que un tercero pueda verificar cualquier afirmación de seguridad
-  citada contra el run capturado sin confiar en el productor.
+  distribuido vía PyPI con OIDC trusted publishing. La detección de
+  bugs se demuestra sistemáticamente en §8.2 vía una violation
+  matrix de seis categorías (calibrador, decisión, actuación, y
+  threshold inyectados; las seis detectadas). El verificador
+  produce JSON output determinístico across Linux y Windows
+  (enforced por CI, §8.7) y se mantiene policy-agnostic across tres
+  policies de calibración estructuralmente distintas (§8.4).
+- **C3 — Un conjunto de propiedades con semánticas
+  mecánicamente-checked para un supervisor de autonomía de
+  referencia.** Cinco propiedades (BAUD-v1, ERUR-v1, MD-v1, RLB-v1,
+  FPB-v1) instanciando el patrón de citación sobre un ciclo cerrado
+  representativo. Tres specs TLA+ cubren el conjunto de propiedades
+  con 11 invariantes verificados por TLC sobre un modelo abstracto
+  bounded en CI, incluyendo un teorema de partición
+  `BAUD ⊕ ERUR` y un invariante de degradación monótona. Las
+  propiedades en sí son deliberadamente simples; la contribución
+  es la mecanización end-to-end, no la formulación.
+- **C4 — Una cota cerrada ajustada de latencia de recuperación**
+  para filtros de ventana deslizante count-of-K-in-W (Theorem 1,
+  §6.3): `L ≤ peak + W − 1`, alcanzada con igualdad por un trace
+  testigo (`L = 38 = 7 + 32 − 1`). La cota se sigue directamente
+  del mecanismo de ventana deslizante y es elemental en
+  retrospectiva; no la localizamos enunciada como forma cerrada en
+  nuestra revisión de literatura (§2.3) pero no hacemos un claim
+  amplio de novedad y la tratamos como evidencia de apoyo para C3
+  en lugar de resultado teórico autónomo.
 
-C1 y C2 son contribuciones formales, novedosas hasta donde sabemos
-después de una revisión deliberada de prior art (§2.3). C3 y C4 son
-contribuciones operacionales y de patrón; su novedad descansa en la
-matriz de comparación de §2.3.
+C1 y C2 son las contribuciones que esperamos envejezcan mejor. C3
+las instancia sobre un supervisor representativo; C4 aporta una cota
+útil que el spec `Rlb.tla` verifica mecánicamente. Posicionamos el
+trabajo como un **paper de sistemas / tools, no un paper de
+teoría**.
 
 ### 1.2 Qué es y qué no es este paper
 
-Este paper no introduce nueva teoría de estimación; los ingredientes
-de filtrado, calibración, y FDI sobre los que Ghost descansa están
-bien establecidos (§2.1). La matemática de C1 es elemental en
-retrospectiva pero no, hasta donde sabemos, previamente enunciada
-como una cota cerrada en la literatura peer-reviewed de runtime
-verification. La novedad de C2 está en mecanizar la partición para
-supervisores de autonomía de ventana deslizante específicamente;
-patrones TLA+ análogos existen para algoritmos distribuidos pero no
-para este dominio.
+Este es un paper de ingeniería e infraestructura, no un paper de
+teoría. Los ingredientes de filtrado, calibración, y FDI sobre los
+que Ghost descansa están bien establecidos (§2.1). La matemática de
+Theorem 1 es elemental en retrospectiva, y la presentamos como
+evidencia de que el patrón de citación puede transportar un
+resultado preciso, no como una contribución teórica autónoma. El
+teorema de partición de §5.3 es novedoso *en la forma que lo
+mecanizamos* — un `INV_PARTITION` en TLA+ sobre el ciclo cerrado de
+referencia — pero la observación subyacente de que "drift fired" y
+"drift clean and KNOWN" particionan el espacio condicional per-ciclo
+es estructuralmente simple. Resistimos deliberadamente sobre-claimar
+sobre cualquiera de los dos resultados. La contribución que más
+estamos dispuestos a defender es **la combinación ingeniada** (C1)
+y su **demostración operacional** (C2): que un tercero puede emitir
+un comando de shell y obtener un veredicto byte-exact contra un
+ADR vinculante.
 
 ---
 
@@ -674,15 +698,32 @@ que las secciones §Scope per-propiedad de los ADRs.
 
 ## 11. Conclusión
 
-Project Ghost no es una nueva teoría de autonomía bajo incertidumbre.
-Es una *referencia del patrón de citación* que la teoría existente
-merece: un log content-addressed, un verificador función-pura sobre
-CLI, statements de propiedades formales en ADRs vinculantes,
-Hypothesis property tests, un CI gate, **tres specs TLA+
-mecánicamente verificados por TLC**, un tagged release, y un wheel
-firmado por OIDC — todo en un solo artefacto, todo en un comando de
-shell. La contribución está en el ensamblaje; la evidencia es
-re-ejecutable desde `pip install project-ghost==0.2.2`.
+Project Ghost es un **patrón de citación para afirmaciones de
+seguridad**. Su contribución load-bearing es la proposición de que
+una afirmación de seguridad debe emitirse junto con todo lo que un
+tercero necesita para rechazarla: un statement escrito vinculante
+(el ADR), un log content-addressed (el MCAP), un verificador
+función-pura expuesto como CLI, property tests, checks mecánicos
+sobre los invariantes subyacentes (TLA+/TLC), y un canal de
+distribución firmado (OIDC PyPI). No claimamos haber descubierto
+los ingredientes individuales — cada uno es práctica estándar —
+pero no hemos localizado un tool que los distribuya como una sola
+unidad coherente alcanzable desde un comando de shell, y tratamos
+esa combinación como la unidad de análisis adecuada.
+
+La instanciación de referencia sobre un supervisor de autonomía
+con cinco propiedades existe como evidencia de que el patrón es
+operable, no como la contribución en sí. Las propiedades son
+deliberadamente simples; la cota de latencia de recuperación es
+elemental en retrospectiva; el teorema de partición es
+estructuralmente obvio. Lo que no es obvio — lo que motivó el
+paper — es que el *ensamblaje* hace las afirmaciones de seguridad
+operacionalmente falsables de una manera que las aserciones
+prosa-y-vídeo no son. El artefacto es re-ejecutable desde
+`pip install project-ghost==0.2.2`; la contribución se sostiene o
+cae sobre si el veredicto resultante significa lo que el ADR dice
+que significa, y sobre si un tercero puede emitir ese veredicto
+sin nuestra ayuda. Ambas, creemos, son ahora ciertas.
 
 ---
 
