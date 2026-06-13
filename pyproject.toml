@@ -51,6 +51,12 @@ app = [
     "pandas>=2.0,<3.0",
     "plotly>=5.18,<6.0",
 ]
+adapters = [
+    # Real-flight ingestion. PX4 ULog adapter (project_ghost.adapters.px4_ulog).
+    # Optional because most users of `ghost verify-properties` do not need
+    # to ingest ULog files; the base install ships only MCAP support.
+    "pyulog>=1.2,<2.0",
+]
 dev = [
     "ruff>=0.6.0",
     "mypy>=1.11",

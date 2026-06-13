@@ -917,6 +917,48 @@ MCAP adding ${\sim}20$\,ms of parsing on the user side. The two
 numbers measure different things and we report them only to give
 the reader a sense of order of magnitude.
 
+\subsection{On real-data validation: state, gap, and v0.3.0 commitment}
+\label{sec:realdata-commitment}
+
+We acknowledge directly: the strongest standing criticism of this
+paper is that every MCAP we verify comes from simulation. A
+reviewer can fairly grade real-data validation low without
+overreaching. We address that critique with three items.
+
+\textbf{What v0.2.2 actually ships:}
+\texttt{project\_ghost.adapters.px4\_ulog}, a real PX4 ULog parser
+built on \texttt{pyulog}, declared as the \texttt{[adapters]}
+optional extra. It reads \texttt{vehicle\_local\_position} and
+\texttt{vehicle\_attitude} from any PX4 $\ge$ 1.13 ULog,
+time-aligns them by nearest-timestamp pairing, normalises the
+quaternion, and returns typed \texttt{ULogPoseSample} records
+mapped to Ghost's units. 15 unit tests cover the happy path, the
+nearest-timestamp pairing, quaternion normalisation, every
+documented error mode, and custom topic names. A launcher CLI at
+\texttt{docs/paper/scripts/px4\_ulog\_adapter\_skeleton.py} runs
+the parser on a real \texttt{.ulg} file as a sanity check.
+
+\textbf{What is still missing in v0.2.2:} the parser returns pose
+samples; it does not yet drive the Ghost closed-loop pipeline
+end-to-end. That requires picking a ground-truth source per
+dataset and a calibration policy re-tuning. The repository does
+not yet ship a real ULog or a verified golden MCAP, and no
+external user has run the parser against a public flight log to
+our knowledge.
+
+\textbf{Public commitment for v0.3.0:} we commit to shipping, by
+the next minor release of \texttt{project-ghost}, all three of the
+following: (1) a licensed real PX4 ULog or EuRoC MAV sequence as
+adapter input; (2) an end-to-end test driving the adapter, the
+Ghost pipeline, and \texttt{ghost verify-properties} over that
+real dataset, with the verdict reported in the CHANGELOG; (3) an
+ADR-0037 documenting the ground-truth-source policy and the
+per-dataset calibration tuning. If those three items are not
+present in the release tagged after v0.2.2, the reproducibility
+claim should be considered incomplete to that exact extent, and we
+ask reviewers and adopters to point that out publicly. We treat
+the commitment as binding.
+
 \subsection{Determinism across replicates and machines}
 Within a single machine, replicate runs produce byte-identical
 MCAPs. \textbf{Cross-machine byte-equality of the MCAP} is enforced

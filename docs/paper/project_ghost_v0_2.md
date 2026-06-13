@@ -1083,7 +1083,76 @@ signals in 0.15 ms, with signal extraction from the MCAP adding
 different things and we report them only to give the reader a sense
 of order of magnitude.
 
-### 8.7 Determinism across replicates and machines
+### 8.7 On real-data validation: state, gap, and v0.3.0 commitment
+
+We acknowledge directly: the strongest standing criticism of this
+paper is that every MCAP we verify comes from simulation. A
+reviewer can fairly grade real-data validation low without
+overreaching. We address that critique in this section with three
+items — what we shipped, what is still missing, and a dated
+commitment.
+
+**What v0.2.2 actually ships:**
+
+- `project_ghost.adapters.px4_ulog` — a real ULog parser built on
+  `pyulog`, declared as the `[adapters]` optional extra of the PyPI
+  package. It reads `vehicle_local_position` and
+  `vehicle_attitude` from any PX4 ≥ 1.13 ULog, time-aligns them by
+  nearest-timestamp pairing, normalises the quaternion, and
+  returns a typed list of `ULogPoseSample` records mapped to Ghost's
+  units (metres ENU, Hamilton-convention quaternion). The mapping
+  from `eph` / `epv` to per-axis position standard deviation is
+  documented honestly, including the PX4 convention that conflates
+  horizontal `x` and `y`.
+- 15 unit tests in `tests/adapters/test_px4_ulog.py` covering the
+  happy path, the nearest-timestamp pairing, quaternion
+  normalisation, every documented error mode, and custom topic
+  names. The tests stand in for a real ULog via `unittest.mock` of
+  `pyulog.ULog` because the repository does not yet check in a
+  flight log artefact.
+- A launcher CLI at
+  [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](docs/paper/scripts/px4_ulog_adapter_skeleton.py)
+  that runs the parser on a real `.ulg` file and prints the
+  first/last pose samples for sanity-checking before any
+  downstream pipeline run.
+
+**What is still missing in v0.2.2:**
+
+- The parser returns pose samples; it does not yet drive the
+  Ghost closed-loop pipeline end to end. Doing so requires
+  picking a ground-truth source per dataset (motion capture, RTK
+  GPS, or the vacuous EKF2-self fallback) and a calibration
+  policy re-tuning (the reference smoke's `M=4, K=2, W=32` is
+  sim-tuned and will likely need re-tuning at flight-grade noise).
+- The repository does not ship a real ULog or a verified
+  golden MCAP from one. No external user has yet run the parser
+  against a public flight log to our knowledge.
+- The honest scope claim of paper §9 ("Sim, not hardware") remains
+  intact at this release.
+
+**Public commitment for v0.3.0:**
+
+We commit to shipping, by the next minor release of
+`project-ghost`, all three of the following:
+
+1. A licensed real PX4 ULog or EuRoC MAV sequence checked in (or
+   downloaded reproducibly by a script that records the source URL,
+   the SHA-256, and the dataset's licence), used as the input to
+   the adapter.
+2. An end-to-end test that drives the adapter, the Ghost pipeline,
+   and `ghost verify-properties` over that real dataset, with the
+   property verdict reported in the CHANGELOG of the release.
+3. An ADR-0037 documenting the ground-truth-source policy and the
+   per-dataset calibration parameter tuning, both of which become
+   load-bearing for honest interpretation of the verdict.
+
+If those three items are not present in the release tagged after
+v0.2.2, the reproducibility claim of this paper should be
+considered incomplete to that exact extent, and we ask reviewers
+and adopters to point that out publicly. We treat the commitment
+as binding.
+
+### 8.8 Determinism across replicates and machines
 
 Within a single machine, replicate runs of the same `(M, K, n)`
 combination produce byte-identical MCAPs (verified by SHA-256

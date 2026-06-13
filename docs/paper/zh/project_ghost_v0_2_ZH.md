@@ -603,7 +603,39 @@ schema 感知的 CLI 验证器与 hand-stated 谓词时**。Performance 测
 量仅作为数量级报告（Ghost ~23 ms，RTAMT ~0.15 ms + ~20 ms 信号
 提取）；这些数字测量不同的事物。
 
-### 8.7 跨副本和跨机器决定论
+### 8.7 关于真实数据验证：状态、差距和 v0.3.0 承诺
+
+我们直接承认：本论文最强烈的批评是所有 MCAP 都来自模拟。我们用
+三项内容回应——我们交付了什么、还缺什么、以及一个有日期的承
+诺。
+
+**v0.2.2 实际交付：**
+
+- `project_ghost.adapters.px4_ulog` —— 基于 `pyulog` 构建的真实
+  ULog 解析器，作为 `[adapters]` 可选 extra 声明。从任何 PX4 ≥
+  1.13 ULog 中读取 `vehicle_local_position` 和 `vehicle_attitude`，
+  按最近时间戳配对，归一化四元数，返回映射到 Ghost 单位的
+  `ULogPoseSample` 记录。
+- `tests/adapters/test_px4_ulog.py` 中的 15 个单元测试涵盖 happy
+  path、配对、归一化、错误模式和自定义主题。
+- CLI 启动器位于
+  [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](../scripts/px4_ulog_adapter_skeleton.py)。
+
+**v0.2.2 仍然缺失：** 解析器返回姿态样本；尚未端到端驱动 Ghost
+闭环管道。这需要选择 ground-truth 源（动作捕捉、RTK GPS 或空虚
+的 EKF2 后备）和校准参数的重新调优。仓库尚未发送真实的 ULog 或
+从其派生的金标准 MCAP。
+
+**v0.3.0 公开承诺：** 我们承诺在 `project-ghost` 的下一个次要版
+本发布时，交付：（1）作为 adapter 输入的真实 PX4 ULog 或
+EuRoC MAV 序列；（2）驱动 adapter、Ghost 管道和验证器对该真实
+数据集进行端到端测试，并在 CHANGELOG 中报告属性判定；（3）记
+录 ground-truth-source 策略和每数据集校准参数调优的 ADR-0037。
+如果在 v0.2.2 之后标记的发布中没有这三项，则应认为本论文的可
+重现性声明在这个范围内不完整，我们请求 reviewer 和采用者公开
+指出这一点。我们将该承诺视为有约束力。
+
+### 8.8 跨副本和跨机器决定论
 
 由 CI 与 matrix ubuntu+windows 强制执行，diff 化 MCAP 和规范化
 JSON 的 SHA-256。

@@ -725,7 +725,43 @@ hand-stated**. Medición de performance reportada solo como orden de
 magnitud (Ghost ~23 ms, RTAMT ~0.15 ms + ~20 ms de signal
 extraction); los números miden cosas distintas.
 
-### 8.7 Determinismo cross-replicates y cross-machine
+### 8.7 Sobre validación real: estado, gap y commitment v0.3.0
+
+Reconocemos: la crítica más fuerte que tiene este paper es que
+todos los MCAPs vienen de simulación. La respondemos con tres ítems
+— qué entregamos, qué falta, y un commitment con fecha.
+
+**Lo que v0.2.2 entrega:**
+
+- `project_ghost.adapters.px4_ulog` — un parser ULog real
+  basado en `pyulog`, declarado como extra opcional `[adapters]`.
+  Lee `vehicle_local_position` y `vehicle_attitude` de cualquier
+  ULog de PX4 ≥ 1.13, alinea por nearest-timestamp, normaliza el
+  quaternion, y retorna `ULogPoseSample` records mapeados a las
+  unidades de Ghost.
+- 15 unit tests en `tests/adapters/test_px4_ulog.py` cubriendo
+  happy path, pairing, normalización, errores, custom topics.
+- Launcher CLI en
+  [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](../scripts/px4_ulog_adapter_skeleton.py).
+
+**Lo que aún falta en v0.2.2:** El parser retorna pose samples; aún
+no maneja el pipeline closed-loop end-to-end. Eso requiere fijar la
+fuente de ground truth (mocap, RTK GPS, fallback EKF2 vacuo) y
+re-tune de los parámetros de calibración. El repositorio no envía
+todavía un ULog real ni un golden MCAP derivado.
+
+**Commitment público v0.3.0:** Nos comprometemos a enviar, antes
+del próximo minor release, (1) un ULog real licenciado o secuencia
+EuRoC MAV usada como input del adapter; (2) un test end-to-end que
+maneje adapter + pipeline + verifier sobre ese dataset con el
+veredicto reportado en el CHANGELOG; (3) un ADR-0037 documentando
+ground-truth-source policy + calibration tuning. Si esos tres
+ítems no están en el release siguiente a v0.2.2, el claim de
+reproducibilidad debe considerarse incompleto en esa medida y
+pedimos a reviewers y adoptantes que lo señalen públicamente.
+Tratamos el commitment como vinculante.
+
+### 8.8 Determinismo cross-replicates y cross-machine
 
 Enforced por CI con matrix ubuntu+windows que diff-ea SHA-256 del
 MCAP y del JSON canonicalizado.
