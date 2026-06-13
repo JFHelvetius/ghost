@@ -154,6 +154,52 @@ las instancia sobre un supervisor representativo; C4 aporta una cota
 trabajo como un **paper de sistemas / tools, no un paper de
 teoría**.
 
+#### Figura 1: El patrón de citación de seguridad
+
+```mermaid
+flowchart LR
+    subgraph P["Productor (autor Ghost / operador)"]
+        ADR["📜 ADR vinculante<br/>predicado de propiedad"]
+        Code["🔧 Verificador función-pura<br/>+ pipeline closed-loop"]
+        Spec["🧪 Property tests + TLA+<br/>(11 invariantes)"]
+    end
+    subgraph R["CI + release firmado"]
+        CIv["⚙ ghost verify-properties<br/>+ TLC + cross-machine"]
+        Tag["🏷 Release tagged v0.2.2<br/>wheel PyPI firmada OIDC"]
+    end
+    subgraph A["Artefacto citable"]
+        MCAP["📦 Log MCAP<br/>SHA-256, byte-exact"]
+        Cite["🔗 La citación<br/>pip install + SHA-256 + ADR ID"]
+    end
+    subgraph V["Tercero (cualquiera)"]
+        Cmd["💻 ghost verify-properties<br/>--mcap log.mcap"]
+        Out["📋 Exit 0/1 + JSON determinístico<br/>(veredicto por propiedad)"]
+    end
+    ADR --> Code
+    Code --> Spec
+    Spec --> CIv
+    CIv --> Tag
+    Code -. produce .-> MCAP
+    Tag --> Cite
+    MCAP --> Cite
+    Cite ==> Cmd
+    Cmd ==> Out
+```
+
+La figura se lee de izquierda a derecha como el pipeline operacional
+de una afirmación de seguridad bajo el patrón. En el lado del
+productor, un ADR vinculante enuncia el predicado de la propiedad,
+un verificador función-pura implementa su semántica, y los property
+tests Hypothesis + specs TLA+ ejercitan los invariantes. CI gate-ea
+cada push y el tagging emite un release firmado por OIDC. El
+artefacto citable carga dos mitades: el run (MCAP con SHA-256) y la
+herramienta de verificación (wheel PyPI fijada por versión). Un
+tercero las concatena con un comando de shell y obtiene un JSON
+veredicto determinístico por propiedad. **La contribución del paper
+es el ensamblaje de las siete cajas en una sola unidad shippable**;
+todo lo demás (el conjunto de propiedades, la cota cerrada, los
+specs TLA+) instancia el patrón sobre un supervisor representativo.
+
 ### 1.2 Qué es y qué no es este paper
 
 Este es un paper de ingeniería e infraestructura, no un paper de
@@ -635,12 +681,35 @@ slow_biased_drift, cascading_failure). Las 5 propiedades HOLD en
 los 3. Honesto: shape-realistic, no data-real; integración con
 datos reales de PX4/ROSBag es roadmap futuro.
 
-### 8.6 Benchmark cuantitativo vs RTAMT
+### 8.6 Comparación contra RTAMT: matriz de capacidades, no carrera
 
-Ghost (BAUD-v1 exacto) HOLDS en 23 ms; RTAMT (STL aproximación)
-VIOLATED en 0.15 ms. Diferencia de veredictos refleja gap de
-expresividad: STL no puede expresar K-of-M-in-W como single formula.
-Los tools son complementarios.
+Después de intentar un benchmark head-to-head (script preservado en
+[`benchmark_vs_rtamt.py`](../scripts/benchmark_vs_rtamt.py)) decidimos
+**no tratarlo como comparación competitiva**: Ghost y RTAMT
+codifican propiedades distintas sobre el mismo trace, así que una
+diferencia de veredicto no establece un defecto en ninguno de los
+dos tools. En su lugar reportamos una matriz de **capacidades**
+publicadas por ambos tools sobre el mismo MCAP (RTAMT 0.3.5; Ghost
+v0.2.2):
+
+| Capacidad | Ghost v0.2.2 | RTAMT 0.3.5 |
+|---|:---:|:---:|
+| Lenguaje nativo | Predicado Python sobre schema MCAP | STL |
+| Lee MCAP directo | Sí | No (usuario extrae signals) |
+| K-en-W como single formula | Sí (intrínseco) | No (contadores auxiliares) |
+| Semántica robustness | No (solo veredicto) | Sí (real-valued) |
+| STL arbitrario | Fuera de scope | Sí (propósito del tool) |
+| Detección de bugs sobre pipeline Ghost | Sistemático (§8.2) | Requiere re-encoding por propiedad |
+| Distribución | PyPI + wheel firmado OIDC | PyPI source |
+
+Los tools son complementarios. **RTAMT es la elección correcta
+cuando el usuario quiere STL declarativo sobre signals arbitrarios
+con robustness cuantitativo**. **Ghost es la elección correcta
+cuando el usuario quiere un verificador CLI content-addressed
+schema-aware para un supervisor específico con predicados
+hand-stated**. Medición de performance reportada solo como orden de
+magnitud (Ghost ~23 ms, RTAMT ~0.15 ms + ~20 ms de signal
+extraction); los números miden cosas distintas.
 
 ### 8.7 Determinismo cross-replicates y cross-machine
 
@@ -682,7 +751,11 @@ que las secciones §Scope per-propiedad de los ADRs.
 ## 10. Future work
 
 - **ADR-0037 (candidate)**: integración con datos de flight reales
-  vía adapter PX4 ULog / ROSBag / EuRoC MAV.
+  vía adapter PX4 ULog / ROSBag / EuRoC MAV. Skeleton ejecutable
+  pero no implementado con el shape exacto de la integración
+  (config dataclass, ground-truth-source enum, contrato de
+  conversión) en
+  [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](../scripts/px4_ulog_adapter_skeleton.py).
 - **ADR-0038 (candidate)**: prueba TLAPS de la versión unbounded de
   Theorem 1 y del teorema de partición.
 - **ADR-0039 (candidate)**: FPB-v2 estadístico con cota Monte Carlo

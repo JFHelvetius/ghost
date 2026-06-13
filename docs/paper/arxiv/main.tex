@@ -24,6 +24,8 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,backgrounds,fit}
 \usepackage[a4paper,margin=1in]{geometry}
 \usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=blue!50!black,urlcolor=blue!60!black]{hyperref}
 
@@ -199,7 +201,78 @@ C1 and C2 are the contributions we expect to age best. C3
 instantiates them on a representative supervisor; C4 supplies a
 useful bound that the spec \texttt{Rlb.tla} verifies mechanically.
 We position the work as a \textbf{systems / tools paper, not a
-theory paper}.
+theory paper}. Figure~\ref{fig:pattern} summarises the pattern.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize,
+  node distance=4mm and 6mm,
+  box/.style={
+    draw, rounded corners=2pt, align=center, inner sep=4pt,
+    minimum width=29mm, minimum height=10mm
+  },
+  producer/.style={box, fill=blue!8, draw=blue!50!black},
+  ci/.style={box, fill=green!10, draw=green!50!black},
+  artifact/.style={box, fill=yellow!18, draw=orange!70!black},
+  party/.style={box, fill=red!8, draw=red!60!black},
+  flow/.style={-{Latex[length=2mm,width=1.6mm]}, thick},
+  flowdash/.style={-{Latex[length=2mm,width=1.6mm]}, thick, dashed, gray!70!black},
+  flowbig/.style={
+    -{Latex[length=2.6mm,width=2mm]}, ultra thick, draw=red!50!black
+  },
+]
+
+\node[producer] (adr) {Binding ADR\\\emph{property predicate}};
+\node[producer, below=of adr] (code) {Pure-function verifier\\+ closed-loop pipeline};
+\node[producer, below=of code] (spec) {Hypothesis tests\\+ TLA+ (11 invariants)};
+
+\node[ci, right=14mm of code] (ci) {CI gate\\verify + TLC + cross-machine};
+\node[ci, below=of ci] (tag) {Tagged release\\OIDC-signed PyPI wheel};
+
+\node[artifact, right=14mm of ci] (mcap) {MCAP log\\SHA-256, byte-exact};
+\node[artifact, below=of mcap] (cite) {\textbf{The citation}\\\texttt{pip install} + SHA-256};
+
+\node[party, right=14mm of mcap] (cmd) {\texttt{ghost verify-\\properties --mcap}};
+\node[party, below=of cmd] (out) {Exit 0/1 +\\deterministic JSON};
+
+% producer chain
+\draw[flow] (adr) -- (code);
+\draw[flow] (code) -- (spec);
+
+% producer -> CI
+\draw[flow] (spec.east) -- (ci.west);
+\draw[flow] (ci) -- (tag);
+
+% producer -> artifact (the run)
+\draw[flowdash] (code.east) -- ++(3mm,0) |- (mcap.west);
+
+% release + run -> citation
+\draw[flow] (tag.east) -- ++(3mm,0) |- (cite.west);
+\draw[flow] (mcap) -- (cite);
+
+% citation -> third party
+\draw[flowbig] (cite.east) -- ++(3mm,0) |- (cmd.west);
+\draw[flow] (cmd) -- (out);
+
+% Cluster labels above each subgraph
+\node[font=\scriptsize\bfseries, above=2mm of adr] {Producer};
+\node[font=\scriptsize\bfseries, above=2mm of ci] {CI + release};
+\node[font=\scriptsize\bfseries, above=2mm of mcap] {Citable artifact};
+\node[font=\scriptsize\bfseries, above=2mm of cmd] {Third party};
+
+\end{tikzpicture}
+\caption{\textbf{The safety citation pattern (C1).} A binding ADR
+states the property predicate; a pure-function verifier and TLA+
+specs encode its semantics; CI gates every push and tagging cuts an
+OIDC-signed release. The citable artifact is the pair
+(MCAP SHA-256, PyPI version). A third party concatenates them with
+one shell command and obtains a deterministic JSON verdict per
+property. The contribution is the assembly of the seven boxes into
+one shippable unit; the property set, the closed-form bound, and the
+TLA+ specs instantiate the pattern on a representative supervisor.}
+\label{fig:pattern}
+\end{figure}
 
 \subsection{What this paper is and is not}
 
@@ -767,54 +840,59 @@ here establish that the verifier and property set generalise to
 non-trivial failure shapes; full flight-data validation is future
 work.
 
-\subsection{Quantitative comparison against RTAMT}
+\subsection{Comparison against RTAMT: capability matrix, not race}
 \label{sec:rtamt-bench}
 
-To put the comparison matrix of \S\ref{sec:comparison} on
-quantitative ground, we benchmarked Ghost's \texttt{verify\_baud}
-against an STL-based safety check in RTAMT~\cite{nikovic2020rtamt}
-(version 0.3.5 from PyPI). The benchmark generates a fresh 50-cycle
-smoke MCAP, extracts time-aligned signals
-(\texttt{error\_magnitude}, \texttt{proceed\_indicator}), and times
-both verifiers over 5 replicates with a warm-up cycle.
+The comparison matrix of \S\ref{sec:comparison} differentiates
+Ghost from RTAMT~\cite{nikovic2020rtamt} qualitatively. A natural
+follow-up is to run them head-to-head on the same MCAP and compare
+verdicts plus wall-clock time. We attempted that benchmark and
+preserve the script for reproducibility, but \textbf{we do not
+treat its result as a competitive comparison}: Ghost and RTAMT
+encode different properties on the same trace, so a verdict
+difference does not establish a defect in either tool. The script
+\texttt{docs/paper/scripts/benchmark\_vs\_rtamt.py} is preserved
+for reproducibility; its output lives in
+\texttt{docs/paper/outputs/benchmark\_vs\_rtamt.json}.
 
-The STL formula approximating BAUD-v1 is
-$G_{[0,0.4]}(\mathrm{error} > 3) \rightarrow (\mathrm{proceed} < 0.5)$:
-``whenever the prediction error has been above 3-sigma for the past
-0.4-second window ($\sim$4 cycles at 10\,Hz), the agent must not be
-issuing PROCEED''. This is the closest expressible approximation;
-STL cannot natively count $K$-of-$M$-in-$W$ occurrences as a single
-formula.
+Instead, Table~\ref{tab:rtamt-bench} states the \emph{capabilities}
+the two tools offer over the same MCAP, evaluated by their
+published feature sets (RTAMT 0.3.5 from PyPI; Ghost v0.2.2). This
+framing is what a reader can defend without entering an arms race
+about which STL encoding ``really'' represents BAUD-v1.
 
 \begin{table}[h]
 \centering
-\small
-\begin{tabular}{lp{4.2cm}cr l}
+\footnotesize
+\begin{tabular}{lcc}
 \toprule
-\textbf{Tool} & \textbf{Property language} & \textbf{Verdict} & \textbf{Time (ms)} & \textbf{Setup} \\
+\textbf{Capability} & \textbf{Ghost v0.2.2} & \textbf{RTAMT 0.3.5} \\
 \midrule
-Ghost \texttt{verify\_baud} (BAUD-v1 exact) & Python predicate over MCAP schema & \textbf{HOLDS} & 23.44 & 1-line CLI \\
-RTAMT (STL dense-time)                     & $G_{[0,0.4]}(e>3 \to p<0.5)$       & VIOLATED         &  0.15 & 12-line glue \\
+Native property language                              & Python predicate over MCAP schema & STL \\
+Reads MCAP directly                                   & Yes (\texttt{MCAPReplayReader})   & No (user extracts signals) \\
+Counts of $K$-in-$W$ as a single formula              & Yes (intrinsic)                   & No (auxiliary counters needed) \\
+Robustness semantics                                  & No (verdict only)                 & Yes (real-valued) \\
+Arbitrary user-defined STL                            & Out of scope                      & Yes (the tool's purpose) \\
+Bug-detection over Ghost's reference pipeline         & Demonstrated in \S\ref{sec:violation}  & Requires re-encoding per property \\
+Distribution                                          & PyPI + OIDC-signed wheel          & PyPI source distribution \\
+Typed per-property report                             & Yes                               & No (robustness/time) \\
 \bottomrule
 \end{tabular}
-\caption{Quantitative benchmark on the reference 50-cycle smoke
-MCAP. Wall-clock times are means of 5 replicates with a warm-up.
-Verdicts differ because STL cannot express BAUD-v1's
-$K$-of-$M$-in-$W$ predicate exactly; the difference is informative,
-not a bug.}
+\caption{Capability matrix Ghost vs RTAMT. The two tools are
+complementary, not direct competitors: RTAMT for declarative STL
+over arbitrary signals with quantitative robustness; Ghost for a
+content-addressed CLI verifier for a specific supervisor with
+hand-stated predicates.}
 \label{tab:rtamt-bench}
 \end{table}
 
-\textbf{Honest reading.} (1) The verdicts differ because RTAMT's
-STL approximation is strictly weaker than BAUD-v1; STL cannot count
-$K$-of-$M$-in-$W$. RTAMT therefore flags the approximation while
-Ghost holds on the exact property. (2) Wall-clock times measure the
-verification step only; signal extraction adds $\sim$20\,ms of MCAP
-parsing to RTAMT's end-to-end cost, putting it in the same order of
-magnitude as Ghost. (3) The tools are complementary: RTAMT for
-declarative STL over arbitrary signals, Ghost for content-addressed
-CLI verification of a specific supervisor with hand-stated
-predicates.
+On performance, the raw measurement on the reference 50-cycle smoke
+is: Ghost's \texttt{verify\_baud} returns in 23\,ms (mean of 5
+replicates); RTAMT's monitor evaluates its STL formula on the
+pre-extracted signals in 0.15\,ms, with signal extraction from the
+MCAP adding ${\sim}20$\,ms of parsing on the user side. The two
+numbers measure different things and we report them only to give
+the reader a sense of order of magnitude.
 
 \subsection{Determinism across replicates and machines}
 Within a single machine, replicate runs produce byte-identical
@@ -832,8 +910,14 @@ Any disagreement fails the build.
 \begin{itemize}
   \item \textbf{Sim, not hardware.} MCAPs come from a simulated
         overconfidence trap, not real flight logs. Real-world
-        claims require a HAL backend and hardware campaign,
-        deferred to a later phase.
+        claims require a HAL backend and a hardware campaign. We
+        ship a runnable but unimplemented skeleton of the PX4 ULog
+        adapter at \texttt{docs/paper/scripts/}
+        \texttt{px4\_ulog\_adapter\_skeleton.py}, with the
+        ground-truth-source policy enumerated explicitly
+        (motion-capture / RTK GPS / vacuous EKF2 fallback) so that
+        a future contributor can close this gap as candidate
+        ADR-0037 without re-deriving the integration contract.
   \item \textbf{Reference policies only.} The TLA+ proofs and
         property semantics target specific reference policies.
         Non-reference policies would need their own ADRs, verifier
