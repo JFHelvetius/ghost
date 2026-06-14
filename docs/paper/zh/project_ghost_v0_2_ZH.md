@@ -229,6 +229,13 @@ Project Ghost 建立在属于机器人和控制标准实践的要素之上：贝
 分发内容寻址、纯函数的安全属性验证器，并具有机械验证的底层不变
 式**。我们将此作为 Ghost 的主要操作声明；上面的比较是其证据。
 
+Ghost 真正与上述运行时验证工具不同的轴是它监控*何种*谓词。
+RTAMT、MoonLight、ROSMonitoring 和 shielding 监控关于外部世界
+的谓词（速度边界、距离阈值、信号包络）。Ghost 的五个属性（§3）
+是关于代理**认识论姿态**的契约 —— 其自身的信心如何在不确定性
+下被降级、恢复、约束并转化为行动。机制有重叠（我们都重放
+trace）；提出的问题不同。
+
 ### 2.4 本工作的新颖之处
 
 两个贡献是操作性的模式声明（可重现性原语和端到端引用模式）。两
@@ -264,23 +271,25 @@ pattern 不是工业 safety case 的替代品；它是这些 case 可以引用
 
 ## 3. 属性集
 
-五个属性在有约束力的 ADR 中声明（一旦接受即不可变），并由
-`src/project_ghost/properties/` 中的纯函数验证。每个验证器返回
-一个 typed report，包含 `holds: bool`、按周期的结构化元数据，
-以及 MCAP 的 SHA-256。
+**与传统的运行时验证（主要监控关于外部世界的谓词：速度、距
+离、温度）不同，Ghost 验证关于代理认识论姿态的契约：信心如何
+在不确定性下被降级、恢复、约束并转化为行动。** 五个属性构成
+了一个自主代理在不确定性下行为的最小理论：
 
-| ID | 属性 | 性质 | 多周期？ |
-|---|---|---|---|
-| **BAUD-v1** | Bounded Action Under Drift | 漂移条件下 | 否，每周期 |
-| **ERUR-v1** | Eventual Reactivation Under Recovery | 漂移缺失 + KNOWN 条件下 | 否，每周期 |
-| **MD-v1** | Monotonic Degradation | 无条件结构 | 否，每周期 |
-| **RLB-v1** | Recovery Latency Bound | 时间定量 | 是 |
-| **FPB-v1** | False Positive Bound observer | 观察定量 | 否，每周期 |
+| ID | 形式谓词 | 认识论解读 |
+|---|---|---|
+| **BAUD-v1** | 检测到漂移 → 不 PROCEED + 保守动作 | *如果你怀疑自己错了，要保守地行动。* |
+| **ERUR-v1** | 漂移缺失 ∧ belief KNOWN → PROCEED | *当证据恢复时，回到行动。* |
+| **MD-v1** | `adjusted ≼ raw`（无膨胀） | *永不声称比证据支持的更多信心。* |
+| **RLB-v1** | `L ≤ peak + W − 1`（恢复有界） | *不确定性不能无限持续。* |
+| **FPB-v1** | 经验触发率被暴露和固定 | *不信任必须可测量、可审计。* |
 
-五个属性都是 self-contained：每个都在 ADR 中形式化声明，由
-`properties/` 中的 Python 函数验证，并在每个 smoke 中内嵌见证。
+每个属性都在有约束力的 ADR 中声明（一旦接受即不可变），并由
+`src/project_ghost/properties/` 中的纯函数验证。
 
 ### 3.1 BAUD-v1 — Bounded Action Under Drift
+
+> *如果代理怀疑自己的信念是错误的，必须保守地行动。*
 
 当检测到漂移时（窗口中 ≥M 个结果且 ≥K 个 dirty），调整等级在 lattice
 中降低，决策不是 PROCEED，且 actuator 命令（如果有）属于封闭的
@@ -289,20 +298,28 @@ ADR-0031。
 
 ### 3.2 ERUR-v1 — Eventual Reactivation Under Recovery
 
+> *当证据恢复时，代理必须回到行动。*
+
 当漂移缺失且原始 belief 为 KNOWN 时，调整等级为 KNOWN 且决策为
 PROCEED。与 BAUD 共同构成分区定理（C2）。ADR-0032。
 
 ### 3.3 MD-v1 — Monotonic Degradation
+
+> *代理永不声称比证据支持的更多信心。*
 
 对所有周期，confidence lattice 中 `adjusted ≼ raw`。校准器从不
 *发明*信心。ADR-0033。
 
 ### 3.4 RLB-v1 — Recovery Latency Bound
 
+> *代理的不确定性不能无限持续；恢复由校准窗口结构所约束。*
+
 对 sliding-window count-of-K-in-W filters 的 `L ≤ peak + W − 1`。
 这是 恢复延迟界限（§6.3）。ADR-0034。
 
 ### 3.5 FPB-v1 — False Positive Bound observer
+
+> *代理的不信任必须可测量、可审计，而非隐式的。*
 
 运行期间的经验 BAUD fire rate，作为结构化指标暴露用于回归门控。
 默认情况下是观察性的（`max_fire_fraction = 1.0`）。ADR-0035。

@@ -134,6 +134,12 @@ content-addressed, pure-function safety-property verifier via
 \label{tab:comparison}
 \end{table}
 
+The axis on which Ghost is genuinely different is the \emph{kind}
+of predicate it monitors. RTAMT, MoonLight and shielding monitor
+predicates over the external world; Ghost's five properties
+(\S\ref{sec:properties}) are contracts over the agent's
+\textbf{epistemic posture}.
+
 % =======================================================================
 \section{The pattern}
 \label{sec:pattern}
@@ -179,19 +185,35 @@ party reproduces the per-property verdict from one shell command.}
 \end{figure}
 
 % =======================================================================
-\section{The property set and the verifier}
+\section{The property set: epistemic contracts}
 \label{sec:properties}
 
-We instantiate the pattern on five binding ADRs over the closed
-loop of a reference autonomy supervisor: BAUD-v1 (no
-non-conservative action while drift is detected), ERUR-v1
-(PROCEED when belief is KNOWN and drift absent), MD-v1
-(calibrator never inflates confidence, $\mathrm{adjusted} \preceq
-\mathrm{raw}$), RLB-v1 (the recovery latency bound of
-\S\ref{sec:mechanical}), and FPB-v1 (empirical fire-rate
-observer). Each is verified by a pure function over the
-content-addressed MCAP, exercised by Hypothesis property tests,
-and self-enforced on every push by CI.
+\textbf{Unlike traditional runtime verification, which monitors
+predicates over the external world (velocity, distance,
+temperature), Ghost verifies contracts over the agent's epistemic
+posture: how confidence may be degraded, recovered, bounded, and
+acted upon under uncertainty.} The five properties are:
+
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item \textbf{BAUD-v1.} \emph{If you suspect you are wrong, act
+        conservatively.} Drift detected $\Rightarrow$ no PROCEED
+        and only a closed safe-reason action set.
+  \item \textbf{ERUR-v1.} \emph{When evidence is restored, return
+        to acting.} Drift absent and belief KNOWN $\Rightarrow$
+        PROCEED.
+  \item \textbf{MD-v1.} \emph{Never claim more confidence than
+        evidence supports.} $\mathrm{adjusted} \preceq
+        \mathrm{raw}$.
+  \item \textbf{RLB-v1.} \emph{Uncertainty cannot last
+        indefinitely.} Recovery is bounded by
+        $L \le \mathrm{peak} + W - 1$ (\S\ref{sec:mechanical}).
+  \item \textbf{FPB-v1.} \emph{Distrust must be measurable and
+        auditable.} Empirical fire rate exposed and pinned.
+\end{itemize}
+
+Each is verified by a pure function over the content-addressed
+MCAP, exercised by Hypothesis property tests, and self-enforced on
+every push by CI.
 
 % =======================================================================
 \section{Mechanical verification}

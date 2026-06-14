@@ -372,15 +372,20 @@ Bug-detection demo            & \textbf{Yes (\S\ref{sec:violation})} & N/A  & N/
 \bottomrule
 \end{tabularx}
 \caption{Comparison of Project Ghost with the closest runtime
-         verification and supervisory-control tooling. To the best
-         of our knowledge, and within the scope of the literature
-         review documented in this section, no prior tool ships a
-         content-addressed, pure-function safety-property verifier
-         via \texttt{pip install} with mechanically verified
-         underlying invariants; we welcome correction from readers
-         with broader coverage of the surveyed fields.}
+         verification and supervisory-control tooling.}
 \label{tab:comparison}
 \end{table}
+
+The axis on which Ghost is genuinely different from the
+runtime-verification tooling above is the \emph{kind} of
+predicate it monitors. RTAMT, MoonLight, ROSMonitoring and
+shielding monitor predicates over the external world (velocity
+bounds, distance thresholds, signal envelopes). Ghost's five
+properties (\S\ref{sec:properties}) are contracts over the
+agent's \textbf{epistemic posture} --- how its own confidence may
+be degraded, recovered, bounded, and acted upon under
+uncertainty. The mechanics overlap (we both replay traces); the
+question being asked is not the same.
 
 \subsection{Where Ghost sits relative to industrial practice}
 \label{sec:industrial}
@@ -418,35 +423,67 @@ primitive itself is missing from the open tooling we surveyed.
 \section{The property set}
 \label{sec:properties}
 
-The five properties are stated in binding ADRs (immutable once
-accepted) and verified by pure functions in
+\textbf{Unlike traditional runtime verification, which primarily
+monitors predicates over the external world (velocity, distance,
+temperature), Ghost verifies contracts over the agent's epistemic
+posture: how confidence may be degraded, recovered, bounded, and
+acted upon under uncertainty.} The five properties form a minimal
+theory of behaviour under uncertainty for an autonomous agent.
+
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\linewidth}{l X X}
+\toprule
+\textbf{ID} & \textbf{Formal predicate} & \textbf{Epistemic reading} \\
+\midrule
+\textbf{BAUD-v1} & Drift detected $\Rightarrow$ no PROCEED + conservative action & \emph{If you suspect you are wrong, act conservatively.} \\
+\textbf{ERUR-v1} & Drift absent $\wedge$ belief KNOWN $\Rightarrow$ PROCEED & \emph{When evidence is restored, return to acting.} \\
+\textbf{MD-v1}   & $\mathrm{adjusted} \preceq \mathrm{raw}$ (no inflation) & \emph{Never claim more confidence than evidence supports.} \\
+\textbf{RLB-v1}  & $L \le \mathrm{peak} + W - 1$ (recovery is bounded) & \emph{Uncertainty cannot last indefinitely.} \\
+\textbf{FPB-v1}  & Empirical fire rate is exposed and pinned & \emph{Distrust must be measurable and auditable.} \\
+\bottomrule
+\end{tabularx}
+\caption{The five properties as epistemic contracts on the agent's
+relation to its own uncertainty.}
+\label{tab:epistemic}
+\end{table}
+
+Each property is stated in a binding ADR (immutable once
+accepted) and verified by a pure function in
 \texttt{src/project\_ghost/properties/}. Each verifier returns a
 typed report with \texttt{holds: bool}, structured per-cycle
 metadata, and the MCAP's SHA-256.
 
 \begin{itemize}
   \item \textbf{BAUD-v1 (ADR-0031): Bounded Action Under Drift.}
-        Over a sliding window of size $W=32$, at least $M=4$
-        calibration outcomes observed and at least $K=2$ in the
-        dirty band. Postcondition: adjusted level strictly lower
-        than raw in the lattice; emitted decision is not PROCEED;
-        emitted actuator command, if any, belongs to a closed
-        safe-reason set
+        \emph{If the agent suspects its own belief is wrong, it
+        must act conservatively.} Over a sliding window of size
+        $W=32$, at least $M=4$ calibration outcomes observed and
+        at least $K=2$ in the dirty band. Postcondition: adjusted
+        level strictly lower than raw in the lattice; emitted
+        decision is not PROCEED; emitted actuator command, if
+        any, belongs to a closed safe-reason set
         $S_{\mathrm{BAUD}} = \{\texttt{attitude\_hold\_hold}, \texttt{kill\_zero\_throttle}\}$.
   \item \textbf{ERUR-v1 (ADR-0032): Eventual Reactivation Under
-        Recovery.} Drift absent and raw belief is KNOWN.
-        Postcondition: adjusted level is KNOWN and decision is
-        PROCEED. Together with BAUD, ERUR forms the
+        Recovery.} \emph{When evidence is restored, the agent
+        must return to acting.} Drift absent and raw belief is
+        KNOWN. Postcondition: adjusted level is KNOWN and decision
+        is PROCEED. Together with BAUD, ERUR forms the
         \textbf{partition theorem}.
-  \item \textbf{MD-v1 (ADR-0033): Monotonic Degradation.} For every
-        cycle, $\mathrm{adjusted} \preceq \mathrm{raw}$ in the
-        confidence lattice. The calibration policy never \emph{invents}
+  \item \textbf{MD-v1 (ADR-0033): Monotonic Degradation.}
+        \emph{The agent must never claim more confidence than the
+        evidence supports.} For every cycle,
+        $\mathrm{adjusted} \preceq \mathrm{raw}$ in the confidence
+        lattice. The calibration policy never \emph{invents}
         confidence.
-  \item \textbf{RLB-v1 (ADR-0034): Recovery Latency Bound.} See
-        the recovery latency bound.
+  \item \textbf{RLB-v1 (ADR-0034): Recovery Latency Bound.}
+        \emph{The agent's uncertainty cannot last indefinitely.}
+        Recovery is bounded by $L \le \mathrm{peak} + W - 1$
+        (\S\ref{sec:rlb-bound}).
   \item \textbf{FPB-v1 (ADR-0035): False Positive Bound observer.}
-        Empirical BAUD fire rate over the run, exposed as a
-        structured metric for regression gating.
+        \emph{The agent's distrust must be measurable and
+        auditable.} Empirical BAUD fire rate over the run,
+        exposed as a structured metric for regression gating.
 \end{itemize}
 
 % =======================================================================

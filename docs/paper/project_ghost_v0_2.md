@@ -291,6 +291,16 @@ content-addressed, pure-function safety-property verifier via
 underlying invariants**. The matrix is the evidence we offer; the
 practical value is what the rest of the paper exercises.
 
+The axis on which Ghost is genuinely different from the
+runtime-verification tooling above is the *kind* of predicate it
+monitors. RTAMT, MoonLight, ROSMonitoring, and shielding monitor
+predicates over the external world (velocity bounds, distance
+thresholds, signal envelopes). Ghost's five properties
+(§3) are contracts over the agent's **epistemic posture** — how
+its own confidence may be degraded, recovered, bounded, and acted
+upon under uncertainty. The mechanics overlap (we both replay
+traces); the question being asked is not the same.
+
 ### 2.4 What is novel here
 
 Our novelty claims are scoped, not absolute. Our prior-art review
@@ -356,21 +366,32 @@ primitive itself is missing from the open tooling we surveyed.
 
 ## 3. The property set
 
-The five properties are stated in binding ADRs (immutable once
-accepted) and verified by pure functions in
-`src/project_ghost/properties/`. Each verifier returns a typed report
-with `holds: bool`, structured per-cycle metadata, and the MCAP's
-SHA-256.
+**Unlike traditional runtime verification, which primarily
+monitors predicates over the external world (velocity, distance,
+temperature), Ghost verifies contracts over the agent's epistemic
+posture: how confidence may be degraded, recovered, bounded, and
+acted upon under uncertainty.** The five properties form a
+minimal theory of behaviour under uncertainty for an autonomous
+agent:
 
-| ID | Property | Nature | Multi-cycle? |
-|---|---|---|---|
-| **BAUD-v1** | Bounded Action Under Drift | Conditional on drift | No, per-cycle |
-| **ERUR-v1** | Eventual Reactivation Under Recovery | Conditional on drift absent + KNOWN | No, per-cycle |
-| **MD-v1** | Monotonic Degradation | Unconditional structural | No, per-cycle |
-| **RLB-v1** | Recovery Latency Bound | Quantitative temporal | Yes |
-| **FPB-v1** | False Positive Bound observer | Quantitative observational | No, per-cycle |
+| ID | Formal predicate | Epistemic reading |
+|---|---|---|
+| **BAUD-v1** | Drift detected → no PROCEED + conservative action | *If you suspect you are wrong, act conservatively.* |
+| **ERUR-v1** | Drift absent ∧ belief KNOWN → PROCEED | *When evidence is restored, return to acting.* |
+| **MD-v1** | `adjusted ≼ raw` (no inflation) | *Never claim more confidence than evidence supports.* |
+| **RLB-v1** | `L ≤ peak + W − 1` (recovery is bounded) | *Uncertainty cannot last indefinitely.* |
+| **FPB-v1** | Empirical fire rate is exposed and pinned | *Distrust must be measurable and auditable.* |
+
+Each property is stated in a binding ADR (immutable once
+accepted) and verified by a pure function in
+`src/project_ghost/properties/`. Each verifier returns a typed
+report with `holds: bool`, structured per-cycle metadata, and the
+MCAP's SHA-256.
 
 ### 3.1 BAUD-v1 — Bounded Action Under Drift (ADR-0031)
+
+> *If the agent suspects its own belief is wrong, it must act
+> conservatively.*
 
 **Precondition.** Over a sliding window of size `W=32`, at least `M=4`
 calibration outcomes have been observed and at least `K=2` of them are
@@ -391,6 +412,8 @@ are added to the actuation contract.
 
 ### 3.2 ERUR-v1 — Eventual Reactivation Under Recovery (ADR-0032)
 
+> *When evidence is restored, the agent must return to acting.*
+
 **Precondition.** Drift is absent (the negation of BAUD's
 precondition: `outcomes < M` or `dirty_count < K`) and the raw belief
 is KNOWN.
@@ -407,6 +430,9 @@ total 10, no gap, no overlap). The TLA+ spec promotes this to a
 
 ### 3.3 MD-v1 — Monotonic Degradation (ADR-0033)
 
+> *The agent must never claim more confidence than the evidence
+> supports.*
+
 **Postcondition (unconditional).** For every cycle,
 `adjusted ≼ raw` in the confidence lattice (KNOWN ≻ UNCERTAIN ≻
 UNKNOWN ≻ INVALID). The calibration policy never *invents* confidence.
@@ -416,6 +442,9 @@ degenerate "always emit HOLD" policy. MD-v1 closes that loophole on
 the calibrator side.
 
 ### 3.4 RLB-v1 — Recovery Latency Bound (ADR-0034)
+
+> *The agent's uncertainty cannot last indefinitely; recovery is
+> bounded by the calibration window structure.*
 
 **Postcondition.** Once the BAUD precondition stops firing on the
 underlying outcome stream, the calibrated adjusted level returns to
@@ -428,6 +457,9 @@ proved tight by the drift-then-recovery smoke (`L = 38 = 7 + 32 − 1`,
 exactly).
 
 ### 3.5 FPB-v1 — False Positive Bound observer (ADR-0035)
+
+> *The agent's distrust must be measurable and auditable, not
+> implicit.*
 
 **Output.** The empirical BAUD fire rate over the run
 (`fire_count / cycles_with_KNOWN_raw_belief`), exposed as a structured

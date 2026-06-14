@@ -282,6 +282,17 @@ content-addressed, función-pura, de propiedades de seguridad vía
 mecánicamente verificados**. Tratamos eso como el claim operacional
 principal de Ghost; la comparación de arriba es la evidencia.
 
+El eje en el que Ghost es genuinamente distinto del tooling de
+runtime verification de arriba es el *tipo* de predicado que
+monitoriza. RTAMT, MoonLight, ROSMonitoring y shielding
+monitorizan predicados sobre el mundo externo (cotas de velocidad,
+umbrales de distancia, envolventes de señal). Las cinco
+propiedades de Ghost (§3) son contratos sobre la **postura
+epistémica** del agente — cómo su propia confianza puede
+degradarse, recuperarse, acotarse y traducirse en acción bajo
+incertidumbre. La mecánica se solapa (ambos replay-eamos
+traces); la pregunta que se hace no es la misma.
+
 ### 2.4 Qué es novedoso aquí
 
 Dos contribuciones son claims operacionales de patrón (el primitivo
@@ -333,25 +344,30 @@ scope o madurez frente a los trabajos arriba.
 
 ## 3. El conjunto de propiedades
 
-Las cinco propiedades están enunciadas en ADRs vinculantes
-(inmutables una vez aceptados) y verificadas por funciones puras en
-`src/project_ghost/properties/`. Cada verificador retorna un report
-typed con `holds: bool`, metadata estructurada por-ciclo, y el
-SHA-256 del MCAP.
+**A diferencia de la runtime verification tradicional, que
+principalmente monitoriza predicados sobre el mundo externo
+(velocidad, distancia, temperatura), Ghost verifica contratos
+sobre la postura epistémica del agente: cómo la confianza puede
+degradarse, recuperarse, acotarse y traducirse en acción bajo
+incertidumbre.** Las cinco propiedades forman una teoría mínima
+del comportamiento bajo incertidumbre para un agente autónomo:
 
-| ID | Propiedad | Naturaleza | Multi-ciclo? |
-|---|---|---|---|
-| **BAUD-v1** | Bounded Action Under Drift | Condicional sobre drift | No, per-ciclo |
-| **ERUR-v1** | Eventual Reactivation Under Recovery | Condicional sobre drift ausente + KNOWN | No, per-ciclo |
-| **MD-v1** | Monotonic Degradation | Estructural incondicional | No, per-ciclo |
-| **RLB-v1** | Recovery Latency Bound | Temporal cuantitativa | Sí |
-| **FPB-v1** | False Positive Bound observer | Observacional cuantitativa | No, per-ciclo |
+| ID | Predicado formal | Lectura epistémica |
+|---|---|---|
+| **BAUD-v1** | Drift detectado → no PROCEED + acción conservadora | *Si sospechas que estás equivocado, actúa conservadoramente.* |
+| **ERUR-v1** | Drift ausente ∧ belief KNOWN → PROCEED | *Cuando la evidencia se restablece, vuelve a actuar.* |
+| **MD-v1** | `adjusted ≼ raw` (sin inflación) | *Nunca afirmes saber más de lo que la evidencia respalda.* |
+| **RLB-v1** | `L ≤ peak + W − 1` (recuperación acotada) | *La incertidumbre no puede durar indefinidamente.* |
+| **FPB-v1** | Tasa empírica expuesta y pineada | *La desconfianza debe ser medible y auditable.* |
 
-Las cinco son self-contained: cada una está enunciada formalmente en
-un ADR, verificada por una función Python en `properties/`, y
-testimoniada inline en cada smoke.
+Cada propiedad está enunciada en un ADR vinculante (inmutable
+una vez aceptado) y verificada por una función pura en
+`src/project_ghost/properties/`.
 
 ### 3.1 BAUD-v1 — Bounded Action Under Drift
+
+> *Si el agente sospecha que su propia creencia es incorrecta,
+> debe actuar conservadoramente.*
 
 Cuando el drift se detecta (≥M outcomes en window con ≥K dirty), el
 adjusted level baja en el lattice, la decisión no es PROCEED, y el
@@ -360,21 +376,34 @@ actuator command (si lo hay) pertenece al safe-reason set cerrado
 
 ### 3.2 ERUR-v1 — Eventual Reactivation Under Recovery
 
+> *Cuando la evidencia se restablece, el agente debe volver a
+> actuar.*
+
 Cuando drift está ausente y raw belief es KNOWN, adjusted level es
 KNOWN y decisión es PROCEED. Forma con BAUD el teorema de partición
 (C2). ADR-0032.
 
 ### 3.3 MD-v1 — Monotonic Degradation
 
+> *El agente nunca debe afirmar saber más de lo que la evidencia
+> respalda.*
+
 Para todo ciclo, `adjusted ≼ raw` en el confidence lattice. El
 calibrador nunca *inventa* confianza. ADR-0033.
 
 ### 3.4 RLB-v1 — Recovery Latency Bound
 
+> *La incertidumbre del agente no puede durar indefinidamente;
+> la recuperación está acotada por la estructura de la ventana
+> de calibración.*
+
 `L ≤ peak + W − 1` para sliding-window count-of-K-in-W filters. Es
 la cota de latencia de recuperación (§6.3). ADR-0034.
 
 ### 3.5 FPB-v1 — False Positive Bound observer
+
+> *La desconfianza del agente debe ser medible y auditable, no
+> implícita.*
 
 Empirical BAUD fire rate sobre el run, exposed como métrica
 estructurada para regression gating. Observacional por defecto
