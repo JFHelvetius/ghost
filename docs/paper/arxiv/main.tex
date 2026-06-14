@@ -161,15 +161,11 @@ mirroring the verifier algorithm.
 \subsection{Contributions}
 \label{sec:contributions}
 
-\textbf{A safety claim about an autonomy system can today be
-asserted by its authors and illustrated in their venues, but it
-cannot be falsified by a third party who was not in the room when
-the run happened.} Project Ghost closes that gap: a safety claim
-ships as a content-addressed autonomy log plus a single shell
-command (\texttt{ghost verify-properties --mcap <log>}); anyone
-with the wheel and the log reproduces the verdict --- or
-contradicts it. We call this pattern an \textbf{executable safety
-citation}.
+\textbf{Project Ghost operationalises safety claims as executable
+citations.} A safety claim becomes a content-addressed run plus a
+pure-function verifier; a third party reproduces the verdict from
+\texttt{ghost verify-properties --mcap <log>}. \textbf{The cited
+artefact \emph{is} the falsification mechanism.}
 
 We make \textbf{three contributions}:
 

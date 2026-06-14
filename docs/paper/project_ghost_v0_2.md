@@ -99,14 +99,11 @@ demonstration (§8.2) and a parametric policy sweep (§8.3).
 
 ### 1.1 Contributions
 
-**A safety claim about an autonomy system can today be asserted by
-its authors and illustrated in their venues, but it cannot be
-falsified by a third party who was not in the room when the run
-happened.** Project Ghost closes that gap: a safety claim ships as
-a content-addressed autonomy log plus a single shell command (`ghost
-verify-properties --mcap <log>`); anyone with the wheel and the log
-reproduces the verdict — or contradicts it. We call this pattern an
-**executable safety citation**.
+**Project Ghost operationalises safety claims as executable
+citations.** A safety claim becomes a content-addressed run plus a
+pure-function verifier; a third party reproduces the verdict from
+`ghost verify-properties --mcap <log>`. **The cited artefact *is*
+the falsification mechanism.**
 
 We make **three contributions**:
 

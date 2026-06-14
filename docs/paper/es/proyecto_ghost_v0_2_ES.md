@@ -116,15 +116,11 @@ del verificador.
 
 ### 1.1 Contribuciones
 
-**Una afirmación de seguridad sobre un sistema autónomo hoy puede
-ser asertada por sus autores e ilustrada en sus venues, pero no
-puede ser falsada por un tercero que no estaba en la sala cuando
-el run ocurrió.** Project Ghost cierra ese hueco: una afirmación
-de seguridad se entrega como un log de autonomía content-addressed
-más un único comando de shell (`ghost verify-properties --mcap
-<log>`); cualquiera con el wheel y el log reproduce el veredicto —
-o lo contradice. Llamamos a este patrón una **cita de seguridad
-ejecutable**.
+**Project Ghost operacionaliza las afirmaciones de seguridad como
+citas ejecutables.** Una afirmación de seguridad pasa a ser un
+run content-addressed más un verificador función-pura; un tercero
+reproduce el veredicto desde `ghost verify-properties --mcap
+<log>`. **El artefacto citado *es* el mecanismo de falsación.**
 
 Hacemos **tres contribuciones**:
 
