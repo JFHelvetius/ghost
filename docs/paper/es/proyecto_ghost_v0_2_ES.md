@@ -133,15 +133,17 @@ Hacemos **cuatro contribuciones reivindicables**, dos formales y
 dos operacionales; el patrón cita-de-seguridad-ejecutable es la
 primera y el resto son evidencia operacional de que funciona.
 
-- **C1 — El patrón cita-de-seguridad-ejecutable.** Una composición
-  de siete ingredientes existentes — ADR + MCAP content-addressed
-  + verificador función-pura + Hypothesis property test + CI gate
-  + tagged release + wheel PyPI firmada por OIDC — ensamblados de
-  modo que el artefacto citado *es él mismo el mecanismo de
-  falsación*. Este es el patrón que creemos genuinamente
-  diferenciante; el resto del paper es la evidencia de que funciona
-  en la práctica, incluyendo sobre telemetría de vuelo real
-  (§8.7–§8.8).
+- **C1 — Un artefacto de seguridad reproducible que un tercero
+  puede verificar.** Ghost empaqueta el predicado de la propiedad
+  (ADR), el run (MCAP content-addressed) y el verificador (wheel
+  PyPI firmada por OIDC) en una sola unidad citable; invariantes
+  verificados mecánicamente (TLA+/TLC), Hypothesis property tests
+  y CI gating respaldan el verificador mismo. El artefacto citado
+  *es* el mecanismo de falsación — llamamos a este patrón una
+  *cita de seguridad ejecutable*. Es el patrón que creemos
+  genuinamente diferenciante; el resto del paper es la evidencia
+  de que funciona en la práctica, incluyendo sobre telemetría de
+  vuelo real (§8.7–§8.8).
 - **C2 — Un primitivo de reproducibilidad con capacidad de
   detección demostrada.** Un verificador CLI de una línea
   `ghost verify-properties` sobre logs MCAP content-addressed,
@@ -935,34 +937,27 @@ que las secciones §Scope per-propiedad de los ADRs.
 
 ## 11. Conclusión
 
-**Ghost convierte las afirmaciones de seguridad en citas
-ejecutables.** Esa frase es lo que este paper existe para
-defender. La contribución load-bearing es la proposición de que
-una afirmación de seguridad debe emitirse junto con todo lo que un
-tercero necesita para rechazarla: un statement escrito vinculante
-(el ADR), un log content-addressed (el MCAP), un verificador
-función-pura expuesto como CLI, property tests, checks mecánicos
-sobre los invariantes subyacentes (TLA+/TLC), y un canal de
-distribución firmado (OIDC PyPI). No claimamos haber descubierto
-los ingredientes individuales — cada uno es práctica estándar —
-pero hasta donde sabemos dentro de los venues revisados ningún
-tool los distribuye como una sola unidad coherente alcanzable
-desde un comando de shell, y tratamos esa combinación como la
-unidad de análisis adecuada.
+**Ghost empaqueta una afirmación de seguridad, su run y su
+verificador como una unidad reproducible que un tercero puede
+re-derivar.** La contribución load-bearing es operacional, no
+teórica: un ADR, un MCAP content-addressed, un verificador CLI
+función-pura, Hypothesis property tests, checks TLA+/TLC sobre
+los invariantes subyacentes, y una wheel PyPI firmada por OIDC —
+ensamblados de modo que la cita *es* el mecanismo de falsación.
+Llamamos a este patrón una **cita de seguridad ejecutable**.
 
 La instanciación de referencia sobre un supervisor de autonomía
-con cinco propiedades existe como evidencia de que el patrón es
-operable, no como la contribución en sí. Las propiedades son
-deliberadamente simples; la cota de latencia de recuperación es
-elemental en retrospectiva; el teorema de partición es
-estructuralmente obvio. Lo que no es obvio — lo que motivó el
-paper — es que el *ensamblaje* hace las afirmaciones de seguridad
-operacionalmente falsables de una manera que las aserciones
-prosa-y-vídeo no son. El artefacto es re-ejecutable desde
-`pip install project-ghost==0.2.2`; la contribución se sostiene o
-cae sobre si el veredicto resultante significa lo que el ADR dice
-que significa, y sobre si un tercero puede emitir ese veredicto
-sin nuestra ayuda. Ambas, creemos, son ahora ciertas.
+con cinco propiedades es evidencia de que el patrón es operable,
+no la contribución en sí. Las propiedades son deliberadamente
+simples; la cota de latencia de recuperación es elemental en
+retrospectiva; el teorema de partición es estructuralmente
+obvio. Lo que no es obvio — lo que motivó el paper — es que el
+*ensamblaje* hace las afirmaciones de seguridad operacionalmente
+falsables de una manera que las aserciones prosa-y-vídeo no son.
+El artefacto es re-ejecutable desde
+`pip install project-ghost==0.2.3`; la contribución se sostiene o
+cae sobre si el veredicto resultante significa lo que el ADR
+dice que significa. Creemos que sí.
 
 ---
 

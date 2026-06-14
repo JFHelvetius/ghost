@@ -369,14 +369,14 @@ Appendix~\ref{app:eval}: six-category violation matrix
 \section{Conclusion}
 \label{sec:conclusion}
 
-\textbf{Ghost turns safety claims into executable citations.} That
-sentence is what this paper exists to defend. The load-bearing
-contribution is the proposition that a safety claim should be
-issued together with everything a third party needs to reject it:
-an ADR, an MCAP, a pure-function verifier on a CLI, property
-tests, mechanical checks (TLA+/TLC), and a signed PyPI wheel. The
-individual ingredients are standard; the assembly, in our
-surveyed scope, is missing. The artifact is re-runnable from
+\textbf{Ghost packages a safety claim, its run, and its verifier
+as a reproducible unit a third party can re-derive.} The
+load-bearing contribution is operational: an ADR, an MCAP, a
+pure-function CLI verifier, property tests, mechanical checks
+(TLA+/TLC) and an OIDC-signed PyPI wheel --- assembled so that
+the citation \emph{is} the falsification mechanism. The individual
+ingredients are standard; the assembly, in our surveyed scope, is
+missing. The artifact is re-runnable from
 \texttt{pip install project-ghost==0.2.3}.
 
 % =======================================================================

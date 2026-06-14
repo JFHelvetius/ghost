@@ -115,14 +115,17 @@ We make **four claimable contributions**, two formal and two
 operational; the executable-safety-citation pattern is the first
 and the rest are operational evidence that it works.
 
-- **C1 — The executable-safety-citation pattern.** A composition of
-  seven existing ingredients — ADR + content-addressed MCAP +
-  pure-function verifier + Hypothesis property test + CI gate +
-  tagged release + OIDC-signed PyPI wheel — assembled so that the
-  artefact cited *is itself the falsification mechanism*. The
-  pattern is what we believe is genuinely differentiating; the rest
-  of the paper is the evidence that it works in practice, including
-  on real flight telemetry (§8.7–§8.8).
+- **C1 — A reproducible safety artefact a third party can verify.**
+  Ghost packages the property predicate (ADR), the run
+  (content-addressed MCAP), and the verifier (OIDC-signed PyPI
+  wheel) into a single citable unit; mechanically-checked
+  invariants (TLA+/TLC), Hypothesis property tests and CI gating
+  back the verifier itself. The cited artefact *is* the
+  falsification mechanism — we call the pattern an *executable
+  safety citation*. The pattern is what we believe is genuinely
+  differentiating; the rest of the paper is the evidence that it
+  works in practice, including on real flight telemetry
+  (§8.7–§8.8).
 - **C2 — A reproducibility primitive with demonstrated detection
   capacity.** A one-line CLI verifier `ghost verify-properties` over
   content-addressed MCAP logs, distributed via PyPI with OIDC
@@ -388,10 +391,9 @@ data pipeline.
 These efforts share an organisational property Ghost does not:
 **teams of safety engineers and proprietary access to telemetry,
 testing infrastructure, and regulators**. They produce assurance
-artefacts that justify operational deployment. Ghost makes a much
-smaller claim — *a third party can verify a stated property against
-a captured run by issuing one shell command* — but it makes that
-claim **operationally**, not by appeal to internal review.
+artefacts that justify operational deployment; Ghost makes a much
+smaller claim, but it makes it **operationally** rather than by
+appeal to internal review.
 
 The niche we believe Ghost fills, complementary to those efforts, is
 the gap between *"this software is safe"* (a closed claim signed by
@@ -1333,31 +1335,25 @@ per-property §Scope sections of the ADRs.
 
 ## 11. Conclusion
 
-**Ghost turns safety claims into executable citations.** That
-sentence is what this paper exists to defend. The load-bearing
-contribution is the proposition that a safety claim should be
-issued together with everything a third party needs to reject it:
-a binding written statement (the ADR), a content-addressed log
-(the MCAP), a pure-function verifier exposed as a CLI, property
-tests, mechanical checks on the underlying invariants (TLA+/TLC),
-and a signed distribution channel (OIDC PyPI). We do not claim to
-have discovered the individual ingredients — each is standard
-practice — but to the best of our knowledge within the surveyed
-venues no tool ships them as one coherent unit reachable from a
-single shell command, and we treat that combination as the proper
-unit of analysis.
+**Ghost packages a safety claim, its run, and its verifier as a
+reproducible unit a third party can re-derive.** The load-bearing
+contribution is operational, not theoretical: an ADR, a
+content-addressed MCAP, a pure-function CLI verifier, Hypothesis
+property tests, TLA+/TLC checks on the underlying invariants, and
+an OIDC-signed PyPI wheel — assembled so that the citation *is*
+the falsification mechanism. We call the pattern an **executable
+safety citation**.
 
 The reference instantiation on a five-property autonomy supervisor
-exists as evidence that the pattern is workable, not as the
-contribution itself. The properties are deliberately simple; the
-recovery latency bound is elementary in hindsight; the partition
-theorem is structurally obvious. What is not obvious — what motivated
-the paper — is that the *assembly* makes safety claims operationally
-falsifiable in a way that prose-and-video assertions are not. The
-artifact is re-runnable from `pip install project-ghost==0.2.2`; the
-contribution stands or falls on whether the resulting verdict means
-what the ADR says it means, and on whether a third party can issue
-that verdict without our help. Both, we believe, are now true.
+is evidence the pattern is workable, not the contribution itself.
+The properties are deliberately simple; the recovery latency bound
+is elementary in hindsight; the partition theorem is structurally
+obvious. What is not obvious — what motivated the paper — is that
+the *assembly* makes safety claims operationally falsifiable in a
+way that prose-and-video assertions are not. The artifact is
+re-runnable from `pip install project-ghost==0.2.3`; the
+contribution stands or falls on whether the resulting verdict
+means what the ADR says it means. We believe it does.
 
 ---
 
