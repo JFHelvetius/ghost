@@ -14,7 +14,7 @@ Scenarios:
   that loses GPS lockduring a sustained interval, drifts steadily,
   and then recovers GPS lock. The drift duration is parameterised;
   the recovery phase is long enough to flush the calibration
-  window. Theorem 1's recovery latency bound applies.
+  window. RLB-v1's recovery latency bound applies.
 
 - ``run_slow_biased_drift_smoke()``: simulates a chronic
   low-magnitude bias in the visual odometry — the kind that

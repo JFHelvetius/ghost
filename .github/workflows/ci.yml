@@ -250,7 +250,7 @@ jobs:
     #
     # BaudErur.tla (M=2, K=1, W=3): INV_BAUD, INV_ERUR, INV_PARTITION,
     #   INV_NO_INVENTED_CONFIDENCE, INV_HISTORY_BOUND.
-    # Rlb.tla (W=4, MAX_DRIFT=4): INV_RLB (Theorem 1),
+    # Rlb.tla (W=4, MAX_DRIFT=4): INV_RLB (RLB-v1),
     #   INV_PEAK_BOUNDED, INV_WINDOW_BOUND.
     # Fpb.tla (MAX_CYCLES=8, MAX_FIRE_NUMER=BOUND_DENOM=1):
     #   INV_FPB_RATIO_BOUNDED, INV_FPB_FIRE_IMPLIES_TOTAL,
@@ -289,7 +289,7 @@ jobs:
           # by pipefail, this just asserts the canonical success
           # signature is in the log we are about to archive.
           grep -q "Model checking completed" tlc_output_baud_erur.log
-      - name: Run TLC on Rlb spec (Theorem 1)
+      - name: Run TLC on Rlb spec (RLB-v1)
         working-directory: docs/proofs
         run: |
           java -cp ../../tla2tools.jar tlc2.TLC \

@@ -12,7 +12,7 @@ Their purpose is to demonstrate that:
    it operates on the captured ``CalibratedSelfAssessment`` records
    regardless of which policy produced them.
 2. The property set (BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1) is
-   well-defined on any policy satisfying the contract; only Theorem 1
+   well-defined on any policy satisfying the contract; only RLB-v1
    (the closed-form recovery latency bound) is specific to the
    reference's count-of-K-in-W mechanism.
 

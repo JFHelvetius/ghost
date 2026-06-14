@@ -1,6 +1,6 @@
 --------------------------- MODULE Rlb_unbounded ---------------------------
 (****************************************************************************)
-(* TLAPS proof skeleton for the unbounded version of Theorem 1               *)
+(* TLAPS proof skeleton for the unbounded version of RLB-v1               *)
 (* (paper §6.3; Action C roadmap).                                          *)
 (*                                                                          *)
 (* The bounded TLC verification in ``Rlb.tla`` proves INV_RLB over a fixed   *)
@@ -96,7 +96,7 @@ LEMMA CleanAfterDirty_count ==
 PROOF OMITTED  \* induction on k, using WindowUpdate_bounded + DirtyAcc_count
 
 (****************************************************************************)
-(* Theorem 1 (UNBOUNDED): for N <= W consecutive DIRTY outcomes followed   *)
+(* RLB-v1 (UNBOUNDED): for N <= W consecutive DIRTY outcomes followed   *)
 (* by clean outcomes, the dirty-run length L = peak + W - 1, where         *)
 (* peak = N.                                                                *)
 (*                                                                          *)

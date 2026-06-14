@@ -51,7 +51,7 @@ Cuándo **no** actualizar:
   `EWMADowngradePolicy`, etc.
 - Snippets de código bash o Python.
 - Rutas de archivos del repositorio.
-- Theorem 1 statement y prueba — copiados verbatim, solo la prosa
+- RLB-v1 statement y prueba — copiados verbatim, solo la prosa
   alrededor está en español.
 - Referencias bibliográficas — formato canónico inglés.
 

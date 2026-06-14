@@ -66,7 +66,7 @@ Primary and secondary classifications for the submission form:
 - **Primary:** `cs.SE` — Software Engineering. The paper is
   fundamentally about a build-and-ship pattern with reproducibility
   as the headline.
-- **Secondary 1:** `cs.LO` — Logic in Computer Science. Theorem 1
+- **Secondary 1:** `cs.LO` — Logic in Computer Science. RLB-v1
   + the TLA+/TLC mechanisation belong here.
 - **Secondary 2:** `cs.RO` — Robotics. The application domain.
 

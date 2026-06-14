@@ -58,7 +58,7 @@ reproducibility primitive, and the comparison with prior work.
   formula. Output captured to
   [`docs/paper/outputs/benchmark_vs_rtamt.json`](docs/paper/outputs/benchmark_vs_rtamt.json).
   Paper §8.6 documents the honest three-point reading.
-- **TLAPS proof outline** for Theorem 1 unbounded (Action C,
+- **TLAPS proof outline** for RLB-v1 unbounded (Action C,
   [`docs/proofs/Rlb_unbounded.tla`](docs/proofs/Rlb_unbounded.tla)):
   TLA+ module that compiles under TLAPS, declares the four
   supporting lemmas with `PROOF OMITTED` placeholders, and the
@@ -94,12 +94,12 @@ reproducibility primitive, and the comparison with prior work.
 Paper-readiness pass: artifacts in support of the v0.2.x academic
 write-up at [`docs/paper/project_ghost_v0_2.md`](docs/paper/project_ghost_v0_2.md),
 the LaTeX arXiv source at [`docs/paper/arxiv/main.tex`](docs/paper/arxiv/main.tex),
-and a second TLA+ specification mechanically verifying Theorem 1
+and a second TLA+ specification mechanically verifying RLB-v1
 (the tight recovery latency bound `L ≤ peak + W − 1`).
 
 ### Added
 
-- **TLA+ `Rlb.tla` specification** mechanically verifying Theorem 1
+- **TLA+ `Rlb.tla` specification** mechanically verifying RLB-v1
   ([`docs/proofs/Rlb.tla`](docs/proofs/Rlb.tla),
   [`docs/proofs/Rlb.cfg`](docs/proofs/Rlb.cfg)). Mirrors the
   verifier algorithm of
@@ -136,10 +136,10 @@ and a second TLA+ specification mechanically verifying Theorem 1
   [`docs/paper/project_ghost_v0_2.md`](docs/paper/project_ghost_v0_2.md)
   with:
   - 4 contributions formulated as C1–C4: tight recovery latency
-    bound (Theorem 1), mechanically verified partition theorem,
+    bound (RLB-v1), mechanically verified partition theorem,
     reproducibility primitive with demonstrated detection capacity,
     end-to-end safety citation pattern.
-  - **§6 Theorem 1 with rigorous proof by sliding-window trace**
+  - **§6 RLB-v1 with rigorous proof by sliding-window trace**
     (accumulation → saturation → flush → recovery) and two
     corollaries on the operational regime and structural sanity.
   - §2 Related work with 10 prior tools cited (RTAMT, MoonLight,

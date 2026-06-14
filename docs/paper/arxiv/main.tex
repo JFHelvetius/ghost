@@ -93,10 +93,7 @@ specifications jointly cover the property set with 11 invariants
 verified by TLC on a bounded abstract model, including a partition
 theorem $\mathrm{BAUD} \oplus \mathrm{ERUR}$ and a closed-form
 recovery latency bound $L \le \mathrm{peak} + W - 1$
-(RLB-v1), shown tight by a witness trace. We
-acknowledge the latency bound is elementary in hindsight; we
-present it as supporting evidence for the broader citation pattern
-rather than as a stand-alone theoretical contribution.
+(RLB-v1), shown tight by a witness trace.
 
 Empirical evaluation on a violation matrix of six injected bug
 categories, three structurally distinct calibration policies, three
@@ -105,11 +102,9 @@ RTAMT establishes that the verifier is policy-agnostic, runs in
 21--406\,ms (linear in trace length), and produces byte-identical
 MCAPs and canonicalised property-report JSON across Linux and
 Windows CI runners. The full artifact is re-runnable from
-\texttt{pip install project-ghost==0.2.2}. We invite readers to
-take that verification as the unit of analysis: \textbf{a safety
-claim should be issued together with everything a third party
-needs to reject it, and we believe that is now operationally
-possible.}
+\texttt{pip install project-ghost==0.2.3}. \textbf{A safety claim
+should be issued together with everything a third party needs to
+reject it, and we believe that is now operationally possible.}
 \end{abstract}
 
 \medskip
@@ -216,14 +211,10 @@ works.
 The recovery latency bound --- the closed-form RLB-v1 bound
 $L \le \mathrm{peak} + W - 1$ for sliding-window count-of-$K$-in-$W$
 filters --- is presented as an \textbf{auxiliary result} that the
-TLA+ spec \texttt{Rlb.tla} mechanises. We do not list it as a
-contribution: the bound is elementary in hindsight, follows directly
-from the sliding-window mechanism, and is included because the spec
-mechanises it cleanly, not because it carries the paper. Readers
-should grade the paper on C1--C3.
-
-We position the work as a \textbf{systems / tools paper, not a
-theory paper}. Figure~\ref{fig:pattern} summarises the pattern.
+TLA+ spec \texttt{Rlb.tla} mechanises; it is an auxiliary result,
+not a contribution. We position the work as a \textbf{systems /
+tools paper, not a theory paper}; readers should grade
+C1--C3. Figure~\ref{fig:pattern} summarises the pattern.
 
 \begin{figure}[t]
 \centering
@@ -1154,15 +1145,12 @@ pattern an \textbf{executable safety citation}.
 
 The reference instantiation on a five-property autonomy supervisor
 is evidence that the pattern is workable, not the contribution
-itself. The properties are deliberately simple; the recovery
-latency bound is elementary in hindsight; the partition theorem
-is structurally obvious. What is not obvious --- what motivated
-the paper --- is that the \emph{assembly} makes safety claims
-operationally falsifiable in a way that prose-and-video assertions
-are not. The artifact is re-runnable from
-\texttt{pip install project-ghost==0.2.3}; the contribution stands
-or falls on whether the resulting verdict means what the ADR says
-it means. We believe it does.
+itself. What motivated the paper is that the \emph{assembly} makes
+safety claims operationally falsifiable in a way that
+prose-and-video assertions are not. The artifact is re-runnable
+from \texttt{pip install project-ghost==0.2.3}; the contribution
+stands or falls on whether the resulting verdict means what the
+ADR says it means. We believe it does.
 
 % =======================================================================
 \bibliographystyle{plainurl}

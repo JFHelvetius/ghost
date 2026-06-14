@@ -42,13 +42,13 @@ IROS workshop where page limits are 12–15 pages.
 - §3 (The pattern) — the figure plus its caption; that's it.
 - §4 (Properties + verifier) — short bullets, no full ADR prose.
 - §5 (Mechanical verification) — three specs in one paragraph each;
-  Theorem 1 statement only; proof in Appendix B.
+  the recovery latency bound statement only; proof in Appendix B.
 - §6 (Real telemetry) — kept; this is the load-bearing section.
 - §7 (Limitations) — four bullets.
 - §8 (Conclusion) — three sentences, all of them important.
 
 Appendix A: per-tool comparison detail (long-version §2.2 prose).
-Appendix B: Theorem 1 proof.
+Appendix B: the recovery latency bound proof.
 Appendix C: full evaluation tables (long-version §8.2–§8.6).
 
 ## What to do before each submission

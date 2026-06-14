@@ -149,7 +149,7 @@ ignore = [
 "src/project_ghost/app/**/*.py" = ["PLR2004", "S101", "ARG", "PLC0415", "TC003", "TRY003", "TRY301", "RUF001"]
 # Paper reproducibility scripts: capital M, K mirror the
 # (min_outcomes, downgrade_threshold) math notation of ADRs 0031..0034
-# and Theorem 1 (docs/paper/project_ghost_v0_2.md §6). The × in summary
+# and RLB-v1 (docs/paper/project_ghost_v0_2.md §6). The × in summary
 # output is intentional Unicode matching the paper's table captions
 # ("3 policies × 3 cycle counts").
 "docs/paper/scripts/**/*.py" = ["N803", "N806", "RUF001", "PLR2004"]

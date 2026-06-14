@@ -49,7 +49,7 @@ Three pieces of the paper might be of interest:
 
 1. A closed-form, tight recovery latency bound L ≤ peak + W − 1 for
    count-of-K-in-W sliding-window calibration filters. I have
-   stated this as Theorem 1 with a sliding-window proof and a
+   stated this as the recovery latency bound with a sliding-window proof and a
    tightness witness; I would deeply appreciate your judgement on
    whether the bound is genuinely novel relative to the runtime
    verification literature or whether I am missing prior work that
@@ -194,7 +194,7 @@ autonomy supervisor:
 1. A partition theorem (BAUD ⊕ ERUR) over the conditional behaviour
    space of a closed-loop supervisor, verified by TLC over the full
    reachable state space at small bounded constants.
-2. A tight closed-form recovery-latency bound (Theorem 1,
+2. A tight closed-form recovery-latency bound (the recovery latency bound,
    L ≤ peak + W − 1) for sliding-window count-of-K-in-W filters,
    also mechanised in TLA+ under its consecutive-drift hypothesis.
 

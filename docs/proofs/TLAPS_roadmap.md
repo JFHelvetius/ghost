@@ -1,14 +1,14 @@
-# TLAPS roadmap for unbounded Theorem 1 (Action C)
+# TLAPS roadmap for unbounded RLB-v1 (Action C)
 
 ## What TLAPS would add
 
-`Rlb.tla` proves Theorem 1 (`L ≤ peak + W − 1`) over a bounded state
+`Rlb.tla` proves RLB-v1 (`L ≤ peak + W − 1`) over a bounded state
 space by exhaustive TLC enumeration: `W = 4, MAX_DRIFT = 4`. The
 TLAPS extension `Rlb_unbounded.tla` would prove the same theorem for
 **any finite W ∈ Nat** using TLAPS proof tactics that are checked by
 a combination of Zenon, Isabelle/HOL, CVC4, and Z3.
 
-This converts the paper's Theorem 1 from:
+This converts the paper's RLB-v1 from:
 
 - "Verified by TLC on bounded `W ≤ 4`"
 
@@ -105,7 +105,7 @@ each obligation; if any succeeds, the obligation is discharged.
 - **TLAPS proof effort is not parallelisable with single-author
   work.** A full proof takes uninterrupted time. The paper's
   contribution is the property set, the verifier, and the
-  partition theorem mechanisation — Theorem 1 unbounded is a
+  partition theorem mechanisation — RLB-v1 unbounded is a
   follow-up improvement, not a load-bearing claim.
 - **The honest-scope clause already documents this.** Paper §5.5
   explicitly states "TLC is exhaustive over the finite state space
@@ -114,7 +114,7 @@ each obligation; if any succeeds, the obligation is discharged.
 
 ## What we shipped instead (v0.2.1+)
 
-- `Rlb.tla` proves Theorem 1 by TLC over the bounded state space.
+- `Rlb.tla` proves RLB-v1 by TLC over the bounded state space.
   This is sufficient for the paper's claim.
 - `Rlb_unbounded.tla` is a **proof outline** that compiles under
   TLAPS and lists every obligation; it serves as the concrete

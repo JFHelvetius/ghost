@@ -43,11 +43,7 @@ reference smoke, and self-enforced on every push by CI. Three TLA+
 specifications jointly cover the five properties; together they
 verify 11 invariants over the bounded state space, including a
 partition theorem `BAUD ⊕ ERUR` and a closed-form recovery latency
-bound `L ≤ peak + W − 1` (RLB-v1), shown tight by a witness
-trace where equality is attained. We acknowledge that the latency
-bound is elementary in hindsight; we present it as supporting
-evidence for the broader citation pattern rather than as a stand-
-alone theoretical contribution.
+bound `L ≤ peak + W − 1` (RLB-v1), shown tight by a witness trace.
 
 Empirical evaluation on a violation matrix of six injected bug
 categories, three structurally distinct calibration policies, three
@@ -57,10 +53,9 @@ RTAMT establishes that the verifier is policy-agnostic, runs in
 MCAPs and canonicalised property-report JSON across Linux and
 Windows CI runners. The full artifact, including the three TLA+
 specifications and all reproducibility scripts, is re-runnable from
-`pip install project-ghost==0.2.2`. We invite readers to take that
-verification as the unit of analysis: **a safety claim should be
+`pip install project-ghost==0.2.3`. **A safety claim should be
 issued together with everything a third party needs to reject it,
-and we believe that is now operationally possible**.
+and we believe that is now operationally possible.**
 
 **Keywords:** safety citation patterns, reproducible safety
 verification, runtime verification, content-addressed telemetry,
@@ -147,15 +142,10 @@ and the rest are operational evidence that it works.
 
 The recovery latency bound (§6.3) — the closed-form RLB-v1 bound
 `L ≤ peak + W − 1` for sliding-window count-of-K-in-W filters,
-attained with equality by a witness trace — is presented as an
-**auxiliary result** that the TLA+ spec `Rlb.tla` mechanises. We do
-not list it as a contribution: the bound is elementary in hindsight,
-follows directly from the sliding-window mechanism, and is included
-because the spec mechanises it cleanly, not because it carries the
-paper. Readers should grade the paper on C1–C3.
-
-We position the work as a **systems / tools paper, not a theory
-paper**.
+attained with equality by a witness trace — is an **auxiliary
+result** that the TLA+ spec `Rlb.tla` mechanises. We position the
+work as a **systems / tools paper, not a theory paper**; readers
+should grade C1–C3.
 
 #### Figure 1: The safety citation pattern
 
@@ -221,19 +211,13 @@ representative supervisor.
 
 This is an engineering and infrastructure paper, not a theory
 paper. The filtering, calibration, and FDI ingredients Ghost rests
-on are well established (§2.1). The recovery latency bound's mathematics is
-elementary in hindsight and is presented as a useful auxiliary
-result, not a contribution. The partition theorem of §5.3 is novel
-*in the form we mechanised it* — a TLA+ `INV_PARTITION` over the
-reference closed loop — but the underlying observation that
-"drift fired" and "drift clean and KNOWN" partition the per-cycle
-condition space is structurally simple. We deliberately resist
-overclaiming. The contribution we are most willing to defend is
-**the engineered combination** (C1) and its **operational
-demonstration** (C2 + C3): that a third party can issue one shell
-command and obtain a byte-exact verdict against a binding ADR —
-and that this combination is, we believe, missing from the open
-autonomy-safety tooling we surveyed.
+on are well established (§2.1). The recovery latency bound is a
+useful auxiliary result, not a contribution. The partition theorem
+of §5.3 is novel *in the form we mechanised it* — a TLA+
+`INV_PARTITION` over the reference closed loop. The contribution
+we defend is **the engineered combination** (C1) and its
+**operational demonstration** (C2 + C3): the assembly is missing
+from the open autonomy-safety tooling we surveyed.
 
 ---
 
@@ -348,8 +332,8 @@ single-author effort. With that scope in mind:
   sliding-window autonomy supervisor. Analogous TLA+ patterns exist
   for distributed algorithms. We do not claim that partitions of
   drift / non-drift behaviour are conceptually novel — the binary
-  partition is structurally obvious — only that the mechanisation
-  in TLA+ over the reference closed loop is new.
+  partition is structurally obvious; the mechanisation in TLA+
+  over the reference closed loop is what we claim is new.
 - **C4 (the closed-form recovery latency bound `L ≤ peak + W − 1`)**
   — we did not locate this exact closed form in the runtime-
   verification venues we surveyed. Sequential probability ratio
@@ -357,17 +341,9 @@ single-author effort. With that scope in mind:
   size bounds for hypothesis testing, but not this specific form
   for sliding-window recovery; timed-automata work prefers
   qualitative non-blocking guarantees over concrete latency bounds.
-  The bound is elementary in hindsight (it follows directly from
-  the sliding-window mechanism), so we frame it as a useful
-  supporting bound rather than as a stand-alone theoretical
-  contribution. A future contribution would be a TLAPS-checked
-  unbounded version (Rlb_unbounded.tla outline in §5.4).
-
-We invite readers from sequential-analysis or change-point-detection
-backgrounds to point us at prior closed-form bounds we may have
-missed; framing the recovery latency bound as an auxiliary result rather than a
-stand-alone contribution is chosen precisely to keep this from
-being a load-bearing claim.
+  We frame the bound as a useful supporting result. A TLAPS-checked
+  unbounded version (Rlb_unbounded.tla outline in §5.4) is future
+  work.
 
 ### 2.5 Where Ghost sits relative to industrial practice
 
@@ -1346,14 +1322,12 @@ safety citation**.
 
 The reference instantiation on a five-property autonomy supervisor
 is evidence the pattern is workable, not the contribution itself.
-The properties are deliberately simple; the recovery latency bound
-is elementary in hindsight; the partition theorem is structurally
-obvious. What is not obvious — what motivated the paper — is that
-the *assembly* makes safety claims operationally falsifiable in a
-way that prose-and-video assertions are not. The artifact is
-re-runnable from `pip install project-ghost==0.2.3`; the
-contribution stands or falls on whether the resulting verdict
-means what the ADR says it means. We believe it does.
+What motivated the paper is that the *assembly* makes safety
+claims operationally falsifiable in a way that prose-and-video
+assertions are not. The artifact is re-runnable from
+`pip install project-ghost==0.2.3`; the contribution stands or
+falls on whether the resulting verdict means what the ADR says it
+means. We believe it does.
 
 ---
 

@@ -197,7 +197,7 @@ MCAP without trusting the producer.
         "paper_lang_label": "Paper language",
         "paper_intro": (
             "The full technical paper — abstract, contributions, proof of "
-            "Theorem 1, evaluation, and references — available in three "
+            "the recovery latency bound, evaluation, and references — available in three "
             "languages. The English version is canonical for arXiv and "
             "FMAS 2026 submission; the Spanish and Chinese versions are "
             "internal translations for collaborators."
@@ -520,7 +520,7 @@ propios runs contra el MCAP capturado sin confiar en el productor.
         "paper_lang_label": "Idioma del paper",
         "paper_intro": (
             "El paper técnico completo — abstract, contribuciones, prueba "
-            "del Theorem 1, evaluación y referencias — disponible en tres "
+            "de la cota de latencia de recuperación, evaluación y referencias — disponible en tres "
             "idiomas. La versión inglesa es la canónica para arXiv y para "
             "la submission a FMAS 2026; las versiones española y china son "
             "traducciones internas para colaboradores."

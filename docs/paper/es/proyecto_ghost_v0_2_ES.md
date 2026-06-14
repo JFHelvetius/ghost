@@ -58,10 +58,7 @@ propiedades; juntos verifican 11 invariantes sobre el espacio de
 estados bounded, incluyendo un teorema de partición
 `BAUD ⊕ ERUR` y una cota cerrada de latencia de recuperación
 `L ≤ peak + W − 1` (RLB-v1), mostrada ajustada mediante un trace
-testigo donde se alcanza la igualdad. Reconocemos que la cota es
-elemental en retrospectiva; la presentamos como evidencia de apoyo
-para el patrón más amplio de citación, no como una contribución
-teórica autónoma.
+testigo.
 
 La evaluación empírica sobre una matriz de violaciones de seis
 categorías de bugs inyectados, tres policies de calibración
@@ -71,11 +68,10 @@ establece que el verificador es policy-agnostic, corre en
 21–406 ms (lineal en longitud del trace), y produce MCAPs y
 property-report JSON canonicalizado byte-idénticos entre runners
 Linux y Windows en CI. El artefacto completo es re-ejecutable
-desde `pip install project-ghost==0.2.2`. Invitamos a los lectores
-a tomar esa verificación como la unidad de análisis: **una
-afirmación de seguridad debe emitirse junto con todo lo que un
-tercero necesita para rechazarla, y creemos que eso es ahora
-operacionalmente posible**.
+desde `pip install project-ghost==0.2.3`. **Una afirmación de
+seguridad debe emitirse junto con todo lo que un tercero necesita
+para rechazarla, y creemos que eso es ahora operacionalmente
+posible.**
 
 **Palabras clave:** patrones de citación de seguridad, verificación
 reproducible de seguridad, runtime verification, telemetría
@@ -165,17 +161,12 @@ primera y el resto son evidencia operacional de que funciona.
   propiedades en sí son deliberadamente simples; la contribución
   es la mecanización end-to-end, no la formulación.
 
-La cota de latencia de recuperación (§6.3) — la cota cerrada RLB-v1
+La cota de latencia de recuperación (§6.3) — RLB-v1
 `L ≤ peak + W − 1` para filtros de ventana deslizante
-count-of-K-in-W — se presenta como **resultado auxiliar** que el
-spec TLA+ `Rlb.tla` mecaniza. No la listamos como contribución: la
-cota es elemental en retrospectiva, se sigue directamente del
-mecanismo de ventana deslizante, y se incluye porque el spec la
-mecaniza limpiamente, no porque lleve el paper. Los lectores deben
-calificar el paper sobre C1–C3.
-
-Posicionamos el trabajo como un **paper de sistemas / tools, no un
-paper de teoría**.
+count-of-K-in-W — es un **resultado auxiliar** que el spec TLA+
+`Rlb.tla` mecaniza. Posicionamos el trabajo como **paper de
+sistemas / tools, no de teoría**; los lectores deben calificar
+C1–C3.
 
 #### Figura 1: El patrón de citación de seguridad
 
@@ -230,20 +221,14 @@ supervisor representativo.
 
 Este es un paper de ingeniería e infraestructura, no un paper de
 teoría. Los ingredientes de filtrado, calibración, y FDI sobre los
-que Ghost descansa están bien establecidos (§2.1). La matemática de
-La cota de latencia de recuperación es elemental en retrospectiva, y la presentamos como
-evidencia de que el patrón de citación puede transportar un
-resultado preciso, no como una contribución teórica autónoma. El
-teorema de partición de §5.3 es novedoso *en la forma que lo
-mecanizamos* — un `INV_PARTITION` en TLA+ sobre el ciclo cerrado de
-referencia — pero la observación subyacente de que "drift fired" y
-"drift clean and KNOWN" particionan el espacio condicional per-ciclo
-es estructuralmente simple. Resistimos deliberadamente sobre-claimar
-sobre cualquiera de los dos resultados. La contribución que más
-estamos dispuestos a defender es **la combinación ingeniada** (C1)
-y su **demostración operacional** (C2): que un tercero puede emitir
-un comando de shell y obtener un veredicto byte-exact contra un
-ADR vinculante.
+que Ghost descansa están bien establecidos (§2.1). La cota de
+latencia de recuperación es un resultado auxiliar, no una
+contribución. El teorema de partición de §5.3 es novedoso *en la
+forma que lo mecanizamos* — un `INV_PARTITION` en TLA+ sobre el
+ciclo cerrado de referencia. La contribución que defendemos es
+**la combinación ingeniada** (C1) y su **demostración
+operacional** (C2): el ensamblaje falta en el tooling
+autonomy-safety abierto que revisamos.
 
 ---
 
@@ -948,10 +933,7 @@ Llamamos a este patrón una **cita de seguridad ejecutable**.
 
 La instanciación de referencia sobre un supervisor de autonomía
 con cinco propiedades es evidencia de que el patrón es operable,
-no la contribución en sí. Las propiedades son deliberadamente
-simples; la cota de latencia de recuperación es elemental en
-retrospectiva; el teorema de partición es estructuralmente
-obvio. Lo que no es obvio — lo que motivó el paper — es que el
+no la contribución en sí. Lo que motivó el paper es que el
 *ensamblaje* hace las afirmaciones de seguridad operacionalmente
 falsables de una manera que las aserciones prosa-y-vídeo no son.
 El artefacto es re-ejecutable desde

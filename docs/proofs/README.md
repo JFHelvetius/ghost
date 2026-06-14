@@ -18,11 +18,11 @@ property statements in the ADRs is surfaced by *some* layer breaking.
 |---|---|---|---|
 | [`BaudErur.tla`](BaudErur.tla) | BAUD-v1, ERUR-v1, Partition, MD-v1 bonus | TLA+ / TLC | Accepted (ADR-0036) |
 | [`BaudErur.cfg`](BaudErur.cfg) | TLC config for the above | TLC | — |
-| [`Rlb.tla`](Rlb.tla) | RLB-v1 / Theorem 1 (tight recovery latency bound) | TLA+ / TLC | Accepted (paper §6) |
+| [`Rlb.tla`](Rlb.tla) | RLB-v1 / RLB-v1 (tight recovery latency bound) | TLA+ / TLC | Accepted (paper §6) |
 | [`Rlb.cfg`](Rlb.cfg) | TLC config for the above | TLC | — |
 | [`Fpb.tla`](Fpb.tla) | FPB-v1 (counter automaton well-formedness) | TLA+ / TLC | Accepted (paper §5.3) |
 | [`Fpb.cfg`](Fpb.cfg) | TLC config for the above | TLC | — |
-| [`Rlb_unbounded.tla`](Rlb_unbounded.tla) | Theorem 1 unbounded (any finite `W`) | TLA+ / TLAPS | Proof outline; see [`TLAPS_roadmap.md`](TLAPS_roadmap.md) |
+| [`Rlb_unbounded.tla`](Rlb_unbounded.tla) | RLB-v1 unbounded (any finite `W`) | TLA+ / TLAPS | Proof outline; see [`TLAPS_roadmap.md`](TLAPS_roadmap.md) |
 
 The three specs together provide **5/5 properties with at least a
 structural TLC invariant in CI** (BAUD/ERUR/MD via `BaudErur.tla`,
@@ -106,7 +106,7 @@ for the full honest framing.
 ## Future work
 
 - TLAPS proof of the unbounded version of the partition theorem
-  (any finite `W, M, K`) and of Theorem 1 (RLB).
+  (any finite `W, M, K`) and of RLB-v1 (RLB).
 - Statistical FPB-v2 with Monte Carlo bounds (the current `Fpb.tla`
   verifies counter well-formedness only; a probabilistic upper bound
   on the fire rate under arbitrary noise models is out of scope for

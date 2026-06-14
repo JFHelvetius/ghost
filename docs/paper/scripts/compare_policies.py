@@ -9,12 +9,12 @@ Policies compared:
 
 - ``MahalanobisDowngradePolicy(M=4, K=2)`` — the reference. Counts
   dirty outcomes in a sliding window; downgrades when ``count >= K``.
-  Theorem 1's recovery latency bound (paper §6) applies to this
+  the recovery latency bound's recovery latency bound (paper §6) applies to this
   family specifically.
 - ``EWMADowngradePolicy(alpha=0.5, min_outcomes=3, threshold=0.3)`` —
   exponentially-weighted-moving-average over the dirty indicator.
   Downgrades when the EWMA exceeds the threshold. Structurally
-  different mechanism; Theorem 1 does NOT apply.
+  different mechanism; the recovery latency bound does NOT apply.
 - ``PerAxisHysteresisDowngradePolicy(upper=3.0)`` — examines the
   worst per-axis Mahalanobis distance; downgrades when either axis
   exceeds the upper threshold. A third structurally distinct
