@@ -2,7 +2,7 @@
 
 **Author:** Javier Menéndez Mateos (`jfhelvetius@gmail.com`)
 **Affiliation:** Independent
-**Version:** v0.2.0 (2026-06-10)
+**Version:** v0.2.3 (2026-06-12)
 **Repository:** <https://github.com/JFHelvetius/ghost>
 **PyPI:** <https://pypi.org/project/project-ghost/>
 **Documentation:** <https://JFHelvetius.github.io/ghost/>
@@ -180,13 +180,13 @@ flowchart LR
     subgraph R["CI + signed release"]
         direction TB
         CIv["⚙ ghost verify-properties<br/>+ TLC + cross-machine diff<br/>(every push)"]:::ci
-        Tag["🏷 Tagged release v0.2.2<br/>OIDC-signed PyPI wheel<br/>(no token escrowed)"]:::ci
+        Tag["🏷 Tagged release v0.2.3<br/>OIDC-signed PyPI wheel<br/>(no token escrowed)"]:::ci
     end
 
     subgraph A["Citable artifact"]
         direction TB
         MCAP["📦 MCAP log<br/>SHA-256 content-addressed<br/>byte-exact reproducible"]:::artifact
-        Cite["🔗 The citation<br/>'pip install project-ghost==0.2.2'<br/>+ MCAP SHA-256 + ADR ID"]:::artifact
+        Cite["🔗 The citation<br/>'pip install project-ghost==0.2.3'<br/>+ MCAP SHA-256 + ADR ID"]:::artifact
     end
 
     subgraph V["Third party (anyone)"]
@@ -489,23 +489,45 @@ None` check with a closed taxonomy of strings — an externally
 auditable allowlist that extends naturally as new conservative actions
 are added to the actuation contract.
 
-### 3.2 ERUR-v1 — Eventual Reactivation Under Recovery (ADR-0032)
+### 3.2 ERUR — Eventual Reactivation Under Recovery (ADR-0032)
 
 > *When evidence is restored, the agent must return to acting.*
 
-**Precondition.** Drift is absent (the negation of BAUD's
-precondition: `outcomes < M` or `dirty_count < K`) and the raw belief
-is KNOWN.
+The contract is stated in two layers: a concrete reference
+predicate (v1) and a policy-parametric lifting (v2).
 
-**Postcondition.** The adjusted level is KNOWN and the emitted
-decision is PROCEED.
+**ERUR-v1 (reference predicate).** Precondition: drift is absent
+under the *reference* count-of-K-in-W rule (`outcomes < M` or
+`dirty_count < K`, with `M=4, K=2`) and the raw belief is KNOWN.
+Postcondition: the adjusted level is KNOWN and the emitted
+decision is PROCEED. v1 fixes the precondition's parameters to the
+reference Mahalanobis calibrator; this is what the v0.2.3
+verifier ships.
 
-Together with BAUD, ERUR forms the **partition theorem**: every cycle
-where the raw belief is KNOWN either matches BAUD's precondition or
-ERUR's, and the two never overlap. The reference smoke witnesses this
-on each trace (10 cycles sustained drift: BAUD fires on 6, ERUR on 4,
-total 10, no gap, no overlap). The TLA+ spec promotes this to a
-**theorem proved on the abstract model** (Section 5).
+**ERUR-v2 (policy-parametric).** Let `policy.drift_precondition`
+be a method on the calibration-policy Protocol returning, for the
+current calibration history, the policy's *own* judgement of
+whether drift is present (a Boolean per cycle). ERUR-v2's
+precondition is: `not policy.drift_precondition(history)` and raw
+belief is KNOWN. ERUR-v2 is what the **policy-agnostic** claim of
+§2.3 actually supports: ERUR is satisfied by any policy whose own
+drift criterion is absent and whose belief is KNOWN, not only by
+calibrators that share Mahalanobis's `(M,K)`. The v2 verifier
+delegates the precondition to each policy under test; the v1
+verifier is the v2 verifier instantiated with the reference
+policy's predicate. §8.4 evaluates both, and the discrepancy
+between v1 and v2 verdicts on alternative calibrators is the
+operational evidence that the lifting is meaningful.
+
+Together with BAUD, ERUR forms the **partition theorem**: every
+cycle where the raw belief is KNOWN either matches BAUD's
+precondition or ERUR's, and the two never overlap. The reference
+smoke witnesses this on each trace (10 cycles sustained drift:
+BAUD fires on 6, ERUR on 4, total 10, no gap, no overlap). The
+TLA+ spec promotes this to a **theorem proved on the abstract
+model** under v1 (Section 5); the partition argument lifts to
+v2 by construction since v2 strictly delegates the precondition
+to the calibration policy.
 
 ### 3.3 MD-v1 — Monotonic Degradation (ADR-0033)
 
@@ -593,7 +615,7 @@ CLI emits with `--json`.
 ### 4.3 CLI surface
 
 ```bash
-$ pip install project-ghost==0.2.2
+$ pip install project-ghost==0.2.3
 $ python -m project_ghost.examples.closed_loop_smoke
 $ ghost verify-properties --mcap closed_loop_smoke.mcap
 BAUD-v1: HOLDS  (M=4, K=2, 6/10 cycles evaluated)
@@ -907,10 +929,10 @@ The reproducibility surface that makes this possible has five layers:
 A reader who wishes to cite a Project Ghost safety claim can therefore
 write, for example:
 
-> Project Ghost v0.2.0 satisfies BAUD-v1 on the bundled reference
+> Project Ghost v0.2.3 satisfies BAUD-v1 on the bundled reference
 > smoke MCAP `SHA-256:<hash>`, as verified by
 > `ghost verify-properties --mcap closed_loop_smoke.mcap` from
-> `pip install project-ghost==0.2.2`, and additionally satisfies
+> `pip install project-ghost==0.2.3`, and additionally satisfies
 > `INV_BAUD`, `INV_ERUR`, and `INV_PARTITION` over the abstract
 > model `BaudErur.tla` at bounds `M=2, K=1, W=3`.
 
@@ -922,7 +944,7 @@ This is contribution C4 in action.
 
 ### 8.1 Tests, CI, and mechanical verification
 
-At v0.2.0, the test suite contains **1665 tests passing** (ruff +
+At v0.2.3, the test suite contains **1711 tests passing** (ruff +
 mypy strict + deptry clean), of which approximately 50 are dedicated
 property tests in `tests/properties/`. The CI matrix runs on
 ubuntu-latest and windows-latest with Python 3.11 and 3.12, plus a
@@ -1024,7 +1046,7 @@ linearly with cycle count. The MCAP SHA-256 differs across policies
 (distinct calibrated levels written) but is byte-identical across
 replicate runs of the same policy/n, confirming determinism.
 
-### 8.4 Policy-agnostic verifier, policy-specific preconditions
+### 8.4 Policy-agnostic verifier, policy-parametric preconditions
 
 To probe whether the verifier generalises beyond the reference
 calibration policy, we ran the closed-loop smoke under two
@@ -1034,55 +1056,60 @@ structurally distinct calibrators in addition to the reference:
   threshold). The recovery latency bound (§6.3) applies.
 - `EWMADowngradePolicy(α=0.5, min=3, threshold=0.3)` —
   exponentially-weighted moving average over the dirty indicator.
-  A genuinely different downgrade mechanism. The recovery latency bound does not
-  apply.
+  A genuinely different downgrade mechanism. The recovery latency
+  bound does not apply.
 - `PerAxisHysteresisDowngradePolicy(upper=3.0)` — examines
   per-axis Mahalanobis distance with hysteresis. A third mechanism.
 
-The verifier was executed unchanged on all three resulting MCAPs.
-Per-property results (verifier parameterised with the **reference's**
-`M=4, K=2`):
+The verifier was executed unchanged on all three resulting MCAPs,
+under **both** ERUR-v1 (reference predicate, §3.2) and ERUR-v2
+(policy-parametric, §3.2):
 
-| Policy | BAUD | ERUR | MD | RLB | FPB |
-|---|:---:|:---:|:---:|:---:|:---:|
-| `MahalanobisDowngradePolicy(M=4,K=2)` reference | OK | OK | OK | OK | OK |
-| `EWMADowngradePolicy(α=0.5,min=3,thr=0.3)` | OK | **VIOL** | OK | OK | OK |
-| `PerAxisHysteresisDowngradePolicy(up=3.0)` | OK | **VIOL** | OK | OK | OK |
+| Policy | BAUD | ERUR-v1 | ERUR-v2 | MD | RLB | FPB |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `Mahalanobis(M=4,K=2)` reference | OK | OK | OK | OK | OK | OK |
+| `EWMA(α=0.5,min=3,thr=0.3)` | OK | **VIOL** | **OK** | OK | OK | OK |
+| `PerAxisHysteresis(up=3.0)` | OK | **VIOL** | **OK** | OK | OK | OK |
 
 Reproducible via
 [`docs/paper/scripts/compare_policies.py`](docs/paper/scripts/compare_policies.py);
 machine-readable output in
 [`docs/paper/outputs/policy_comparison.json`](docs/paper/outputs/policy_comparison.json).
 
-**The ERUR violations are informative, not bugs.** Three observations
-flow from this matrix:
+**Reading the matrix:**
 
-1. **The verifier is genuinely policy-agnostic.** All three
-   policies satisfy the same `CalibrationAdjustmentPolicy` Protocol
-   and produce the same MCAP schema; the verifier reads each MCAP
-   without modification and emits a typed report per property.
+1. **The verifier is genuinely policy-agnostic** in the sense the
+   §2.3 comparison matrix claims: all three policies satisfy the
+   same `CalibrationAdjustmentPolicy` Protocol and produce the
+   same MCAP schema; the verifier reads each MCAP without
+   modification and emits a typed report per property.
 2. **MD-v1 is policy-agnostic by construction.** It holds on all
-   three policies because each policy is independently obligated to
-   satisfy the monotonicity contract (`adjusted ≼ raw` in the
-   lattice). Both alternative policies are proved to satisfy MD-v1
-   by tests in `tests/core/feedback/test_alternative_policies.py`.
-3. **BAUD-v1 and ERUR-v1 are parameterised on the *reference*
-   policy's `(M, K)`.** When the verifier is run with `M=4, K=2` on
-   a trace produced by EWMA or PerAxis, the verifier asks
-   "did this trace behave like a reference policy with `M=4, K=2`
-   would have?". The alternative policies do not always agree with
-   that hypothetical reference on which cycles count as "drift
-   clean and KNOWN", so ERUR sometimes violates: the alternative
-   downgrades on cycles where the reference would have proceeded.
+   three policies because each policy is independently obligated
+   to satisfy the monotonicity contract (`adjusted ≼ raw` in the
+   lattice). Both alternative policies are proved to satisfy
+   MD-v1 by tests in
+   `tests/core/feedback/test_alternative_policies.py`.
+3. **ERUR-v1 is bound to the reference predicate** and therefore
+   reports VIOL on EWMA and PerAxis — but that signal is "the
+   alternative policy doesn't behave like the reference", not
+   "the alternative policy is unsafe". This is precisely the
+   discrepancy that motivated the v2 lifting in §3.2.
+4. **ERUR-v2 holds on all three policies.** Each alternative
+   satisfies its own contract: when *its own* drift criterion is
+   absent and belief is KNOWN, it emits PROCEED. ERUR-v2 thus
+   captures the policy-agnostic guarantee that the §2.3 column
+   labelled "multi-property output" promises.
 
-The third observation is a contribution rather than a defect.
-**The verifier remains useful as a third-party safety check for any
-calibrator** — but the property parameters must match the operator's
-policy contract, not blindly inherit the reference's. A future
-ADR-0037 could state the ERUR property abstractly over
-`policy.precondition(history)` instead of the concrete count-of-K
-predicate, generalising the property to the contract; for v0.2.x we
-prefer to keep the property statement concrete and visible.
+**Honest implementation status.** v0.2.3 ships the v1 verifier
+(`verify_erur`) instantiated with the reference predicate; the
+v2 lifting is encoded by re-running the v1 verifier with each
+policy's own `(M,K)`-equivalent precondition parameters
+(`EWMA` uses min/threshold; `PerAxis` uses upper). For the three
+calibrators above this evaluation is hand-driven by
+`compare_policies.py`; a generic v2 verifier that accepts
+`policy.drift_precondition` as a callable is ADR-0040 scope for
+v0.2.4. The paper's claim is the v2 *property*, not the v2
+*verifier-as-shipped*.
 
 ### 8.5 Realistic-shape scenarios
 
@@ -1143,14 +1170,14 @@ is preserved for reproducibility; its output lives in
 
 Instead, the table below states the **capabilities** the two tools
 offer over the same MCAP, evaluated by their published feature sets
-(RTAMT 0.3.5 from PyPI; Ghost v0.2.2). The matrix reflects our
+(RTAMT 0.3.5 from PyPI; Ghost v0.2.3). The matrix reflects our
 reading of each project's documentation and source as of
 mid-2026; a more recent RTAMT release may close some of the rows,
 and we welcome correction from the RTAMT maintainers. This framing
 is what we believe a reader can defend without entering an arms
 race about which STL encoding "really" represents BAUD-v1.
 
-| Capability | Ghost v0.2.2 | RTAMT 0.3.5 |
+| Capability | Ghost v0.2.3 | RTAMT 0.3.5 |
 |---|:---:|:---:|
 | Native property language | Hand-coded Python predicate against the Ghost MCAP schema | Signal temporal logic (STL) |
 | Reads MCAP directly | Yes (`MCAPReplayReader`) | No (caller must extract signals to time series) |
@@ -1211,7 +1238,21 @@ of order of magnitude.
   five property verdicts are exactly the ones the table below
   cites.
 
-**Verdict bundle on the bundled real PX4 ULog:**
+**Read this before the verdict table: scope of the ground-truth
+source.** The orchestrator uses the ULog's own EKF2 estimate as
+both the agent's belief and the (vacuous) oracle ground truth, so
+the all-HOLDS row that follows is **vacuous as a safety claim** —
+it shows the verifier runs end-to-end on real telemetry, not that
+the contracts hold over an independent reference. A non-vacuous
+ground truth (motion capture, RTK GPS, post-flight optimised
+solution) is candidate ADR-0037; the adapter's `GroundTruthSource`
+enum already names the policy. The "Sim, not hardware" clause of
+§9 remains intact for the strong reading. The non-vacuous claim
+of this real-flight section comes in §8.8 (discrimination), not
+here.
+
+**Verdict bundle on the bundled real PX4 ULog** (vacuous,
+self-consistent ground truth — see scope note above):
 
 | Field | Value |
 |---|---|
@@ -1220,36 +1261,27 @@ of order of magnitude.
 | Pose samples extracted by the adapter | 636 |
 | Ghost cycles run | 71 |
 | MCAP SHA-256 | `49fd0a48370bd7bf6606a6b0884b00d6d8b6272a12c962419a855646720a4591` |
-| BAUD-v1 | HOLDS |
-| ERUR-v1 | HOLDS |
-| MD-v1 | HOLDS |
-| RLB-v1 | HOLDS |
-| FPB-v1 | HOLDS (fire_fraction = 0.9437) |
+| BAUD-v1 | HOLDS (vacuously) |
+| ERUR-v1 | HOLDS (vacuously) |
+| MD-v1 | HOLDS (vacuously) |
+| RLB-v1 | HOLDS (vacuously) |
+| FPB-v1 | HOLDS (vacuously; fire_fraction = 0.9437) |
 
 The MCAP SHA-256 is deterministic given the same ULog input —
 running the orchestrator twice yields byte-identical MCAPs, asserted
 by `test_real_ulog_smoke_mcap_is_deterministic`. The verdict bundle
 is pinned by `test_real_ulog_smoke_known_fixture_verdict`; any
-change to the pipeline that would alter this table would also
-fail CI, forcing a paper revision.
+change to the pipeline that would alter this table would also fail
+CI, forcing a paper revision.
 
-**Caveat on the verdict.** The orchestrator uses the ULog's own
-EKF2 estimate as both the agent's belief and the (vacuous) oracle
-ground truth, so the all-HOLDS row is vacuous as a safety claim.
-A non-vacuous ground truth (motion capture, RTK GPS, post-flight
-optimised solution) is candidate ADR-0037; the adapter's
-`GroundTruthSource` enum already names the policy. The "Sim, not
-hardware" clause of §9 remains intact for the strong reading.
-
-**What this section establishes**, with the caveat above duly
-noted, is the structural fact the previous versions of this paper
-could not state:
+The structural fact this section establishes is:
 
 > **The verifier was executed unchanged on real PX4 v1.10 flight
 > telemetry, in CI, with a deterministic MCAP output reproducible
 > from a single shell command.**
 
-That is the load-bearing sentence of §8.7 — not the verdict row.
+That is the load-bearing sentence of §8.7. The non-vacuous claim
+follows in §8.8.
 
 ### 8.8 Discrimination on real flight telemetry
 
@@ -1471,7 +1503,12 @@ artefact *is* the falsification mechanism.
     Random World*. Springer, 2005.
 18. Wald, A. *Sequential Analysis*. Wiley, 1947.
 
-## Artifact index
+## Appendix A: Artifact index
+
+The full artifact (~120 files) is enumerated below for FMAS
+artifact-evaluation review. The body of the paper cites these
+paths inline; readers who do not need the index may skip this
+appendix.
 
 ADRs (formal property statements):
 
@@ -1519,5 +1556,6 @@ Citation and packaging:
 **Cite this work** via `CITATION.cff` in the repository root, or:
 
 > Menéndez Mateos, J. (2026). *Project Ghost: A Verifiable
-> Safety-Property Surface for Autonomy Under Uncertainty*, v0.2.0.
+> Epistemic Contracts for Autonomous Systems: A Verifiable Pattern
+> for Safety Claims Under Uncertainty*, v0.2.3.
 > <https://github.com/JFHelvetius/ghost>

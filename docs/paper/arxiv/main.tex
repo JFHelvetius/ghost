@@ -1,4 +1,4 @@
-% Project Ghost — arXiv submission (v0.2.0, 2026-06-10)
+% Project Ghost — arXiv submission (v0.2.3, 2026-06-10)
 % Author: Javier Menéndez Mateos <jfhelvetius@gmail.com>
 % Compiles with pdflatex + bibtex (or biber if you switch \bibliographystyle).
 %
@@ -54,7 +54,7 @@
 \author{Javier Menéndez Mateos\\
         \texttt{jfhelvetius@gmail.com}\\
         \small Independent}
-\date{v0.2.0 --- \today}
+\date{v0.2.3 --- \today}
 
 \begin{document}
 \maketitle
@@ -581,7 +581,7 @@ public API; their JSON serialisation is the wire format the CLI
 emits with \texttt{--json}.
 
 \begin{lstlisting}[language=bash]
-$ pip install project-ghost==0.2.2
+$ pip install project-ghost==0.2.3
 $ python -m project_ghost.examples.closed_loop_smoke
 $ ghost verify-properties --mcap closed_loop_smoke.mcap
 BAUD-v1: HOLDS  (M=4, K=2, 6/10 cycles evaluated)
@@ -766,10 +766,10 @@ every push.
 
 A reader who wishes to cite a Project Ghost safety claim can write:
 \begin{quote}\small
-Project Ghost v0.2.0 satisfies BAUD-v1 on the bundled reference
+Project Ghost v0.2.3 satisfies BAUD-v1 on the bundled reference
 smoke MCAP \texttt{SHA-256:<hash>}, as verified by
 \texttt{ghost verify-properties --mcap closed\_loop\_smoke.mcap}
-from \texttt{pip install project-ghost==0.2.2}, and additionally
+from \texttt{pip install project-ghost==0.2.3}, and additionally
 satisfies \texttt{INV\_BAUD}, \texttt{INV\_ERUR},
 \texttt{INV\_PARTITION} over the abstract model
 \texttt{BaudErur.tla} at bounds $M{=}2, K{=}1, W{=}3$, and
@@ -783,7 +783,7 @@ This is contribution C4 in action.
 \label{sec:evaluation}
 
 \subsection{Tests, CI, and mechanical verification}
-At v0.2.0, the test suite contains 1665 tests passing (ruff +
+At v0.2.3, the test suite contains 1711 tests passing (ruff +
 mypy strict + deptry clean), of which approximately 50 are
 dedicated property tests. The CI matrix runs on
 \texttt{ubuntu-latest} and \texttt{windows-latest} with Python
@@ -1010,7 +1010,7 @@ for reproducibility; its output lives in
 
 Instead, Table~\ref{tab:rtamt-bench} states the \emph{capabilities}
 the two tools offer over the same MCAP, evaluated by their
-published feature sets (RTAMT 0.3.5 from PyPI; Ghost v0.2.2). The
+published feature sets (RTAMT 0.3.5 from PyPI; Ghost v0.2.3). The
 matrix reflects our reading of each project's documentation and
 source as of mid-2026; a more recent RTAMT release may close some
 rows, and we welcome correction from the RTAMT maintainers. This
@@ -1022,7 +1022,7 @@ arms race about which STL encoding ``really'' represents BAUD-v1.
 \footnotesize
 \begin{tabular}{lcc}
 \toprule
-\textbf{Capability} & \textbf{Ghost v0.2.2} & \textbf{RTAMT 0.3.5} \\
+\textbf{Capability} & \textbf{Ghost v0.2.3} & \textbf{RTAMT 0.3.5} \\
 \midrule
 Native property language                              & Python predicate over MCAP schema & STL \\
 Reads MCAP directly                                   & Yes (\texttt{MCAPReplayReader})   & No (user extracts signals) \\
@@ -1079,6 +1079,19 @@ end-to-end flow on any \texttt{.ulg} file. Three integration tests
 in \texttt{tests/adapters/test\_real\_ulog\_smoke.py} pin the
 end-to-end outcome.
 
+\textbf{Read this before the verdict table: scope of the
+ground-truth source.} The orchestrator uses the ULog's own EKF2
+estimate as both the agent's belief and the (vacuous) oracle
+ground truth, so the all-HOLDS row that follows is \textbf{vacuous
+as a safety claim} --- it shows the verifier runs end-to-end on
+real telemetry, not that the contracts hold over an independent
+reference. A non-vacuous ground truth (motion capture, RTK GPS,
+post-flight optimised solution) is candidate ADR-0037; the
+\texttt{Sim, not hardware} clause of \S9 remains intact for the
+strong reading. The non-vacuous claim of this real-flight section
+comes in \S\ref{sec:realflight-discrim} (discrimination), not
+here.
+
 \begin{table}[h]
 \centering
 \small
@@ -1089,28 +1102,19 @@ end-to-end outcome.
 Pose samples extracted by the adapter & 636 \\
 Ghost cycles run                      & 71 \\
 MCAP SHA-256                          & \texttt{49fd0a48...720a4591} \\
-BAUD-v1                                & HOLDS \\
-ERUR-v1                                & HOLDS \\
-MD-v1                                  & HOLDS \\
-RLB-v1                                 & HOLDS \\
-FPB-v1                                 & HOLDS (fire\_fraction = 0.9437) \\
+BAUD-v1                                & HOLDS (vacuously) \\
+ERUR-v1                                & HOLDS (vacuously) \\
+MD-v1                                  & HOLDS (vacuously) \\
+RLB-v1                                 & HOLDS (vacuously) \\
+FPB-v1                                 & HOLDS (vacuously; fire\_fraction = 0.9437) \\
 \bottomrule
 \end{tabular}
-\caption{Verdict bundle on the bundled real PX4 ULog.}
+\caption{Verdict bundle on the bundled real PX4 ULog
+(self-consistent ground truth; see scope note above).}
 \label{tab:real-verdict}
 \end{table}
 
-\textbf{Caveat on the verdict.} The orchestrator uses the ULog's
-own EKF2 estimate as both the agent's belief and the (vacuous)
-oracle ground truth, so the all-HOLDS row is vacuous as a safety
-claim. A non-vacuous ground truth (motion capture, RTK GPS,
-post-flight optimised solution) is candidate ADR-0037; the
-\texttt{Sim, not hardware} clause of \S9 remains intact for the
-strong reading.
-
-\textbf{What this section establishes}, with the caveat above duly
-noted, is the structural fact the previous versions of this paper
-could not state:
+The structural fact this section establishes is:
 
 \begin{quote}
 \itshape

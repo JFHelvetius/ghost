@@ -2,7 +2,7 @@
 
 **Autor:** Javier Menéndez Mateos (`jfhelvetius@gmail.com`)
 **Afiliación:** Independiente
-**Versión:** v0.2.2 (2026-06-12)
+**Versión:** v0.2.3 (2026-06-12)
 **Repositorio:** <https://github.com/JFHelvetius/ghost>
 **PyPI:** <https://pypi.org/project/project-ghost/>
 **Documentación:** <https://JFHelvetius.github.io/ghost/>
@@ -239,7 +239,7 @@ flowchart LR
     end
     subgraph R["CI + release firmado"]
         CIv["⚙ ghost verify-properties<br/>+ TLC + cross-machine"]
-        Tag["🏷 Release tagged v0.2.2<br/>wheel PyPI firmada OIDC"]
+        Tag["🏷 Release tagged v0.2.3<br/>wheel PyPI firmada OIDC"]
     end
     subgraph A["Artefacto citable"]
         MCAP["📦 Log MCAP<br/>SHA-256, byte-exact"]
@@ -495,7 +495,7 @@ y (d) retorna un report typed.
 ### 4.3 Superficie CLI
 
 ```bash
-$ pip install project-ghost==0.2.2
+$ pip install project-ghost==0.2.3
 $ python -m project_ghost.examples.closed_loop_smoke
 $ ghost verify-properties --mcap closed_loop_smoke.mcap
 BAUD-v1: HOLDS  (M=4, K=2, 6/10 cycles evaluated)
@@ -559,7 +559,7 @@ scope.
 Los tres specs juntos verifican 11 invariantes en CI continuo (5 en
 BaudErur, 3 en Rlb, 3 en Fpb), cubriendo BAUD/ERUR/MD/RLB/FPB con al
 menos un invariante estructural cada una. Esto eleva la cobertura
-mecánica de 3/5 propiedades en v0.2.1 a **5/5 en v0.2.2**.
+mecánica de 3/5 propiedades en v0.2.1 a **5/5 en v0.2.3**.
 
 ### 5.4 Bounds y qué prueban
 
@@ -737,10 +737,10 @@ productor**. La superficie de reproducibilidad tiene cinco capas:
 Un lector que quiera citar un claim de seguridad de Project Ghost
 puede entonces escribir:
 
-> Project Ghost v0.2.2 satisface BAUD-v1 sobre el MCAP del smoke de
+> Project Ghost v0.2.3 satisface BAUD-v1 sobre el MCAP del smoke de
 > referencia incluido `SHA-256:<hash>`, verificado por
 > `ghost verify-properties --mcap closed_loop_smoke.mcap` desde
-> `pip install project-ghost==0.2.2`, y adicionalmente satisface
+> `pip install project-ghost==0.2.3`, y adicionalmente satisface
 > `INV_BAUD`, `INV_ERUR`, `INV_PARTITION` sobre el modelo abstracto
 > `BaudErur.tla` en bounds `M=2, K=1, W=3`, y `INV_RLB` (la cota de latencia de recuperación)
 > sobre `Rlb.tla` en `W=4`.
@@ -800,9 +800,9 @@ codifican propiedades distintas sobre el mismo trace, así que una
 diferencia de veredicto no establece un defecto en ninguno de los
 dos tools. En su lugar reportamos una matriz de **capacidades**
 publicadas por ambos tools sobre el mismo MCAP (RTAMT 0.3.5; Ghost
-v0.2.2):
+v0.2.3):
 
-| Capacidad | Ghost v0.2.2 | RTAMT 0.3.5 |
+| Capacidad | Ghost v0.2.3 | RTAMT 0.3.5 |
 |---|:---:|:---:|
 | Lenguaje nativo | Predicado Python sobre schema MCAP | STL |
 | Lee MCAP directo | Sí | No (usuario extrae signals) |
