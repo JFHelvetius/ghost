@@ -1555,7 +1555,7 @@ Citation and packaging:
 
 **Cite this work** via `CITATION.cff` in the repository root, or:
 
-> Menéndez Mateos, J. (2026). *Project Ghost: A Verifiable
-> Epistemic Contracts for Autonomous Systems: A Verifiable Pattern
-> for Safety Claims Under Uncertainty*, v0.2.3.
+> Menéndez Mateos, J. (2026). *Epistemic Contracts for Autonomous
+> Systems: A Verifiable Pattern for Safety Claims Under
+> Uncertainty*, v0.2.3.
 > <https://github.com/JFHelvetius/ghost>
