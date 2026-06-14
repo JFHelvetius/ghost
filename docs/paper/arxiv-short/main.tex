@@ -50,14 +50,6 @@
 \begin{document}
 \maketitle
 
-\begin{center}
-\itshape\small
-``Ghost turns safety claims into executable citations.''\\[0.3em]
-\upshape\textmd{--- the one-sentence summary of this work.}
-\end{center}
-
-\vspace{0.6em}
-
 \begin{abstract}
 \textbf{Thesis: safety claims should be executable and falsifiable
 through a reproducible citation.} We introduce \emph{executable
@@ -90,74 +82,36 @@ telemetry, TLA+, MCAP.
 \section{Introduction}
 \label{sec:intro}
 
-Safety claims in autonomy research are typically asserted in prose
-and illustrated by simulation videos that the reader cannot re-run.
-The literature on uncertainty in autonomy is rich --- Bayesian
-filters, calibration of probabilistic predictions, fault detection
-and isolation, runtime supervisors --- but the gap between
-\emph{the theory exists} and \emph{this specific run, on this
-specific code, satisfies the property} is rarely closed
-operationally. A third party cannot, in practice, verify another
-team's safety claim against a recorded run.
-
-We describe Project Ghost, an open-source platform whose primary
-contribution is a citation pattern that closes that gap: a third
-party can verify any cited safety claim against the recorded run by
-running \texttt{ghost verify-properties --mcap <log>} from a wheel
-installed via \texttt{pip}. Two of the properties (BAUD-v1 and
-ERUR-v1) plus the recovery latency bound and the FPB counter
-automaton are mechanically verified by TLA+/TLC over the abstract
-state space of the reference policy pair. The whole pipeline runs
-end-to-end on a real PX4 flight log in CI.
-
-\subsection{The single claim}
-
 \textbf{A safety claim about an autonomy system can today be
 asserted by its authors and illustrated in their venues, but it
 cannot be falsified by a third party who was not in the room when
-the run happened.} Project Ghost closes that gap. A safety claim
+the run happened.} Project Ghost closes that gap: a safety claim
 ships as a content-addressed autonomy log plus a single shell
 command (\texttt{ghost verify-properties --mcap <log>}); anyone
 with the wheel and the log reproduces the verdict --- or
 contradicts it. We call this pattern an \textbf{executable safety
-citation}. The body of the paper is the operational evidence that
-the pattern works.
+citation}. Two properties (BAUD-v1, ERUR-v1) plus the recovery
+latency bound and the FPB counter automaton are mechanically
+verified by TLA+/TLC; the whole pipeline runs end-to-end on a real
+PX4 flight log in CI.
 
 % =======================================================================
 \section{Background and related work}
 \label{sec:related}
 
-\textbf{Underlying ingredients.} Bayesian and particle filtering
-[Thrun et al.\ 2005], calibration of probabilistic predictions
-[Vovk et al.\ 2005], runtime verification [Bartocci et al.\ 2018],
-TLA+/TLC [Lamport 2002], MCAP [Foxglove 2022].
-
-\textbf{Closest tooling prior work.} RTAMT [Niković et al.\ 2020]:
-STL monitors over CPS logs; STL formula language, no mechanically
-verified proof layer. MoonLight [Bartocci et al.\ 2020]: STREL
-monitor; spatial focus. ROSMonitoring [Ferrando et al.\ 2020] and
-ROSRV [Huang et al.\ 2014]: live ROS-middleware monitors, online.
-Safe RL via shielding [Jansen et al.\ 2020]: online enforcement.
-Conformal prediction for robot safety [Chakraborty et al.\ 2024]:
-predictive. Supervisory control of timed automata
-[Flordal et al.\ 2022]: synthesises new supervisors. Surveys
-[Rizaldi et al.\ 2020] note absence of mechanically verified TLA+
-specs for autonomy supervisors specifically.
-
-\textbf{Industrial practice.} Waymo, NASA NFM, PX4
-\texttt{commander}, Autoware, Cruise produce safety artefacts at
-scales Ghost does not. They share organisational properties Ghost
-does not: teams of safety engineers and proprietary access to
-telemetry, testing infrastructure, and regulators. The niche we
-believe Ghost fills, complementary to those efforts, is the gap
-between ``this software is safe'' (a closed claim signed by an
-organisation) and ``here is the verifier and the log; check it
-yourself'' (an open claim citable by a third party). The pattern
-is a primitive those cases could cite, not a substitute for them.
-
-\textbf{Comparison matrix.} Table~\ref{tab:comparison} positions
-Ghost against the closest runtime-verification and
-supervisory-control tooling. Full per-tool detail in
+Ghost rests on standard ingredients: Bayesian filtering
+[Thrun et al.\ 2005], calibration [Vovk et al.\ 2005], runtime
+verification [Bartocci et al.\ 2018], TLA+/TLC [Lamport 2002],
+MCAP [Foxglove 2022]. Closest tooling: RTAMT, MoonLight,
+ROSMonitoring, ROSRV, shielding, conformal prediction,
+supervisory control of timed automata. None of these ships a
+content-addressed pure-function verifier via signed wheels with
+a mechanically verified semantics layer; Table~\ref{tab:comparison}
+positions Ghost on the relevant axes. Industrial practice (Waymo,
+NASA NFM, PX4 \texttt{commander}, Autoware, Cruise) produces
+safety artefacts at scales Ghost does not but behind organisational
+gates the public cannot replay; Ghost fills the niche of the open,
+third-party-citable safety claim. Full per-tool detail in
 Appendix~\ref{app:comparison}.
 
 \begin{table}[h]
@@ -222,12 +176,9 @@ content-addressed, pure-function safety-property verifier via
 \draw[flowbig] (cite.east) -- ++(3mm,0) |- (cmd.west);
 \draw[flow] (cmd) -- (out);
 \end{tikzpicture}
-\caption{\textbf{The executable safety citation pattern.} A binding
-ADR states the property predicate; a pure-function verifier and
-TLA+ specs encode its semantics; CI gates every push and tagging
-cuts an OIDC-signed release. The citable artifact is the pair
-(MCAP SHA-256, PyPI version). A third party concatenates them with
-one shell command and obtains a deterministic verdict per property.}
+\caption{\textbf{The executable safety citation pattern.} The
+citable artefact is the pair (MCAP SHA-256, PyPI version); a third
+party reproduces the per-property verdict from one shell command.}
 \label{fig:pattern}
 \end{figure}
 
@@ -235,55 +186,30 @@ one shell command and obtains a deterministic verdict per property.}
 \section{The property set and the verifier}
 \label{sec:properties}
 
-We instantiate the pattern on five properties of a reference
-closed-loop autonomy supervisor:
-
-\begin{itemize}[noitemsep,topsep=2pt]
-  \item \textbf{BAUD-v1} (ADR-0031): when drift is detected the
-        agent emits no non-conservative action.
-  \item \textbf{ERUR-v1} (ADR-0032): when drift is absent and
-        belief is KNOWN the agent emits PROCEED.
-  \item \textbf{MD-v1} (ADR-0033): the calibrator never inflates
-        confidence ($\mathrm{adjusted} \preceq \mathrm{raw}$).
-  \item \textbf{RLB-v1} (ADR-0034): structural recovery latency
-        bound (\S\ref{sec:mechanical}).
-  \item \textbf{FPB-v1} (ADR-0035): empirical fire-rate observer.
-\end{itemize}
-
-Each property is stated as a binding ADR, verified by a pure
-function over the MCAP, exercised by Hypothesis property tests,
-witnessed inline in every reference smoke, and self-enforced on
-every push by CI.
-
-\textbf{CLI surface.} \texttt{pip install project-ghost==0.2.3}
-followed by \texttt{ghost verify-properties --mcap <log>} yields
-exit code \texttt{0} iff every property holds, with a deterministic
-JSON report. The verifier is a pure function over the
-content-addressed MCAP; no replay, no simulation, no trust in the
-producer.
+We instantiate the pattern on five binding ADRs over the closed
+loop of a reference autonomy supervisor: BAUD-v1 (no
+non-conservative action while drift is detected), ERUR-v1
+(PROCEED when belief is KNOWN and drift absent), MD-v1
+(calibrator never inflates confidence, $\mathrm{adjusted} \preceq
+\mathrm{raw}$), RLB-v1 (the recovery latency bound of
+\S\ref{sec:mechanical}), and FPB-v1 (empirical fire-rate
+observer). Each is verified by a pure function over the
+content-addressed MCAP, exercised by Hypothesis property tests,
+and self-enforced on every push by CI.
 
 % =======================================================================
-\section{Mechanical verification (compact)}
+\section{Mechanical verification}
 \label{sec:mechanical}
 
-Three TLA+ specifications jointly cover the five properties with 11
-invariants verified by TLC over the bounded state space, in CI on
-every push.
-
-\texttt{BaudErur.tla} ($M{=}2, K{=}1, W{=}3$) verifies BAUD-v1,
-ERUR-v1, the partition theorem $\mathrm{BAUD} \oplus \mathrm{ERUR}$,
-MD-v1, and the structural history bound. \texttt{Rlb.tla} ($W{=}4$)
-mirrors the verifier algorithm under the consecutive-drift
-hypothesis and mechanises the recovery latency bound below.
-\texttt{Fpb.tla} ($\mathrm{MAX\_CYCLES}{=}8$) checks the FPB
-counter automaton's structural well-formedness.
-
-\paragraph{Recovery latency bound (RLB-v1, transient regime).}
-Let the outcome stream contain a transient drift of $N \le W$
-consecutive dirty outcomes followed by clean outcomes. Let
-$\mathrm{peak} = N$ and $L$ be the dirty-run length. Then
-$L = \mathrm{peak} + W - 1$, attained with equality
-(proof in \S\ref{app:theorem}).
+Three TLA+ specifications jointly cover the property set with 11
+invariants verified by TLC on every push:
+\texttt{BaudErur.tla} ($M{=}2, K{=}1, W{=}3$) for BAUD-v1, ERUR-v1,
+the partition theorem $\mathrm{BAUD} \oplus \mathrm{ERUR}$, and
+MD-v1; \texttt{Rlb.tla} ($W{=}4$) mirrors the verifier algorithm
+under the consecutive-drift hypothesis and mechanises the recovery
+latency bound $L = \mathrm{peak} + W - 1$ (statement and proof in
+\S\ref{app:theorem}); \texttt{Fpb.tla} checks FPB counter
+well-formedness.
 
 % =======================================================================
 \section{The verifier on real flight telemetry}
@@ -393,9 +319,16 @@ missing. The artifact is re-runnable from
 Reviewers needing per-tool detail get it without bloating the
 main body.)
 
-\section{Proof of the recovery latency bound}
+\section{The recovery latency bound: statement and proof}
 \label{app:theorem}
 
+\paragraph{Statement (RLB-v1, transient regime).}
+Let the outcome stream contain a transient drift of $N \le W$
+consecutive dirty outcomes followed by clean outcomes. Let
+$\mathrm{peak} = N$ and $L$ be the dirty-run length. Then
+$L = \mathrm{peak} + W - 1$, attained with equality.
+
+\paragraph{Proof.}
 Trace the window state cycle by cycle, noting the sliding-window
 invariant: at cycle $t$, the window contains the last
 $\min(t, W)$ outcomes. Accumulation phase (cycles $1..N$): each
