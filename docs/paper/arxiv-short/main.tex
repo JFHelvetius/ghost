@@ -110,14 +110,16 @@ end-to-end on a real PX4 flight log in CI.
 
 \subsection{The single claim}
 
-\textbf{Project Ghost introduces executable safety citations: a
-reproducibility pattern that allows a third party to verify a
-safety claim against a content-addressed autonomy log using a
-single command.}
-
-If a reader remembers one sentence from this paper, that is the one
-we ask them to remember. The body of the paper is the operational
-evidence for it.
+\textbf{A safety claim about an autonomy system can today be
+asserted by its authors and illustrated in their venues, but it
+cannot be falsified by a third party who was not in the room when
+the run happened.} Project Ghost closes that gap. A safety claim
+ships as a content-addressed autonomy log plus a single shell
+command (\texttt{ghost verify-properties --mcap <log>}); anyone
+with the wheel and the log reproduces the verdict --- or
+contradicts it. We call this pattern an \textbf{executable safety
+citation}. The body of the paper is the operational evidence that
+the pattern works.
 
 % =======================================================================
 \section{Background and related work}
@@ -243,7 +245,7 @@ closed-loop autonomy supervisor:
   \item \textbf{MD-v1} (ADR-0033): the calibrator never inflates
         confidence ($\mathrm{adjusted} \preceq \mathrm{raw}$).
   \item \textbf{RLB-v1} (ADR-0034): structural recovery latency
-        bound (Theorem~\ref{thm:rlb}).
+        bound (\S\ref{sec:mechanical}).
   \item \textbf{FPB-v1} (ADR-0035): empirical fire-rate observer.
 \end{itemize}
 
@@ -271,21 +273,17 @@ every push.
 ERUR-v1, the partition theorem $\mathrm{BAUD} \oplus \mathrm{ERUR}$,
 MD-v1, and the structural history bound. \texttt{Rlb.tla} ($W{=}4$)
 mirrors the verifier algorithm under the consecutive-drift
-hypothesis and mechanises Theorem~\ref{thm:rlb}. \texttt{Fpb.tla}
-($\mathrm{MAX\_CYCLES}{=}8$) checks the FPB counter automaton's
-structural well-formedness.
+hypothesis and mechanises the recovery latency bound below.
+\texttt{Fpb.tla} ($\mathrm{MAX\_CYCLES}{=}8$) checks the FPB
+counter automaton's structural well-formedness.
 
-\begin{theorem}[Tight recovery latency bound; transient regime]
-\label{thm:rlb}
+\paragraph{Recovery latency bound (RLB-v1, transient regime).}
 Let the outcome stream contain a transient drift of $N \le W$
 consecutive dirty outcomes followed by clean outcomes. Let
 $\mathrm{peak} = N$ and $L$ be the dirty-run length. Then
-$L = \mathrm{peak} + W - 1$, attained with equality. Proof in
-Appendix~\ref{app:theorem}.
-\end{theorem}
-
-Theorem~\ref{thm:rlb} is presented as an auxiliary result that the
-TLA+ spec \texttt{Rlb.tla} mechanises, not as a contribution.
+$L = \mathrm{peak} + W - 1$, attained with equality
+(\S\ref{app:theorem}). This is an auxiliary structural result that
+\texttt{Rlb.tla} mechanises, not a contribution.
 
 % =======================================================================
 \section{The verifier on real flight telemetry}
@@ -338,23 +336,9 @@ six integration tests pin the experiment.}
 \label{tab:real-verdict}
 \end{table}
 
-\textbf{What this establishes.}
-
-\begin{quote}
-\itshape
-On the same real PX4 v1.10 flight log, the verifier flips its
-verdict from all-HOLDS under the reference policies to BAUD-v1
-VIOLATED when a one-line decision-policy or actuation-policy
-regression is substituted. The verifier is informative on real
-telemetry: it discriminates the reference run from two specific
-named regressions.
-\end{quote}
-
-\textbf{What this does not claim.} The buggy run did not fly
-anything; the substitution is at the policy layer. The diversity
-of bug categories that flip on real data depends on whether the
-ULog's drift pattern exercises their precondition --- generalising
-across more flights is scope for ADR-0037 (real-flight corpus).
+The substitution is at the policy layer and the buggy run did
+not fly anything; generalising across more flights is scope for
+ADR-0037 (\S\ref{sec:limits}).
 
 \textbf{Evaluation summary.} Full evaluation in
 Appendix~\ref{app:eval}: six-category violation matrix
@@ -409,7 +393,7 @@ surveyed scope, is missing. The artifact is re-runnable from
 Reviewers needing per-tool detail get it without bloating the
 main body.)
 
-\section{Proof of Theorem~\ref{thm:rlb}}
+\section{Proof of the recovery latency bound}
 \label{app:theorem}
 
 Trace the window state cycle by cycle, noting the sliding-window

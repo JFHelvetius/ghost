@@ -57,7 +57,7 @@ cada push por CI. Tres specs TLA+ cubren conjuntamente las cinco
 propiedades; juntos verifican 11 invariantes sobre el espacio de
 estados bounded, incluyendo un teorema de partición
 `BAUD ⊕ ERUR` y una cota cerrada de latencia de recuperación
-`L ≤ peak + W − 1` (Theorem 1), mostrada ajustada mediante un trace
+`L ≤ peak + W − 1` (RLB-v1), mostrada ajustada mediante un trace
 testigo donde se alcanza la igualdad. Reconocemos que la cota es
 elemental en retrospectiva; la presentamos como evidencia de apoyo
 para el patrón más amplio de citación, no como una contribución
@@ -119,26 +119,29 @@ del verificador.
 
 ### 1.1 Contribuciones
 
-**Project Ghost introduce citas de seguridad ejecutables: un patrón
-de reproducibilidad que permite a un tercero verificar una
-afirmación de seguridad contra un log de autonomía content-addressed
-usando un único comando.**
+**Una afirmación de seguridad sobre un sistema autónomo hoy puede
+ser asertada por sus autores e ilustrada en sus venues, pero no
+puede ser falsada por un tercero que no estaba en la sala cuando
+el run ocurrió.** Project Ghost cierra ese hueco: una afirmación
+de seguridad se entrega como un log de autonomía content-addressed
+más un único comando de shell (`ghost verify-properties --mcap
+<log>`); cualquiera con el wheel y el log reproduce el veredicto —
+o lo contradice. Llamamos a este patrón una **cita de seguridad
+ejecutable**.
 
-Si un lector recuerda una frase de este paper, esa es la que
-pedimos que recuerde. Las contribuciones de abajo son evidencia
-operacional de ella:
+Hacemos **cuatro contribuciones reivindicables**, dos formales y
+dos operacionales; el patrón cita-de-seguridad-ejecutable es la
+primera y el resto son evidencia operacional de que funciona.
 
-- **C1 — Un patrón de citación de seguridad.** Una composición de
-  siete ingredientes existentes — ADR + MCAP content-addressed +
-  verificador función-pura + Hypothesis property test + CI gate +
-  tagged release + wheel PyPI firmada por OIDC — ensamblados como
-  una sola unidad de reproducibilidad para que un tercero pueda
-  verificar cualquier afirmación de seguridad citada contra el run
-  capturado vía un comando de shell, sin confiar en el productor.
-  **Ghost convierte las afirmaciones de seguridad en citas
-  ejecutables.** Este es el patrón que creemos genuinamente
+- **C1 — El patrón cita-de-seguridad-ejecutable.** Una composición
+  de siete ingredientes existentes — ADR + MCAP content-addressed
+  + verificador función-pura + Hypothesis property test + CI gate
+  + tagged release + wheel PyPI firmada por OIDC — ensamblados de
+  modo que el artefacto citado *es él mismo el mecanismo de
+  falsación*. Este es el patrón que creemos genuinamente
   diferenciante; el resto del paper es la evidencia de que funciona
-  en la práctica, incluyendo sobre telemetría de vuelo real (§8.7).
+  en la práctica, incluyendo sobre telemetría de vuelo real
+  (§8.7–§8.8).
 - **C2 — Un primitivo de reproducibilidad con capacidad de
   detección demostrada.** Un verificador CLI de una línea
   `ghost verify-properties` sobre logs MCAP content-addressed,
@@ -160,7 +163,7 @@ operacional de ella:
   propiedades en sí son deliberadamente simples; la contribución
   es la mecanización end-to-end, no la formulación.
 
-Theorem 1 (§6.3) — la cota cerrada de latencia de recuperación
+La cota de latencia de recuperación (§6.3) — la cota cerrada RLB-v1
 `L ≤ peak + W − 1` para filtros de ventana deslizante
 count-of-K-in-W — se presenta como **resultado auxiliar** que el
 spec TLA+ `Rlb.tla` mecaniza. No la listamos como contribución: la
@@ -226,7 +229,7 @@ supervisor representativo.
 Este es un paper de ingeniería e infraestructura, no un paper de
 teoría. Los ingredientes de filtrado, calibración, y FDI sobre los
 que Ghost descansa están bien establecidos (§2.1). La matemática de
-Theorem 1 es elemental en retrospectiva, y la presentamos como
+La cota de latencia de recuperación es elemental en retrospectiva, y la presentamos como
 evidencia de que el patrón de citación puede transportar un
 resultado preciso, no como una contribución teórica autónoma. El
 teorema de partición de §5.3 es novedoso *en la forma que lo
@@ -278,7 +281,7 @@ telemetría de robótica.
 - **Supervisory control of timed automata** [Flordal et al., 2022]:
   sintetiza supervisores timed. Construye nuevos supervisores;
   Ghost verifica traces existentes. Trabajos previos de timed
-  automata no dan la cota cerrada de Theorem 1.
+  automata no dan esa cota cerrada.
 - **Surveys de formal verification para autonomía** [Rizaldi et al.,
   ACM CSUR 2020]: catalogan trabajo Coq/Lean/Isabelle/Alloy. Notan
   la ausencia de specs TLA+ mecánicamente verificados para
@@ -320,7 +323,7 @@ literatura peer-reviewed en la forma que enunciamos:
   size para hypothesis testing, pero no esta forma cerrada exacta
   para recovery de ventana deslizante, y el trabajo de timed
   automata prefiere garantías cualitativas de non-blocking sobre
-  cotas cuantitativas concretas. La formalizamos como Theorem 1
+  cotas cuantitativas concretas. La formalizamos como RLB-v1
   (§6.4) y demostramos que es ajustada por construcción.
 - **El teorema de partición `BAUD ⊕ ERUR`** sobre el espacio de
   comportamiento condicional por-ciclo de un supervisor de autonomía
@@ -395,7 +398,7 @@ calibrador nunca *inventa* confianza. ADR-0033.
 ### 3.4 RLB-v1 — Recovery Latency Bound
 
 `L ≤ peak + W − 1` para sliding-window count-of-K-in-W filters. Es
-Theorem 1 (§6.3). ADR-0034.
+la cota de latencia de recuperación (§6.3). ADR-0034.
 
 ### 3.5 FPB-v1 — False Positive Bound observer
 
@@ -481,7 +484,7 @@ scope.
   una transición por ciclo. Verifica BAUD-v1, ERUR-v1, partition y
   MD-v1.
 - **`Rlb.tla`** restringe el modelo a la hipótesis de drift
-  consecutivo del Theorem 1 vía dos fases (`ACCUMULATING`,
+  consecutivo de la cota de latencia de recuperación vía dos fases (`ACCUMULATING`,
   `RECOVERING`). Mirror-ea el algoritmo del verificador
   `properties/rlb.py`.
 - **`Fpb.tla`** modela el counter automaton de FPB-v1 en aritmética
@@ -502,12 +505,12 @@ Para tractabilidad, cada spec corre con constantes bounded pequeñas:
 | Spec | Bounds | Por qué es suficiente |
 |---|---|---|
 | `BaudErur.tla` | `M=2, K=1, W=3` | Casos *frontera* de la precondición exhaustos en cualquier `M > 0`; `W ≥ M` ejercita la ventana deslizante. |
-| `Rlb.tla` | `W=4, MAX_DRIFT=4` | Ejercita las cuatro fases de la prueba del Theorem 1 (acumulación, saturación, flush, recovery). |
+| `Rlb.tla` | `W=4, MAX_DRIFT=4` | Ejercita las cuatro fases de la prueba de la cota de latencia de recuperación (acumulación, saturación, flush, recovery). |
 | `Fpb.tla` | `MAX_CYCLES=8` | Ocho ciclos enumeran el counter automaton through cada alternancia fire/non-fire. |
 
 Comportamiento a constantes de escala de producción (`M=4, K=2,
 W=32`) está cubierto por los property tests. TLA+ rellena el rincón
-*pequeño pero exhaustivo*. Elevar Theorem 1 a *cualquier W finito*
+*pequeño pero exhaustivo*. Elevar la cota de latencia de recuperación a *cualquier W finito*
 (prueba unbounded) es el candidato ADR-0038 documentado en
 [`docs/proofs/TLAPS_roadmap.md`](../../proofs/TLAPS_roadmap.md).
 
@@ -560,9 +563,9 @@ el lattice de confianza en cualquier ciclo donde
 - **L** = la latencia de recuperación: número de ciclos consecutivos
   donde la ventana contiene al menos un outcome dirty.
 
-### 6.3 Theorem 1 (Cota ajustada de latencia de recuperación)
+### 6.3 La cota de latencia de recuperación
 
-**Theorem 1 (RLB-v1, régimen transitorio).** *Sea
+**Cota de latencia de recuperación (RLB-v1, régimen transitorio).** *Sea
 `(o_t)_{t ≥ 1}` un stream que contiene un drift interval transitorio
 de `N ≤ W` outcomes dirty consecutivos seguidos por outcomes clean,
 con ventana `W`. Defina:*
@@ -615,7 +618,7 @@ integridad estructural sobre la implementación de la ventana.
 ### 6.4 Check operacional de ajustabilidad
 
 El smoke drift-then-recovery (`closed_loop_smoke_with_recovery.py`)
-está ingeniado para exhibir Theorem 1 en las constantes de producción
+está ingeniado para exhibir la cota de latencia de recuperación en las constantes de producción
 (`N = peak = 7`, `W = 32`):
 
 ```
@@ -626,12 +629,12 @@ El test de integración
 `tests/integration/test_closed_loop_smoke_with_recovery.py`
 asserta que la recovery transition fires exactamente en el ciclo 39
 y en ningún otro lugar antes o después. El smoke por tanto es testigo
-de que la cota es *alcanzable* — es decir, Theorem 1 es ajustado en
+de que la cota es *alcanzable* — es decir, está ajustada en
 el régimen transitorio.
 
 ### 6.5 Scope y limitaciones
 
-Theorem 1 aplica al calibrador de referencia
+La cota de latencia de recuperación aplica al calibrador de referencia
 `MahalanobisDowngradePolicy(M, K)` y su mecanismo de ventana
 deslizante con partición binaria dirty/clean de outcomes.
 Calibradores con hysteresis, history recency-weighted, o partición
@@ -676,7 +679,7 @@ puede entonces escribir:
 > `ghost verify-properties --mcap closed_loop_smoke.mcap` desde
 > `pip install project-ghost==0.2.2`, y adicionalmente satisface
 > `INV_BAUD`, `INV_ERUR`, `INV_PARTITION` sobre el modelo abstracto
-> `BaudErur.tla` en bounds `M=2, K=1, W=3`, y `INV_RLB` (Theorem 1)
+> `BaudErur.tla` en bounds `M=2, K=1, W=3`, y `INV_RLB` (la cota de latencia de recuperación)
 > sobre `Rlb.tla` en `W=4`.
 
 Esa es la contribución C4 en acción.
@@ -868,14 +871,9 @@ sintéticas de la violation matrix §8.2 transfieren a telemetría
 real, sobre este ULog, para las categorías de bug cuya
 precondición el patrón de drift del vuelo real ejercita.
 
-**Lo que esta sección NO afirma.** No afirma que toda clase de bug
-de §8.2 fliperá sobre todo ULog real — eso requiere un set de
-fixtures más diverso que el único PX4 SITL log bundleado aquí, y
-es scope de ADR-0037 (corpus real-flight). No afirma que el run
-buggy sea *inseguro* en sentido hardware — el run buggy no voló
-nada. Afirma, precisamente, que el verificador discrimina
-telemetría real contra dos regresiones nombradas específicas cuyas
-contrapartes sintéticas §8.2 ya detecta.
+La sustitución buggy es en la capa de policy; el run buggy no
+voló nada, y generalizar across más ULogs es scope de ADR-0037
+(corpus real-flight).
 
 ### 8.9 Determinismo cross-replicates y cross-machine
 
@@ -923,7 +921,7 @@ que las secciones §Scope per-propiedad de los ADRs.
   conversión) en
   [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](../scripts/px4_ulog_adapter_skeleton.py).
 - **ADR-0038 (candidate)**: prueba TLAPS de la versión unbounded de
-  Theorem 1 y del teorema de partición.
+  la cota de latencia de recuperación y del teorema de partición.
 - **ADR-0039 (candidate)**: FPB-v2 estadístico con cota Monte Carlo
   sobre el fire rate empírico.
 - **ADR-0040 (candidate)**: ERUR-v2 enunciado abstractamente sobre

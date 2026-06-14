@@ -43,7 +43,7 @@ reference smoke, and self-enforced on every push by CI. Three TLA+
 specifications jointly cover the five properties; together they
 verify 11 invariants over the bounded state space, including a
 partition theorem `BAUD ⊕ ERUR` and a closed-form recovery latency
-bound `L ≤ peak + W − 1` (Theorem 1), shown tight by a witness
+bound `L ≤ peak + W − 1` (RLB-v1), shown tight by a witness
 trace where equality is attained. We acknowledge that the latency
 bound is elementary in hindsight; we present it as supporting
 evidence for the broader citation pattern rather than as a stand-
@@ -102,28 +102,27 @@ demonstration (§8.2) and a parametric policy sweep (§8.3).
 
 ### 1.1 Contributions
 
+**A safety claim about an autonomy system can today be asserted by
+its authors and illustrated in their venues, but it cannot be
+falsified by a third party who was not in the room when the run
+happened.** Project Ghost closes that gap: a safety claim ships as
+a content-addressed autonomy log plus a single shell command (`ghost
+verify-properties --mcap <log>`); anyone with the wheel and the log
+reproduces the verdict — or contradicts it. We call this pattern an
+**executable safety citation**.
+
 We make **four claimable contributions**, two formal and two
-operational:
+operational; the executable-safety-citation pattern is the first
+and the rest are operational evidence that it works.
 
-**Project Ghost introduces executable safety citations: a
-reproducibility pattern that allows a third party to verify a safety
-claim against a content-addressed autonomy log using a single
-command.**
-
-If a reader remembers one sentence from this paper, that is the one
-we ask them to remember. The rest of the contributions, listed
-below, are operational evidence for it:
-
-- **C1 — A safety citation pattern.** A composition of seven
-  existing ingredients — ADR + content-addressed MCAP +
+- **C1 — The executable-safety-citation pattern.** A composition of
+  seven existing ingredients — ADR + content-addressed MCAP +
   pure-function verifier + Hypothesis property test + CI gate +
-  tagged release + OIDC-signed PyPI wheel — assembled as a single
-  reproducibility unit so a third party can verify any cited safety
-  claim against the captured run via one shell command, without
-  trusting the producer. **Ghost turns safety claims into executable
-  citations.** The pattern is what we believe is genuinely
-  differentiating; the rest of the paper is the evidence that it
-  works in practice, including on real flight telemetry (§8.7).
+  tagged release + OIDC-signed PyPI wheel — assembled so that the
+  artefact cited *is itself the falsification mechanism*. The
+  pattern is what we believe is genuinely differentiating; the rest
+  of the paper is the evidence that it works in practice, including
+  on real flight telemetry (§8.7–§8.8).
 - **C2 — A reproducibility primitive with demonstrated detection
   capacity.** A one-line CLI verifier `ghost verify-properties` over
   content-addressed MCAP logs, distributed via PyPI with OIDC
@@ -143,7 +142,7 @@ below, are operational evidence for it:
   properties themselves are deliberately simple; the contribution
   is the end-to-end mechanisation, not the formulation.
 
-Theorem 1 (§6.3) — the closed-form recovery latency bound
+The recovery latency bound (§6.3) — the closed-form RLB-v1 bound
 `L ≤ peak + W − 1` for sliding-window count-of-K-in-W filters,
 attained with equality by a witness trace — is presented as an
 **auxiliary result** that the TLA+ spec `Rlb.tla` mechanises. We do
@@ -209,20 +208,17 @@ cross-machine determinism diff) and tagging cuts an OIDC-signed
 release. The citable artifact carries two halves: the run (MCAP with
 SHA-256) and the verification tool (PyPI wheel pinned by version).
 A third party concatenates them with one shell command and obtains
-a deterministic JSON verdict per property. **The contribution of
+a deterministic JSON verdict per property. The contribution of
 this paper is the assembly of those seven boxes into a single
-shippable unit, so that — for the first time, to the best of our
-knowledge within the surveyed venues — a safety claim can be
-issued together with everything a third party needs to reject
-it.** Everything else (the property set, the closed-form bound,
-the TLA+ specs) instantiates the pattern on a representative
-supervisor.
+shippable unit; everything else (the property set, the
+closed-form bound, the TLA+ specs) instantiates the pattern on a
+representative supervisor.
 
 ### 1.2 What this paper is and is not
 
 This is an engineering and infrastructure paper, not a theory
 paper. The filtering, calibration, and FDI ingredients Ghost rests
-on are well established (§2.1). Theorem 1's mathematics is
+on are well established (§2.1). The recovery latency bound's mathematics is
 elementary in hindsight and is presented as a useful auxiliary
 result, not a contribution. The partition theorem of §5.3 is novel
 *in the form we mechanised it* — a TLA+ `INV_PARTITION` over the
@@ -290,7 +286,7 @@ overlapping concerns, none of which occupies the same niche:
 - **Supervisory control of timed automata** [Flordal et al., 2022]:
   synthesises timed supervisors. Constructs new supervisors; Ghost
   verifies existing traces. Prior timed-automata recovery results do
-  not give the closed-form bound of Theorem 1.
+  not give the closed-form bound of the recovery latency bound.
 - **Surveys of formal verification for autonomy** [Rizaldi et al.,
   ACM CSUR 2020]: catalogue Coq/Lean/Isabelle/Alloy work. Note the
   absence of mechanically-verified TLA+ specs for autonomy
@@ -366,7 +362,7 @@ single-author effort. With that scope in mind:
 
 We invite readers from sequential-analysis or change-point-detection
 backgrounds to point us at prior closed-form bounds we may have
-missed; framing Theorem 1 as an auxiliary result rather than a
+missed; framing the recovery latency bound as an auxiliary result rather than a
 stand-alone contribution is chosen precisely to keep this from
 being a load-bearing claim.
 
@@ -477,7 +473,7 @@ KNOWN within `L ≤ peak + W − 1` cycles, where `peak` is the maximum
 number of dirty outcomes observed during the drift interval and `W` is
 the calibration history window size.
 
-This is a *structural* bound, formalised in §6.4 as **Theorem 1** and
+This is a *structural* bound, formalised in §6.4 as **the recovery latency bound** and
 proved tight by the drift-then-recovery smoke (`L = 38 = 7 + 32 − 1`,
 exactly).
 
@@ -599,7 +595,7 @@ mirrors the Python source line-for-line for its in-scope policies.
   (`UncertaintyAwareReferencePolicy`), and actuator safety classifier
   are mirrored as TLA+ definitions.
 - **`docs/proofs/Rlb.tla`** restricts the model to the
-  consecutive-drift hypothesis of Theorem 1 (§6.3) via two phases
+  consecutive-drift hypothesis of the recovery latency bound (§6.3) via two phases
   (`ACCUMULATING`, `RECOVERING`). It mirrors the verifier algorithm
   of `src/project_ghost/properties/rlb.py` and tracks the dirty-run
   counter and peak observed during the run.
@@ -627,13 +623,13 @@ checks five invariants covering BAUD-v1, ERUR-v1, and MD-v1:
 
 **`Rlb.tla`** (`docs/proofs/Rlb.tla`, bounds `W=4, MAX_DRIFT=4`)
 mirrors the verifier algorithm in `src/project_ghost/properties/rlb.py`
-under the consecutive-drift hypothesis of Theorem 1 and checks three
+under the consecutive-drift hypothesis of the recovery latency bound and checks three
 invariants covering RLB-v1:
 
 - `INV_RLB` — on every reachable state where the next CLEAN outcome
   would yield a fully-clean window (a recovery transition), the
   observed `dirty_run` length is at most `peak_in_run + W − 1`. This
-  is the **mechanical witness of Theorem 1** (§6.3).
+  is the **mechanical witness of the recovery latency bound** (§6.3).
 - `INV_PEAK_BOUNDED` — `peak_in_run ≤ W` (the window cannot hold
   more dirty entries than its capacity).
 - `INV_WINDOW_BOUND` — `Len(window) ≤ W` (structural sanity).
@@ -668,13 +664,13 @@ constants:
 | Spec | Bounds | Why these bounds are sufficient |
 |---|---|---|
 | `BaudErur.tla` | `M=2, K=1, W=3` | Precondition *boundary cases* exhausted at any positive `M`; `W ≥ M` exercises the sliding-window mechanism. |
-| `Rlb.tla` | `W=4, MAX_DRIFT=4` | Exercises all four phases of Theorem 1's proof (accumulation, saturation, flush, recovery); `MAX_DRIFT = W` covers the transient regime (Corollary 1). |
+| `Rlb.tla` | `W=4, MAX_DRIFT=4` | Exercises all four phases of the recovery latency bound's proof (accumulation, saturation, flush, recovery); `MAX_DRIFT = W` covers the transient regime (Corollary 1). |
 | `Fpb.tla` | `MAX_CYCLES=8, MAX_FIRE_NUMER=BOUND_DENOM=1` | Eight cycles enumerate the counter automaton through every fire/non-fire alternation; the unit-ratio bound exercises the default observational threshold. |
 
 These bounds prove the invariants on each abstract model. Behaviour
 at production-scale constants (`M=4, K=2, W=32`) is covered by the
 property tests; TLA+ fills in the *small but exhaustive* corner.
-Lifting Theorem 1 to *any finite W* (an unbounded proof) is the
+Lifting the recovery latency bound to *any finite W* (an unbounded proof) is the
 candidate ADR-0038 documented at
 [`docs/proofs/TLAPS_roadmap.md`](docs/proofs/TLAPS_roadmap.md).
 
@@ -734,9 +730,9 @@ evidence" mode.
   condition (1) fails to hold and the calibrator returns the adjusted
   level to KNOWN.
 
-### 6.3 Theorem 1 (Tight Recovery Latency Bound)
+### 6.3 The recovery latency bound
 
-**Theorem 1 (RLB-v1, transient regime).** *Let `(o_t)_{t ≥ 1}` be a
+**Recovery latency bound (RLB-v1, transient regime).** *Let `(o_t)_{t ≥ 1}` be a
 stream of outcomes containing a transient drift interval of
 `N ≤ W` consecutive dirty outcomes followed by clean outcomes,
 where `W` is the calibrator's window size. Define*
@@ -789,7 +785,7 @@ implementation.
 ### 6.4 Operational tightness check
 
 The drift-then-recovery smoke (`closed_loop_smoke_with_recovery.py`)
-is engineered to exhibit Theorem 1 at the production constants
+is engineered to exhibit the recovery latency bound at the production constants
 (`N = peak = 7`, `W = 32`):
 
 ```
@@ -800,12 +796,12 @@ The integration test
 `tests/integration/test_closed_loop_smoke_with_recovery.py`
 asserts the recovery transition fires at exactly cycle 39 and
 nowhere earlier or later. The smoke is therefore a witness that the
-bound is *achievable* — i.e., that Theorem 1 is tight in the
+bound is *achievable* — i.e., that the recovery latency bound is tight in the
 transient regime.
 
 ### 6.5 Scope and limitations
 
-Theorem 1 applies to the reference calibrator
+The recovery latency bound applies to the reference calibrator
 `MahalanobisDowngradePolicy(M, K)` and its sliding-window mechanism
 with binary dirty/clean partitioning of outcomes. Calibrators with
 hysteresis, recency-weighted history, or a multi-band partition are
@@ -826,9 +822,8 @@ Lifting that outline to a verified proof is a candidate ADR-0038.
 
 ## 7. Reproducibility surface
 
-The headline claim is that a third party can verify the property set
-against a captured run **without trusting the producer**. The
-reproducibility surface that makes this possible has five layers:
+The verifier does not require the third party to trust the producer.
+The reproducibility surface that makes this possible has five layers:
 
 1. **Content-addressed MCAP.** The SHA-256 is computed once and carried
    inside every property report. Tampering with any byte changes the
@@ -975,10 +970,10 @@ calibration policy, we ran the closed-loop smoke under two
 structurally distinct calibrators in addition to the reference:
 
 - `MahalanobisDowngradePolicy(M=4, K=2)` — reference (count-of-K-in-W
-  threshold). Theorem 1 (§6.3) applies.
+  threshold). The recovery latency bound (§6.3) applies.
 - `EWMADowngradePolicy(α=0.5, min=3, threshold=0.3)` —
   exponentially-weighted moving average over the dirty indicator.
-  A genuinely different downgrade mechanism. Theorem 1 does not
+  A genuinely different downgrade mechanism. The recovery latency bound does not
   apply.
 - `PerAxisHysteresisDowngradePolicy(upper=3.0)` — examines
   per-axis Mahalanobis distance with hysteresis. A third mechanism.
@@ -1040,7 +1035,7 @@ differs from the basic smoke.
 
 - **`gps_denial`**: 6 cycles of sustained drift (GPS-denial proxy)
   followed by 44 recovery cycles. The drift duration is short
-  enough that Theorem 1's transient regime applies; the recovery
+  enough that the recovery latency bound's transient regime applies; the recovery
   phase is long enough to flush the calibration window and witness
   ERUR.
 - **`slow_biased_drift`**: 50 cycles of low-magnitude chronic drift.
@@ -1250,15 +1245,9 @@ violation-matrix detections of §8.2 transfer to real telemetry, on
 this ULog, for the bug categories whose precondition the real
 flight's drift pattern exercises.
 
-**What this section does not claim.** It does not claim that every
-class of bug in §8.2 will flip on every real ULog — that requires
-a more diverse fixture set than the single PX4 SITL log bundled
-here, and is scope for ADR-0037 (real-flight corpus). It does not
-claim that the buggy run is *unsafe* in a hardware sense — the
-buggy run did not fly anything. It claims, precisely, that the
-verifier discriminates real telemetry against two specific
-named regressions whose synthetic counterparts §8.2 already
-detects.
+The buggy substitution is at the policy layer; the buggy run did
+not fly anything, and generalising across more ULogs is scope for
+ADR-0037 (real-flight corpus).
 
 ### 8.9 Determinism across replicates and machines
 
@@ -1320,7 +1309,7 @@ per-property §Scope sections of the ADRs.
   contract) at
   [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](docs/paper/scripts/px4_ulog_adapter_skeleton.py).
 - **ADR-0038 (candidate)**: TLAPS proof of the unbounded version of
-  Theorem 1 and of the partition theorem — replacing TLC's
+  the recovery latency bound and of the partition theorem — replacing TLC's
   "exhaustive over bounded state space" with "proved for any
   finite W, M, K". Proof outline already at
   [`docs/proofs/Rlb_unbounded.tla`](docs/proofs/Rlb_unbounded.tla);
@@ -1433,7 +1422,7 @@ Mechanical verification:
 - `docs/proofs/BaudErur.tla`, `docs/proofs/BaudErur.cfg`
   (BAUD-v1, ERUR-v1, MD-v1, partition theorem)
 - `docs/proofs/Rlb.tla`, `docs/proofs/Rlb.cfg`
-  (Theorem 1 / RLB-v1 / structural window sanity)
+  (the recovery latency bound / RLB-v1 / structural window sanity)
 
 Verifiers and reference pipeline:
 
