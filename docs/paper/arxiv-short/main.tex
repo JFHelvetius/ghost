@@ -40,8 +40,8 @@
 
 \newtheorem{theorem}{Theorem}
 
-\title{Executable Safety Citations:\\
-       A Verifiable Reproducibility Pattern for Autonomy Under Uncertainty}
+\title{Epistemic Contracts for Autonomous Systems:\\
+       A Verifiable Pattern for Safety Claims Under Uncertainty}
 \author{Javier Menéndez Mateos\\
         \texttt{jfhelvetius@gmail.com}\\
         \small Independent}
@@ -51,45 +51,51 @@
 \maketitle
 
 \begin{abstract}
-\textbf{Thesis: safety claims should be executable and falsifiable
-through a reproducible citation.} We introduce \emph{executable
-safety citations}: a reproducibility pattern that lets a third
-party verify a safety claim against a content-addressed autonomy
-log using a single command. The pattern composes seven existing
-ingredients ---
-ADRs, content-addressed MCAP telemetry, pure-function verifiers,
-Hypothesis property tests, CI gating, tagged releases, and
-OIDC-signed PyPI wheels --- into one shippable unit, with
-underlying invariants additionally checked by TLA+/TLC. We
-instantiate the pattern on a five-property reference autonomy
-supervisor (BAUD/ERUR/MD/RLB/FPB), verify it under three
-calibration policies, exercise it under six categories of
-injected bugs (all detected), and run the verifier unchanged on
-a real PX4 v1.10 flight log --- on which the verifier
-\emph{discriminates}: two independently buggy components, swapped
-into the same physical flight, each flip BAUD-v1 from HOLDS to
-VIOLATED, while the four other properties remain HOLD. The
-pattern, not the individual properties, is the contribution. The
-artifact is re-runnable from
-\texttt{pip install project-ghost==0.2.3}.
+\textbf{Thesis: autonomous agents should have verifiable contracts
+on their own epistemic posture --- how they degrade confidence,
+recover, remain bounded, and translate belief into action under
+uncertainty.} Most existing runtime verifiers ask predicates of
+the world (velocity, distance, temperature); we propose asking
+predicates of the agent's posture toward its own uncertainty. We
+call these \textbf{epistemic safety contracts}. We describe
+Project Ghost: five contracts for a reference autonomy supervisor
+(BAUD/ERUR/MD/RLB/FPB), each verified by a pure function over a
+content-addressed MCAP log, with underlying invariants checked
+mechanically by TLA+/TLC. Each contract ships together with its
+recorded run and verifier as an \textbf{executable safety
+citation}: a third party reproduces the verdict from
+\texttt{pip install 'project-ghost[adapters]==0.2.3'} followed by
+\texttt{ghost verify-properties --mcap <log>}. On real PX4 v1.10
+flight telemetry, the verifier \emph{discriminates}: two
+independently buggy components, swapped into the same physical
+flight, each flip BAUD-v1 from HOLDS to VIOLATED while the four
+other contracts remain HOLD.
 \end{abstract}
 
-\noindent\textbf{Keywords:} safety citation patterns, reproducible
-safety verification, runtime verification, content-addressed
-telemetry, TLA+, MCAP.
+\noindent\textbf{Keywords:} epistemic safety contracts, runtime
+verification, uncertainty in autonomy, executable safety
+citations, content-addressed telemetry, TLA+, MCAP.
 
 % =======================================================================
 \section{Introduction}
 \label{sec:intro}
 
-\textbf{Project Ghost operationalises safety claims as executable
-citations.} A safety claim becomes a content-addressed run plus a
-pure-function verifier; a third party reproduces the verdict from
+Most existing runtime verifiers ask predicates of the world.
+We ask predicates of the agent's posture toward its own
+uncertainty. An \textbf{epistemic safety contract} is a triple
+$(P,Q,V)$ where $P$ is a predicate over the agent's epistemic
+state at cycle $t$, $Q$ a predicate over the agent's behaviour at
+$t$, and $V$ a pure-function verifier such that $V(r)$ on a
+recorded run $r$ returns HOLDS iff every cycle satisfying $P$
+also satisfies $Q$. Distinct from STL (predicates over signals)
+and from belief monitoring (a property of what the agent
+believes, not of how it must relate to its belief).
+
+We package each contract together with a content-addressed run
+and an OIDC-signed verifier wheel as an \textbf{executable safety
+citation}: a third party reproduces the verdict from
 \texttt{ghost verify-properties --mcap <log>}. \textbf{The cited
-artefact \emph{is} the falsification mechanism.} Two properties
-(BAUD-v1, ERUR-v1) plus the recovery latency bound and the FPB
-counter automaton are mechanically verified by TLA+/TLC; the whole
-pipeline runs end-to-end on a real PX4 flight log in CI.
+artefact \emph{is} the falsification mechanism.}
 
 % =======================================================================
 \section{Background and related work}
@@ -313,15 +319,17 @@ Appendix~\ref{app:eval}: six-category violation matrix
 \section{Conclusion}
 \label{sec:conclusion}
 
-\textbf{Ghost packages a safety claim, its run, and its verifier
-as a reproducible unit a third party can re-derive.} The
-load-bearing contribution is operational: an ADR, an MCAP, a
-pure-function CLI verifier, property tests, mechanical checks
-(TLA+/TLC) and an OIDC-signed PyPI wheel --- assembled so that
-the citation \emph{is} the falsification mechanism. The individual
-ingredients are standard; the assembly, in our surveyed scope, is
-missing. The artifact is re-runnable from
-\texttt{pip install project-ghost==0.2.3}.
+\textbf{Autonomous agents should have verifiable contracts on
+their own epistemic posture, and those contracts should ship as
+executable citations a third party can falsify.} Epistemic
+contracts are adjacent to but distinct from STL-style predicates
+over signals and from POMDP-style belief monitoring: they verify
+obligations on how the agent must relate to its own uncertainty.
+Ghost ships five such contracts for a reference autonomy
+supervisor, packages each as an executable safety citation, and
+demonstrates discrimination on real PX4 flight telemetry. The
+cited artefact \emph{is} the falsification mechanism. The artifact
+is re-runnable from \texttt{pip install project-ghost==0.2.3}.
 
 % =======================================================================
 \bibliographystyle{plainurl}

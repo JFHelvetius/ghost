@@ -79,7 +79,7 @@ ACM Computing Classification System (optional, free-text):
 
 ### 4. Title, abstract, and metadata
 
-- **Title:** `Project Ghost: A Verifiable Safety-Property Surface for Autonomy Under Uncertainty`
+- **Title:** `Epistemic Contracts for Autonomous Systems: A Verifiable Pattern for Safety Claims Under Uncertainty`
 - **Authors:** `Javier Menéndez Mateos` (single author).
 - **Comments line** (free text, displayed under the abstract):
   ```

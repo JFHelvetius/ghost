@@ -1,4 +1,4 @@
-# Project Ghost: A Verifiable Safety-Property Surface for Autonomy Under Uncertainty
+# Epistemic Contracts for Autonomous Systems: A Verifiable Pattern for Safety Claims Under Uncertainty
 
 **Author:** Javier Menéndez Mateos (`jfhelvetius@gmail.com`)
 **Affiliation:** Independent
@@ -10,7 +10,8 @@
 
 ---
 
-> *Ghost turns safety claims into executable citations.*
+> *An autonomous agent should have verifiable obligations about
+> how it relates to its own uncertainty.*
 >
 > *A safety claim should be issued together with everything a third
 > party needs to reject it.*
@@ -21,106 +22,128 @@
 
 ## Abstract
 
-**Thesis: safety claims should be executable and falsifiable
-through a reproducible citation.** Today they are typically
-asserted in prose and illustrated by simulation videos the reader
-cannot re-run. We describe **Project Ghost**, an open-source
-platform whose primary contribution is **a citation pattern that
-lets a third party verify any safety claim against the recorded
-run, byte-exact, via a single shell command**:
-`pip install project-ghost==0.2.3`, then
-`ghost verify-properties --mcap <log>`. The pattern composes seven
-existing ingredients — architectural decision records (ADRs),
-content-addressed MCAP telemetry, pure-function verifiers,
-Hypothesis property tests, CI gating, tagged releases, and
-OIDC-signed PyPI wheels — into one coherent reproducibility unit,
-with the underlying invariants additionally checked by TLA+/TLC.
+**Thesis: autonomous agents should have verifiable contracts on
+their own epistemic posture — how they degrade confidence, recover,
+remain bounded, and translate belief into action under
+uncertainty.** Most existing runtime verifiers ask predicates of
+the world (velocity, distance, temperature); we propose asking
+predicates of the agent's posture toward its own uncertainty. We
+call these **epistemic safety contracts**. We describe **Project
+Ghost**, an open-source platform that (i) defines five epistemic
+contracts for a reference autonomy supervisor (BAUD/ERUR/MD/RLB/FPB),
+(ii) verifies each via a pure function over a content-addressed
+MCAP log, (iii) mechanically checks the underlying invariants via
+TLA+/TLC, and (iv) packages each contract together with a recorded
+run and the verifier into a single **executable safety citation**:
+`pip install project-ghost==0.2.3` followed by
+`ghost verify-properties --mcap <log>` lets a third party reproduce
+the verdict — or contradict it.
 
-To exercise the pattern, we instantiate five safety properties for
-the closed loop of a reference autonomy supervisor (BAUD-v1,
-ERUR-v1, MD-v1, RLB-v1, FPB-v1). Each is stated in a binding ADR,
-verified by a pure function over the MCAP, exercised by ~50
-property tests within a 1687-test suite, witnessed inline in every
-reference smoke, and self-enforced on every push by CI. Three TLA+
-specifications jointly cover the five properties; together they
-verify 11 invariants over the bounded state space, including a
-partition theorem `BAUD ⊕ ERUR` and a closed-form recovery latency
-bound `L ≤ peak + W − 1` (RLB-v1), shown tight by a witness trace.
+The reference contracts cover a minimal theory of behaviour under
+uncertainty: if you suspect you are wrong, act conservatively
+(BAUD); when evidence is restored, return to acting (ERUR); never
+claim more confidence than evidence supports (MD); uncertainty
+cannot last indefinitely (RLB); distrust must be measurable and
+auditable (FPB). Three TLA+ specifications jointly check 11
+invariants in CI, including the partition theorem
+`BAUD ⊕ ERUR` and the recovery latency bound `L ≤ peak + W − 1`.
 
 Empirical evaluation on a violation matrix of six injected bug
 categories, three structurally distinct calibration policies, three
-shape-realistic drift profiles, and a head-to-head benchmark against
-RTAMT establishes that the verifier is policy-agnostic, runs in
-21–406 ms (linear in trace length), and produces byte-identical
-MCAPs and canonicalised property-report JSON across Linux and
-Windows CI runners. The full artifact, including the three TLA+
-specifications and all reproducibility scripts, is re-runnable from
-`pip install project-ghost==0.2.3`. **A safety claim should be
-issued together with everything a third party needs to reject it,
-and we believe that is now operationally possible.**
+shape-realistic drift profiles, a head-to-head benchmark against
+RTAMT, and a discrimination experiment on real PX4 v1.10 flight
+telemetry — where two independently buggy components, swapped into
+the same physical flight, each flip BAUD-v1 from HOLDS to VIOLATED
+while the four other properties remain HOLD — establishes that the
+verifier is policy-agnostic, deterministic across Linux and Windows
+CI runners, and informative on real-world telemetry. The full
+artifact is re-runnable from `pip install project-ghost==0.2.3`.
 
-**Keywords:** safety citation patterns, reproducible safety
-verification, runtime verification, content-addressed telemetry,
-calibrated confidence, TLA+/TLC, MCAP.
+**Keywords:** epistemic safety contracts, runtime verification,
+uncertainty in autonomy, executable safety citations,
+content-addressed telemetry, TLA+/TLC, MCAP.
 
 ---
 
 ## 1. Introduction
 
-Safety claims in robotics are routinely supported by hand-written prose
-in design documents and by simulation videos that the reader cannot
-re-run. The literature on uncertainty in autonomy is rich — Bayesian
-filters, calibration of probabilistic predictions, epistemic versus
-aleatoric uncertainty, fault detection and isolation (FDI), runtime
-safety supervisors — but the gap between *the theory exists* and *this
-specific run, on this specific code, satisfies the property* is rarely
-operationally closed. A third party who wants to verify a safety claim
-against a recorded run typically cannot: there is no shell command, no
-content-addressed log, no pure-function verifier they can re-run on
-their own machine.
+Most existing runtime verifiers ask predicates of the world:
+velocity below a bound, distance above a margin, temperature inside
+an envelope. We ask predicates of the agent's posture toward its
+own uncertainty: contracts the agent must satisfy about *how* it
+degrades confidence, *how* it recovers, *how* its uncertainty stays
+bounded, and *how* belief is translated into action. We call these
+**epistemic safety contracts**.
 
-We describe Project Ghost, an opinionated reference platform built
-around exactly this gap. Ghost is sim-first, written in Python, and
-ships as a `pip`-installable package with a CLI subcommand
-(`ghost verify-properties`) that takes a captured MCAP log and returns
-a byte-exact verdict on five formal safety properties. Each property
-is stated as a binding ADR; verified by a pure function over the log;
-exercised by Hypothesis-based property tests; witnessed inline in every
-reference closed-loop smoke; and self-enforced on every push by CI.
-Two of the properties (BAUD-v1 and ERUR-v1) are additionally
-**mechanically verified** by TLA+/TLC over the abstract state space of
-the reference policy pair, along with the partition theorem that the
-two properties together cover the full conditional behaviour space.
+Epistemic contracts are not contracts about what the agent
+believes; they are contracts about what the agent must do *given*
+what it believes about itself. "If you detect that your
+calibration history contains evidence of drift, you may not emit a
+non-conservative action" (BAUD) is a different shape of property
+than "velocity must remain below 5 m/s" (an STL-style predicate
+over a signal): the precondition refers to the agent's
+self-assessment, not to the world.
 
-This paper describes the property set, the verifier architecture, the
-mechanical verification, and the reproducibility surface, and
-provides a quantitative evaluation including a bug-detection
-demonstration (§8.2) and a parametric policy sweep (§8.3).
+A second gap follows: even if the right shape of property exists,
+a third party who wants to verify a safety claim against a
+recorded run typically cannot — there is no shell command, no
+content-addressed log, no pure-function verifier they can re-run
+on their own machine. We close both gaps in one platform. Project
+Ghost is sim-first, written in Python, and ships as a
+`pip`-installable package with a CLI subcommand
+(`ghost verify-properties`) that takes a captured MCAP log and
+returns a byte-exact verdict on five epistemic contracts for a
+reference autonomy supervisor. Each contract is stated as a
+binding ADR; verified by a pure function over the log; exercised
+by Hypothesis-based property tests; witnessed inline in every
+reference closed-loop smoke; and self-enforced on every push by
+CI. Two of the contracts (BAUD-v1 and ERUR-v1) are additionally
+**mechanically verified** by TLA+/TLC over the abstract state space
+of the reference policy pair, along with the partition theorem
+that the two together cover the full conditional behaviour space.
+
+The packaging of an epistemic contract together with its recorded
+run and its verifier into one citable, third-party-falsifiable unit
+is what we call an **executable safety citation**. The cited
+artefact *is* the falsification mechanism.
+
+This paper describes the epistemic-contract framing, the five
+reference contracts, the verifier architecture, the mechanical
+verification, and the reproducibility surface, and provides a
+quantitative evaluation including a bug-detection demonstration
+(§8.2), a parametric policy sweep (§8.3), and a discrimination
+experiment on real PX4 v1.10 flight telemetry (§8.8).
 
 ### 1.1 Contributions
 
-**Project Ghost operationalises safety claims as executable
-citations.** A safety claim becomes a content-addressed run plus a
-pure-function verifier; a third party reproduces the verdict from
-`ghost verify-properties --mcap <log>`. **The cited artefact *is*
-the falsification mechanism.**
+**Epistemic safety contracts are verifiable obligations an
+autonomous agent must satisfy about its own uncertainty.** A
+contract is a triple (precondition over the agent's epistemic
+state, postcondition over the agent's behaviour, pure-function
+verifier over a recorded run) — a different property class from
+the world-predicates that dominate runtime verification today. We
+package each contract together with the run and the verifier into
+an **executable safety citation**: a third party reproduces the
+verdict from a single shell command.
 
 We make **three contributions**:
 
-- **C1 — The executable safety citation pattern (conceptual).** A
-  safety claim is published as a content-addressed run plus a
-  pure-function verifier, distributable as one shippable unit a
-  third party re-derives from a single command without trusting
-  the producer. The cited artefact *is* the falsification
-  mechanism.
+- **C1 — Epistemic safety contracts as a verification target
+  (conceptual).** A class of safety properties whose preconditions
+  refer to the agent's belief about its own uncertainty
+  (calibrated-self-assessment level, drift detection,
+  fire-rate measurement) rather than to signals of the external
+  world. Distinct from STL-style predicates over signals and from
+  POMDP-style belief monitoring; the formal definition is in
+  §2.0 below.
 
 - **C2 — Reference implementation: Ghost (artefact).** A
-  closed-loop autonomy supervisor instantiating the pattern on
-  five properties (BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1) with
-  binding ADRs, content-addressed MCAP telemetry,
-  `ghost verify-properties --mcap`, OIDC-signed PyPI wheels, and a
-  policy-agnostic verifier across three calibration policies
-  (§8.4).
+  closed-loop autonomy supervisor instantiating five epistemic
+  contracts (BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1) packaged as
+  executable safety citations — binding ADRs, content-addressed
+  MCAP telemetry, `ghost verify-properties --mcap`, OIDC-signed
+  PyPI wheels, and a policy-agnostic verifier across three
+  calibration policies (§8.4).
 
 - **C3 — Mechanical verification + empirical evaluation
   (validation).** Three TLA+ specifications (11 invariants in CI),
@@ -198,17 +221,73 @@ shippable unit; everything else (the property set, the
 closed-form bound, the TLA+ specs) instantiates the pattern on a
 representative supervisor.
 
-### 1.2 What this paper is and is not
+### 1.2 Epistemic safety contracts: formal definition
 
-This is an engineering and infrastructure paper, not a theory
-paper. The filtering, calibration, and FDI ingredients Ghost rests
-on are well established (§2.1). The recovery latency bound is a
-useful auxiliary result, not a contribution. The partition theorem
-of §5.3 is novel *in the form we mechanised it* — a TLA+
-`INV_PARTITION` over the reference closed loop. The contribution
-we defend is **the engineered combination** (C1) and its
-**operational demonstration** (C2 + C3): the assembly is missing
-from the open autonomy-safety tooling we surveyed.
+An **epistemic safety contract** is a triple `(P, Q, V)` where:
+
+- `P` is a predicate over the agent's **epistemic state at cycle
+  `t`** — i.e. a function of the agent's self-assessment record,
+  calibration history, and outcome stream available at `t`. `P`
+  does not refer directly to the world; it refers to what the
+  agent believes about its own posture toward the world.
+- `Q` is a predicate over the agent's **behaviour at cycle `t`** —
+  i.e. a function of the calibrated assessment, decision, and
+  actuator command emitted at `t`.
+- `V` is a pure-function verifier such that, given a recorded run
+  `r` (a content-addressed sequence of per-cycle telemetry
+  records), `V(r)` returns HOLDS iff every cycle `t` of `r` that
+  satisfies `P_t` also satisfies `Q_t`, and VIOLATED otherwise
+  with a witness cycle.
+
+Three observations follow:
+
+1. **An epistemic contract is not an STL predicate.** STL
+   monitors evaluate predicates of the form `signal < threshold`
+   over real-valued temporal signals. The atomic predicates of
+   an epistemic contract are over the agent's *internal record*
+   of its own calibration and decisions, which is structured
+   data, not a continuous signal. STL operators (always,
+   eventually, until) can be lifted to act over the cycle index
+   of an epistemic contract; this is how RLB-v1 (a bounded
+   eventuality) is expressed.
+
+2. **An epistemic contract is not belief monitoring.** Belief
+   monitoring tracks what an agent believes about hidden world
+   state (e.g. POMDP belief updates, particle-filter posteriors).
+   An epistemic contract verifies an obligation about the
+   agent's *relation to* its own belief — that it must downgrade
+   confidence in the right conditions, recover within bounded
+   latency, and never claim more confidence than evidence
+   supports. The contract sits one level above belief: it is a
+   property of the agent's epistemic *policy*, not of its
+   beliefs themselves.
+
+3. **An epistemic contract becomes a third-party-falsifiable
+   safety claim when packaged together with a content-addressed
+   recorded run and an OIDC-signed verifier wheel.** We call this
+   packaging an **executable safety citation** (Figure 1). The
+   citation pattern is the mechanism by which an epistemic
+   contract is shipped as something a reviewer can falsify in one
+   shell command rather than as prose.
+
+The five contracts we ship (§3) instantiate this definition on a
+representative autonomy supervisor. The framework permits other
+contracts; FPB-v1 can be tightened, additional contracts on
+sensor-fusion provenance or actuation-budget consumption could be
+added, and ports to other agent kinds (delivery, manipulation,
+multi-agent) are scope for future work.
+
+### 1.3 What this paper is and is not
+
+This is an engineering and infrastructure paper that introduces
+a property class, not a theory paper proving a new logic. The
+filtering, calibration, and FDI ingredients Ghost rests on are
+well established (§2.1). The recovery latency bound is a useful
+auxiliary result, not a contribution. The partition theorem of
+§5.3 is novel *in the form we mechanised it* — a TLA+
+`INV_PARTITION` over the reference closed loop. The contributions
+we defend are **the epistemic-contracts framing** (C1), **the
+reference implementation** (C2), and **the validation** (C3).
 
 ---
 
@@ -1315,23 +1394,35 @@ per-property §Scope sections of the ADRs.
 
 ## 11. Conclusion
 
-**Ghost packages a safety claim, its run, and its verifier as a
-reproducible unit a third party can re-derive.** The load-bearing
-contribution is operational, not theoretical: an ADR, a
-content-addressed MCAP, a pure-function CLI verifier, Hypothesis
-property tests, TLA+/TLC checks on the underlying invariants, and
-an OIDC-signed PyPI wheel — assembled so that the citation *is*
-the falsification mechanism. We call the pattern an **executable
-safety citation**.
+**Autonomous agents should have verifiable contracts on their own
+epistemic posture, and those contracts should ship as executable
+citations a third party can falsify.** That is the load-bearing
+proposition this paper exists to defend.
 
-The reference instantiation on a five-property autonomy supervisor
-is evidence the pattern is workable, not the contribution itself.
-What motivated the paper is that the *assembly* makes safety
-claims operationally falsifiable in a way that prose-and-video
-assertions are not. The artifact is re-runnable from
-`pip install project-ghost==0.2.3`; the contribution stands or
-falls on whether the resulting verdict means what the ADR says it
-means. We believe it does.
+Epistemic safety contracts are a property class adjacent to but
+distinct from STL-style predicates over signals and from POMDP-
+style belief monitoring (§1.2): they verify obligations the agent
+must satisfy about how it relates to its own uncertainty —
+degrade, recover, bound, and act. Project Ghost ships five such
+contracts for a reference autonomy supervisor (BAUD, ERUR, MD, RLB,
+FPB), packages each together with a content-addressed run and a
+pure-function verifier as an executable safety citation, and
+demonstrates that the verifier discriminates real PX4 flight
+telemetry against named regressions (§8.8).
+
+What we *do not* claim: that epistemic contracts subsume STL or
+shielding (they answer a different question); that this is the
+maximal contract set (FPB-v1 can be tightened, contracts on
+sensor-fusion provenance or actuation budgets remain to be
+written); that we have a unique licensing claim on the term
+(it overlaps with how epistemic-logic, doxastic-logic and
+self-assessment communities have used adjacent vocabulary).
+
+What we *do* claim: that the framing is operationally
+defensible — the artifact is re-runnable from
+`pip install project-ghost==0.2.3`; the verdict on real PX4 flight
+telemetry is reproducible from a single shell command; the cited
+artefact *is* the falsification mechanism.
 
 ---
 

@@ -1,4 +1,4 @@
-# Project Ghost: una superficie de propiedades de seguridad verificable para autonomía bajo incertidumbre
+# Contratos epistémicos para sistemas autónomos: un patrón verificable de afirmaciones de seguridad bajo incertidumbre
 
 **Autor:** Javier Menéndez Mateos (`jfhelvetius@gmail.com`)
 **Afiliación:** Independiente
@@ -19,8 +19,8 @@
 
 ---
 
-> *Ghost convierte las afirmaciones de seguridad en citas
-> ejecutables.*
+> *Un agente autónomo debería tener obligaciones verificables
+> sobre cómo se relaciona con su propia incertidumbre.*
 >
 > *Una afirmación de seguridad debe emitirse junto con todo lo que
 > un tercero necesita para rechazarla.*
@@ -31,113 +31,127 @@
 
 ## Resumen
 
-**Tesis: las afirmaciones de seguridad deberían ser ejecutables y
-falsables mediante una cita reproducible.** Hoy típicamente se
-enuncian en prosa y se ilustran con vídeos de simulación que el
-lector no puede re-ejecutar. Describimos **Project Ghost**, una
-plataforma open source cuya contribución principal es **un patrón
-de citación que permite a un tercero verificar cualquier
-afirmación de seguridad contra el run grabado, byte-exact,
-mediante un único comando de shell**:
-`pip install project-ghost==0.2.3`, luego
-`ghost verify-properties --mcap <log>`. El patrón compone siete
-ingredientes existentes — Architectural Decision Records (ADRs),
-telemetría MCAP content-addressed, verificadores función-pura,
-property tests con Hypothesis, gating CI, tagged releases, y wheels
-PyPI firmadas con OIDC — en una unidad coherente de reproducibilidad,
-con los invariantes subyacentes adicionalmente verificados por
-TLA+/TLC.
+**Tesis: los agentes autónomos deberían tener contratos
+verificables sobre su propia postura epistémica — cómo degradan
+la confianza, se recuperan, permanecen acotados, y traducen
+creencia en acción bajo incertidumbre.** La mayoría de los
+verificadores runtime existentes preguntan predicados del mundo
+(velocidad, distancia, temperatura); nosotros proponemos preguntar
+predicados de la postura del agente hacia su propia
+incertidumbre. Los llamamos **contratos epistémicos de
+seguridad**. Describimos **Project Ghost**, una plataforma open
+source que (i) define cinco contratos epistémicos para un
+supervisor de autonomía de referencia (BAUD/ERUR/MD/RLB/FPB),
+(ii) verifica cada uno vía función pura sobre un log MCAP
+content-addressed, (iii) chequea mecánicamente los invariantes
+subyacentes vía TLA+/TLC, y (iv) empaqueta cada contrato junto
+con un run grabado y el verificador en una **cita de seguridad
+ejecutable**: `pip install project-ghost==0.2.3` seguido de
+`ghost verify-properties --mcap <log>` permite a un tercero
+reproducir el veredicto — o contradecirlo.
 
-Para ejercitar el patrón, instanciamos cinco propiedades de seguridad
-para el ciclo cerrado de un supervisor de autonomía de referencia
-(BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1). Cada una está enunciada
-en un ADR vinculante, verificada por una función pura sobre el MCAP,
-ejercitada por ~50 property tests dentro de una suite de 1687 tests,
-testimoniada inline en cada smoke de referencia, y self-enforced en
-cada push por CI. Tres specs TLA+ cubren conjuntamente las cinco
-propiedades; juntos verifican 11 invariantes sobre el espacio de
-estados bounded, incluyendo un teorema de partición
-`BAUD ⊕ ERUR` y una cota cerrada de latencia de recuperación
-`L ≤ peak + W − 1` (RLB-v1), mostrada ajustada mediante un trace
-testigo.
+Los contratos de referencia cubren una teoría mínima de
+comportamiento bajo incertidumbre: si sospechas que estás
+equivocado, actúa conservadoramente (BAUD); cuando la evidencia
+se restablece, vuelve a actuar (ERUR); nunca afirmes saber más
+de lo que la evidencia respalda (MD); la incertidumbre no puede
+durar indefinidamente (RLB); la desconfianza debe ser medible y
+auditable (FPB). Tres specs TLA+ chequean conjuntamente 11
+invariantes en CI, incluyendo el teorema de partición
+`BAUD ⊕ ERUR` y la cota de latencia de recuperación
+`L ≤ peak + W − 1`.
 
-La evaluación empírica sobre una matriz de violaciones de seis
+La evaluación empírica sobre una violation matrix de seis
 categorías de bugs inyectados, tres policies de calibración
 estructuralmente distintas, tres perfiles de drift
-shape-realistic, y un benchmark head-to-head contra RTAMT,
-establece que el verificador es policy-agnostic, corre en
-21–406 ms (lineal en longitud del trace), y produce MCAPs y
-property-report JSON canonicalizado byte-idénticos entre runners
-Linux y Windows en CI. El artefacto completo es re-ejecutable
-desde `pip install project-ghost==0.2.3`. **Una afirmación de
-seguridad debe emitirse junto con todo lo que un tercero necesita
-para rechazarla, y creemos que eso es ahora operacionalmente
-posible.**
+shape-realistic, un benchmark head-to-head contra RTAMT, y un
+experimento de discriminación sobre telemetría real de vuelo PX4
+v1.10 — donde dos componentes buggy independientes, substituidos
+en el mismo vuelo físico, flipean BAUD-v1 de HOLDS a VIOLATED
+mientras las cuatro otras propiedades siguen HOLD — establece
+que el verificador es policy-agnostic, determinístico across
+runners Linux y Windows en CI, e informativo sobre telemetría
+real. El artefacto completo es re-ejecutable desde
+`pip install project-ghost==0.2.3`.
 
-**Palabras clave:** patrones de citación de seguridad, verificación
-reproducible de seguridad, runtime verification, telemetría
-content-addressed, confianza calibrada, TLA+/TLC, MCAP.
+**Palabras clave:** contratos epistémicos de seguridad, runtime
+verification, incertidumbre en autonomía, citas de seguridad
+ejecutables, telemetría content-addressed, TLA+/TLC, MCAP.
 
 ---
 
 ## 1. Introducción
 
-Las afirmaciones de seguridad en robótica se sostienen rutinariamente
-mediante prosa escrita a mano en documentos de diseño y videos de
-simulación que el lector no puede re-ejecutar. La literatura sobre
-incertidumbre en autonomía es rica — filtros bayesianos, calibración
-de predicciones probabilísticas, incertidumbre epistémica vs
-aleatoria, detección y aislamiento de fallos (FDI), supervisores de
-seguridad en tiempo de ejecución — pero la brecha entre *la teoría
-existe* y *este run específico, sobre este código específico,
-satisface la propiedad* rara vez se cierra operacionalmente. Un
-tercero que quiere verificar una afirmación de seguridad contra un
-run grabado típicamente no puede: no hay comando de shell, ni log
-content-addressed, ni verificador función-pura que pueda re-ejecutar
-en su propia máquina.
+La mayoría de los verificadores runtime existentes preguntan
+predicados del mundo: velocidad por debajo de una cota, distancia
+por encima de un margen, temperatura dentro de un envelope.
+Nosotros preguntamos predicados de la postura del agente hacia su
+propia incertidumbre: contratos que el agente debe satisfacer
+sobre *cómo* degrada la confianza, *cómo* se recupera, *cómo* su
+incertidumbre permanece acotada, y *cómo* la creencia se traduce
+en acción. Los llamamos **contratos epistémicos de seguridad**.
 
-Describimos Project Ghost, una plataforma de referencia opinionada
-construida precisamente alrededor de esa brecha. Ghost es sim-first,
-escrito en Python, y se distribuye como un paquete `pip`-instalable
+Los contratos epistémicos no son contratos sobre lo que el agente
+cree; son contratos sobre lo que el agente debe hacer *dado* lo
+que cree sobre sí mismo. "Si detectas que tu historia de
+calibración contiene evidencia de drift, no puedes emitir una
+acción no-conservadora" (BAUD) es una forma de propiedad distinta
+a "la velocidad debe permanecer bajo 5 m/s" (un predicado STL
+sobre una señal): la precondición se refiere al auto-assessment
+del agente, no al mundo.
+
+De ahí sigue una segunda brecha: incluso si la forma correcta de
+propiedad existe, un tercero que quiere verificar una afirmación
+de seguridad contra un run grabado típicamente no puede — no hay
+comando de shell, ni log content-addressed, ni verificador
+función-pura que pueda re-ejecutar en su propia máquina. Cerramos
+ambas brechas en una sola plataforma. Project Ghost es sim-first,
+escrito en Python, y se distribuye como paquete `pip`-instalable
 con un subcomando CLI (`ghost verify-properties`) que toma un log
 MCAP capturado y devuelve un veredicto byte-exact sobre cinco
-propiedades formales de seguridad. Cada propiedad está enunciada en
-un ADR vinculante; verificada por una función pura sobre el log;
-ejercitada por property tests basados en Hypothesis; testimoniada
-inline en cada smoke de referencia closed-loop; y self-enforced en
-cada push por CI. Dos de las propiedades (BAUD-v1 y ERUR-v1) están
-adicionalmente **verificadas mecánicamente** por TLA+/TLC sobre el
-espacio de estados abstracto del par de policies de referencia,
-junto con el teorema de partición que ambas propiedades juntas
-cubren el espacio de comportamiento condicional completo. La cota
-ajustada de latencia de recuperación RLB-v1 está verificada
-mecánicamente por un spec TLA+ separado que mirror-ea el algoritmo
-del verificador.
+contratos epistémicos para un supervisor de autonomía de
+referencia. Cada contrato está enunciado en un ADR vinculante,
+verificado por una función pura, ejercitado por property tests
+Hypothesis, y self-enforced en cada push por CI. Dos contratos
+(BAUD-v1 y ERUR-v1) están adicionalmente **verificados
+mecánicamente** por TLA+/TLC.
+
+El empaquetado de un contrato epistémico junto con su run grabado
+y su verificador en una sola unidad citable y falsable por
+terceros es lo que llamamos una **cita de seguridad ejecutable**.
+El artefacto citado *es* el mecanismo de falsación.
 
 ### 1.1 Contribuciones
 
-**Project Ghost operacionaliza las afirmaciones de seguridad como
-citas ejecutables.** Una afirmación de seguridad pasa a ser un
-run content-addressed más un verificador función-pura; un tercero
-reproduce el veredicto desde `ghost verify-properties --mcap
-<log>`. **El artefacto citado *es* el mecanismo de falsación.**
+**Los contratos epistémicos de seguridad son obligaciones
+verificables que un agente autónomo debe satisfacer sobre su
+propia incertidumbre.** Un contrato es una tripla (precondición
+sobre el estado epistémico del agente, postcondición sobre el
+comportamiento del agente, verificador función-pura sobre un run
+grabado) — una clase de propiedad distinta de los predicados
+sobre el mundo que dominan runtime verification hoy. Empaquetamos
+cada contrato junto con el run y el verificador en una **cita de
+seguridad ejecutable**.
 
 Hacemos **tres contribuciones**:
 
-- **C1 — El patrón de cita de seguridad ejecutable (conceptual).**
-  Una afirmación de seguridad se publica como un run
-  content-addressed más un verificador función-pura, distribuible
-  como una sola unidad que un tercero re-deriva desde un único
-  comando sin confiar en el productor. El artefacto citado *es*
-  el mecanismo de falsación.
+- **C1 — Contratos epistémicos de seguridad como objetivo de
+  verificación (conceptual).** Una clase de propiedades de
+  seguridad cuyas precondiciones se refieren a la creencia del
+  agente sobre su propia incertidumbre (nivel de
+  calibrated-self-assessment, detección de drift, medición de
+  fire-rate) en lugar de a señales del mundo externo. Distinto
+  de predicados STL sobre señales y de belief monitoring estilo
+  POMDP; definición formal en §1.2.
 
 - **C2 — Implementación de referencia: Ghost (artefacto).** Un
-  supervisor de autonomía closed-loop que instancia el patrón
-  sobre cinco propiedades (BAUD-v1, ERUR-v1, MD-v1, RLB-v1,
-  FPB-v1) con ADRs vinculantes, telemetría MCAP
-  content-addressed, `ghost verify-properties --mcap`, wheels PyPI
-  firmadas por OIDC, y un verificador policy-agnostic across tres
-  policies de calibración (§8.4).
+  supervisor de autonomía closed-loop que instancia cinco
+  contratos epistémicos (BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1)
+  empaquetados como citas de seguridad ejecutables — ADRs
+  vinculantes, telemetría MCAP content-addressed,
+  `ghost verify-properties --mcap`, wheels PyPI firmadas por
+  OIDC, y verificador policy-agnostic across tres policies de
+  calibración (§8.4).
 
 - **C3 — Verificación mecánica + evaluación empírica
   (validación).** Tres specs TLA+ (11 invariantes en CI,
@@ -148,12 +162,71 @@ Hacemos **tres contribuciones**:
   componentes buggy substituidos en el mismo vuelo físico flipean
   BAUD-v1 de HOLDS a VIOLATED (§8.8).
 
-La cota de latencia de recuperación (§6.3) — RLB-v1
-`L ≤ peak + W − 1` para filtros de ventana deslizante
-count-of-K-in-W — es un **resultado auxiliar** que el spec TLA+
-`Rlb.tla` mecaniza. Posicionamos el trabajo como **paper de
-sistemas / tools, no de teoría**; los lectores deben calificar
-C1–C3.
+La cota de latencia de recuperación `L ≤ peak + W − 1` se
+presenta como **resultado de apoyo**, no como contribución.
+
+### 1.2 Contratos epistémicos de seguridad: definición formal
+
+Un **contrato epistémico de seguridad** es una tripla `(P, Q, V)`
+donde:
+
+- `P` es un predicado sobre el **estado epistémico del agente en
+  el ciclo `t`** — una función del registro de self-assessment,
+  historia de calibración, y stream de outcomes disponible en
+  `t`. `P` no se refiere directamente al mundo; se refiere a lo
+  que el agente cree sobre su propia postura hacia el mundo.
+- `Q` es un predicado sobre el **comportamiento del agente en el
+  ciclo `t`** — una función del calibrated assessment, decisión,
+  y comando de actuador emitido en `t`.
+- `V` es un verificador función-pura tal que, dado un run grabado
+  `r` (una secuencia content-addressed de records de telemetría
+  per-ciclo), `V(r)` retorna HOLDS sii cada ciclo `t` de `r` que
+  satisface `P_t` también satisface `Q_t`, y VIOLATED en caso
+  contrario con un ciclo testigo.
+
+Tres observaciones:
+
+1. **Un contrato epistémico no es un predicado STL.** Los
+   monitores STL evalúan predicados de la forma `señal <
+   umbral` sobre señales temporales reales. Los predicados
+   atómicos de un contrato epistémico son sobre el *registro
+   interno* del agente, que es data estructurada, no una señal
+   continua. Los operadores STL (always, eventually, until) se
+   pueden elevar para actuar sobre el índice de ciclo de un
+   contrato epistémico; así se expresa RLB-v1.
+
+2. **Un contrato epistémico no es belief monitoring.** El belief
+   monitoring rastrea lo que un agente cree sobre el estado
+   oculto del mundo (e.g., updates de creencia POMDP). Un
+   contrato epistémico verifica una obligación sobre la
+   *relación del agente con* su propia creencia — que debe
+   degradar la confianza en las condiciones correctas,
+   recuperarse en latencia acotada, y nunca afirmar más
+   confianza que la evidencia respalda. El contrato está un
+   nivel por encima de la creencia: es una propiedad de la
+   *política epistémica* del agente, no de sus creencias.
+
+3. **Un contrato epistémico se vuelve una afirmación de
+   seguridad falsable por terceros cuando se empaqueta junto a
+   un run grabado content-addressed y un wheel verificador
+   OIDC-firmado.** A este empaquetado lo llamamos **cita de
+   seguridad ejecutable** (Figura 1).
+
+Los cinco contratos que enviamos (§3) instancian esta definición
+sobre un supervisor de autonomía representativo.
+
+### 1.3 Qué es y qué no es este paper
+
+Este es un paper de ingeniería e infraestructura que introduce
+una clase de propiedad, no un paper de teoría que prueba una
+lógica nueva. Los ingredientes de filtrado, calibración, y FDI
+sobre los que Ghost descansa están bien establecidos (§2.1). La
+cota de latencia de recuperación es un resultado auxiliar, no
+una contribución. El teorema de partición de §5.3 es novedoso *en
+la forma que lo mecanizamos* — un `INV_PARTITION` en TLA+ sobre
+el ciclo cerrado de referencia. Las contribuciones que
+defendemos son **el framing epistemic-contracts** (C1), **la
+implementación de referencia** (C2), y **la validación** (C3).
 
 #### Figura 1: El patrón de citación de seguridad
 
@@ -203,19 +276,6 @@ seguridad puede emitirse junto con todo lo que un tercero necesita
 para rechazarla.** Todo lo demás (el conjunto de propiedades, la
 cota cerrada, los specs TLA+) instancia el patrón sobre un
 supervisor representativo.
-
-### 1.2 Qué es y qué no es este paper
-
-Este es un paper de ingeniería e infraestructura, no un paper de
-teoría. Los ingredientes de filtrado, calibración, y FDI sobre los
-que Ghost descansa están bien establecidos (§2.1). La cota de
-latencia de recuperación es un resultado auxiliar, no una
-contribución. El teorema de partición de §5.3 es novedoso *en la
-forma que lo mecanizamos* — un `INV_PARTITION` en TLA+ sobre el
-ciclo cerrado de referencia. La contribución que defendemos es
-**la combinación ingeniada** (C1) y su **demostración
-operacional** (C2): el ensamblaje falta en el tooling
-autonomy-safety abierto que revisamos.
 
 ---
 
@@ -938,24 +998,37 @@ que las secciones §Scope per-propiedad de los ADRs.
 
 ## 11. Conclusión
 
-**Ghost empaqueta una afirmación de seguridad, su run y su
-verificador como una unidad reproducible que un tercero puede
-re-derivar.** La contribución load-bearing es operacional, no
-teórica: un ADR, un MCAP content-addressed, un verificador CLI
-función-pura, Hypothesis property tests, checks TLA+/TLC sobre
-los invariantes subyacentes, y una wheel PyPI firmada por OIDC —
-ensamblados de modo que la cita *es* el mecanismo de falsación.
-Llamamos a este patrón una **cita de seguridad ejecutable**.
+**Los agentes autónomos deberían tener contratos verificables
+sobre su propia postura epistémica, y esos contratos deberían
+distribuirse como citas ejecutables que un tercero pueda
+falsar.** Esa es la proposición load-bearing que este paper
+existe para defender.
 
-La instanciación de referencia sobre un supervisor de autonomía
-con cinco propiedades es evidencia de que el patrón es operable,
-no la contribución en sí. Lo que motivó el paper es que el
-*ensamblaje* hace las afirmaciones de seguridad operacionalmente
-falsables de una manera que las aserciones prosa-y-vídeo no son.
-El artefacto es re-ejecutable desde
-`pip install project-ghost==0.2.3`; la contribución se sostiene o
-cae sobre si el veredicto resultante significa lo que el ADR
-dice que significa. Creemos que sí.
+Los contratos epistémicos de seguridad son una clase de propiedad
+adyacente pero distinta a los predicados STL sobre señales y al
+belief monitoring estilo POMDP (§1.2): verifican obligaciones que
+el agente debe satisfacer sobre cómo se relaciona con su propia
+incertidumbre — degradar, recuperar, acotar, y actuar. Project
+Ghost distribuye cinco de estos contratos para un supervisor de
+autonomía de referencia (BAUD, ERUR, MD, RLB, FPB), empaqueta
+cada uno junto con un run content-addressed y un verificador
+función-pura como cita de seguridad ejecutable, y demuestra que
+el verificador discrimina telemetría real PX4 contra regresiones
+nombradas (§8.8).
+
+Lo que *no* afirmamos: que los contratos epistémicos subsumen STL
+o shielding (responden una pregunta distinta); que este es el
+conjunto maximal de contratos (FPB-v1 puede ajustarse, faltan
+contratos sobre procedencia de sensor-fusion o presupuestos de
+actuación); que tenemos un claim de licencia exclusivo sobre el
+término (se solapa con cómo las comunidades de epistemic logic,
+doxastic logic y self-assessment han usado vocabulario adyacente).
+
+Lo que *sí* afirmamos: que el framing es operacionalmente
+defendible — el artefacto es re-ejecutable desde
+`pip install project-ghost==0.2.3`; el veredicto sobre telemetría
+real de vuelo PX4 es reproducible desde un único comando de
+shell; el artefacto citado *es* el mecanismo de falsación.
 
 ---
 
