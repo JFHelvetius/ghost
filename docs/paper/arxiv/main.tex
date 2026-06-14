@@ -61,9 +61,10 @@
 
 \begin{center}
 \itshape\small
+``Ghost turns safety claims into executable citations.''\\[0.3em]
 ``A safety claim should be issued together with everything a third
-party needs to reject it.''\\
-\upshape\textmd{--- the thesis of this paper, in one line.}
+party needs to reject it.''\\[0.3em]
+\upshape\textmd{--- the two sentences this paper exists to defend.}
 \end{center}
 
 \vspace{1em}
@@ -163,9 +164,7 @@ mirroring the verifier algorithm.
 \subsection{Contributions}
 \label{sec:contributions}
 
-We order our contributions \textbf{from the most load-bearing (an
-engineering pattern) to the most narrow (a useful supporting
-bound)}:
+We claim \textbf{three contributions}, deliberately conservative:
 
 \begin{itemize}
   \item \textbf{C1 --- A safety citation pattern.} A composition of
@@ -174,9 +173,11 @@ bound)}:
         tagged release + OIDC-signed PyPI wheel --- assembled as a
         single reproducibility unit so a third party can verify any
         cited safety claim against the captured run via one shell
-        command, without trusting the producer. This is the pattern
+        command, without trusting the producer. \textbf{Ghost turns
+        safety claims into executable citations.} The pattern is what
         we believe is genuinely differentiating; the rest of the
-        paper is the evidence that it works in practice.
+        paper is the evidence that it works in practice, including on
+        real flight telemetry (\S\ref{sec:realflight}).
   \item \textbf{C2 --- A reproducibility primitive with demonstrated
         detection capacity.} A one-line CLI verifier
         \texttt{ghost verify-properties} over content-addressed MCAP
@@ -198,21 +199,17 @@ bound)}:
         $\mathrm{BAUD} \oplus \mathrm{ERUR}$. The properties
         themselves are deliberately simple; the contribution is the
         end-to-end mechanisation, not the formulation.
-  \item \textbf{C4 --- A closed-form tight recovery latency bound}
-        for sliding-window count-of-$K$-in-$W$ filters
-        (Theorem~\ref{thm:rlb}): $L \le \mathrm{peak} + W - 1$,
-        attained with equality by a witness trace
-        ($L = 38 = 7 + 32 - 1$). The bound follows directly from the
-        sliding-window mechanism and is elementary in hindsight; we
-        did not locate it stated as a closed form in our literature
-        review (\S\ref{sec:related}) but we make no broader novelty
-        claim and treat it as supporting evidence for C3 rather than
-        a stand-alone theoretical result.
 \end{itemize}
 
-C1 and C2 are the contributions we expect to age best. C3
-instantiates them on a representative supervisor; C4 supplies a
-useful bound that the spec \texttt{Rlb.tla} verifies mechanically.
+Theorem~\ref{thm:rlb} --- the closed-form recovery latency bound
+$L \le \mathrm{peak} + W - 1$ for sliding-window count-of-$K$-in-$W$
+filters --- is presented as an \textbf{auxiliary result} that the
+TLA+ spec \texttt{Rlb.tla} mechanises. We do not list it as a
+contribution: the bound is elementary in hindsight, follows directly
+from the sliding-window mechanism, and is included because the spec
+mechanises it cleanly, not because it carries the paper. Readers
+should grade the paper on C1--C3.
+
 We position the work as a \textbf{systems / tools paper, not a
 theory paper}. Figure~\ref{fig:pattern} summarises the pattern.
 
@@ -397,6 +394,39 @@ Bug-detection demo            & \textbf{Yes (\S\ref{sec:violation})} & N/A  & N/
          with broader coverage of the surveyed fields.}
 \label{tab:comparison}
 \end{table}
+
+\subsection{Where Ghost sits relative to industrial practice}
+\label{sec:industrial}
+
+The autonomy-safety landscape is dominated by industrial efforts at
+scales Ghost does not approach: Waymo's safety case framework
+\cite{webb2020waymo} documents the arguments behind millions of
+miles of public-road driving and cites internal logs the public
+cannot replay; PX4's \texttt{commander} state machine enforces
+flight-mode preconditions live on the vehicle, with ULogs (as
+ingested in \S\ref{sec:realflight}) as their persistent record;
+NASA's NFM tradition produces formally verified
+software-of-the-air-vehicle artefacts at certification grade;
+Autoware's safety architecture specifies layered runtime monitors
+over a self-driving stack; Cruise's safety case methodology follows
+the GSN claim--argument--evidence pattern over an internal pipeline.
+
+These efforts share an organisational property Ghost does not:
+\textbf{teams of safety engineers and proprietary access to telemetry,
+testing infrastructure, and regulators}. They produce assurance
+artefacts that justify operational deployment. Ghost makes a much
+smaller claim --- \emph{a third party can verify a stated property
+against a captured run by issuing one shell command} --- but it makes
+that claim \emph{operationally}, not by appeal to internal review.
+
+The niche we believe Ghost fills, complementary to those efforts, is
+the gap between ``this software is safe'' (a closed claim signed by
+an organisation) and ``here is the verifier and the log; check it
+yourself'' (an open claim citable by a third party). The citation
+pattern is not a substitute for industrial safety cases; it is a
+primitive those cases could cite. We make no claim of equivalence,
+scope, or maturity vis-à-vis the works above; we do claim that the
+primitive itself is missing from the open tooling we surveyed.
 
 % =======================================================================
 \section{The property set}
@@ -967,20 +997,27 @@ FPB-v1                                 & HOLDS (fire\_fraction = 0.9437) \\
 \label{tab:real-verdict}
 \end{table}
 
-\textbf{Honest scope of the verdict.} The orchestrator uses the
-ULog's own EKF2 estimate as both the agent's belief and the
-(vacuous) oracle ground truth. That makes every BAUD precondition
-trivially false and every property HOLDS vacuously. The
-non-vacuous part of this section is \emph{not} the all-HOLDS row
---- it is the row that says \emph{the verifier ran unchanged on
-real flight telemetry, against a real PX4 v1.10 ULog, with a real
-adapter, in CI}. The ``Sim, not hardware'' honest scope of \S9
-remains intact for the strong reading of the safety claim; what
-v0.2.3 demonstrates is that the citation pattern's plumbing
-extends through to a real-flight artefact end-to-end. A
-non-vacuous verdict requires an independent ground-truth source
-(motion capture, RTK GPS, post-flight optimised solution) and is
-the scope of candidate ADR-0037.
+\textbf{Caveat on the verdict.} The orchestrator uses the ULog's
+own EKF2 estimate as both the agent's belief and the (vacuous)
+oracle ground truth, so the all-HOLDS row is vacuous as a safety
+claim. A non-vacuous ground truth (motion capture, RTK GPS,
+post-flight optimised solution) is candidate ADR-0037; the
+\texttt{Sim, not hardware} clause of \S9 remains intact for the
+strong reading.
+
+\textbf{What this section establishes}, with the caveat above duly
+noted, is the structural fact the previous versions of this paper
+could not state:
+
+\begin{quote}
+\itshape
+The verifier was executed unchanged on real PX4 v1.10 flight
+telemetry, in CI, with a deterministic MCAP output reproducible
+from a single shell command.
+\end{quote}
+
+That is the load-bearing sentence of this section --- not the
+verdict row.
 
 \subsection{Determinism across replicates and machines}
 Within a single machine, replicate runs produce byte-identical
@@ -1038,18 +1075,19 @@ Any disagreement fails the build.
 
 % =======================================================================
 \section{Conclusion}
-Project Ghost is a \textbf{citation pattern for safety claims}. Its
-load-bearing contribution is the proposition that a safety claim
-should be issued together with everything a third party needs to
-reject it: a binding written statement (the ADR), a content-addressed
-log (the MCAP), a pure-function verifier exposed as a CLI, property
+\textbf{Ghost turns safety claims into executable citations.} That
+sentence is what this paper exists to defend. The load-bearing
+contribution is the proposition that a safety claim should be
+issued together with everything a third party needs to reject it:
+a binding written statement (the ADR), a content-addressed log
+(the MCAP), a pure-function verifier exposed as a CLI, property
 tests, mechanical checks on the underlying invariants (TLA+/TLC),
 and a signed distribution channel (OIDC PyPI). We do not claim to
 have discovered the individual ingredients --- each is standard
-practice --- but we have not located a tool that ships them as one
-coherent unit reachable from a single shell command in the literature
-we surveyed, and we treat that combination as the proper unit of
-analysis.
+practice --- but to the best of our knowledge within the surveyed
+venues no tool ships them as one coherent unit reachable from a
+single shell command, and we treat that combination as the proper
+unit of analysis.
 
 The reference instantiation on a five-property autonomy supervisor
 exists as evidence that the pattern is workable, not as the

@@ -19,10 +19,13 @@
 
 ---
 
+> *Ghost convierte las afirmaciones de seguridad en citas
+> ejecutables.*
+>
 > *Una afirmación de seguridad debe emitirse junto con todo lo que
 > un tercero necesita para rechazarla.*
 >
-> — La tesis del paper, en una línea.
+> — Las dos frases que este paper existe para defender.
 
 ---
 
@@ -116,9 +119,7 @@ del verificador.
 
 ### 1.1 Contribuciones
 
-Ordenamos nuestras contribuciones **desde la más load-bearing (un
-patrón de ingeniería) hasta la más estrecha (una cota útil de
-apoyo)**:
+Reclamamos **tres contribuciones**, deliberadamente conservadoras:
 
 - **C1 — Un patrón de citación de seguridad.** Una composición de
   siete ingredientes existentes — ADR + MCAP content-addressed +
@@ -127,8 +128,10 @@ apoyo)**:
   una sola unidad de reproducibilidad para que un tercero pueda
   verificar cualquier afirmación de seguridad citada contra el run
   capturado vía un comando de shell, sin confiar en el productor.
-  Este es el patrón que creemos genuinamente diferenciante; el
-  resto del paper es la evidencia de que funciona en la práctica.
+  **Ghost convierte las afirmaciones de seguridad en citas
+  ejecutables.** Este es el patrón que creemos genuinamente
+  diferenciante; el resto del paper es la evidencia de que funciona
+  en la práctica, incluyendo sobre telemetría de vuelo real (§8.7).
 - **C2 — Un primitivo de reproducibilidad con capacidad de
   detección demostrada.** Un verificador CLI de una línea
   `ghost verify-properties` sobre logs MCAP content-addressed,
@@ -137,7 +140,7 @@ apoyo)**:
   matrix de seis categorías (calibrador, decisión, actuación, y
   threshold inyectados; las seis detectadas). El verificador
   produce JSON output determinístico across Linux y Windows
-  (enforced por CI, §8.7) y se mantiene policy-agnostic across tres
+  (enforced por CI, §8.8) y se mantiene policy-agnostic across tres
   policies de calibración estructuralmente distintas (§8.4).
 - **C3 — Un conjunto de propiedades con semánticas
   mecánicamente-checked para un supervisor de autonomía de
@@ -149,21 +152,18 @@ apoyo)**:
   `BAUD ⊕ ERUR` y un invariante de degradación monótona. Las
   propiedades en sí son deliberadamente simples; la contribución
   es la mecanización end-to-end, no la formulación.
-- **C4 — Una cota cerrada ajustada de latencia de recuperación**
-  para filtros de ventana deslizante count-of-K-in-W (Theorem 1,
-  §6.3): `L ≤ peak + W − 1`, alcanzada con igualdad por un trace
-  testigo (`L = 38 = 7 + 32 − 1`). La cota se sigue directamente
-  del mecanismo de ventana deslizante y es elemental en
-  retrospectiva; no la localizamos enunciada como forma cerrada en
-  nuestra revisión de literatura (§2.3) pero no hacemos un claim
-  amplio de novedad y la tratamos como evidencia de apoyo para C3
-  en lugar de resultado teórico autónomo.
 
-C1 y C2 son las contribuciones que esperamos envejezcan mejor. C3
-las instancia sobre un supervisor representativo; C4 aporta una cota
-útil que el spec `Rlb.tla` verifica mecánicamente. Posicionamos el
-trabajo como un **paper de sistemas / tools, no un paper de
-teoría**.
+Theorem 1 (§6.3) — la cota cerrada de latencia de recuperación
+`L ≤ peak + W − 1` para filtros de ventana deslizante
+count-of-K-in-W — se presenta como **resultado auxiliar** que el
+spec TLA+ `Rlb.tla` mecaniza. No la listamos como contribución: la
+cota es elemental en retrospectiva, se sigue directamente del
+mecanismo de ventana deslizante, y se incluye porque el spec la
+mecaniza limpiamente, no porque lleve el paper. Los lectores deben
+calificar el paper sobre C1–C3.
+
+Posicionamos el trabajo como un **paper de sistemas / tools, no un
+paper de teoría**.
 
 #### Figura 1: El patrón de citación de seguridad
 
@@ -321,6 +321,29 @@ literatura peer-reviewed en la forma que enunciamos:
   localizado formalización previa de partición de comportamiento
   condicional para supervisores de seguridad de ventana deslizante
   específicamente.
+
+### 2.5 Dónde se sitúa Ghost frente a la práctica industrial
+
+El paisaje autonomía-seguridad está dominado por esfuerzos
+industriales que operan a escalas que Ghost no alcanza: el safety
+case framework de Waymo, la state machine `commander` de PX4, la
+tradición NFM de NASA, la arquitectura de seguridad de Autoware, la
+metodología de safety case de Cruise. Todos comparten una propiedad
+organizacional que Ghost no tiene: **equipos de safety engineers y
+acceso propietario a telemetría, infraestructura de testing y
+reguladores**. Producen artefactos de assurance que justifican
+deployment operacional.
+
+Ghost hace un claim mucho más pequeño — *un tercero puede verificar
+una propiedad enunciada contra un run capturado emitiendo un comando
+de shell* — pero lo hace **operacionalmente**, no por apelación a
+review interno. El nicho complementario que creemos llenar es el gap
+entre *"este software es seguro"* (un claim cerrado firmado por una
+organización) y *"aquí está el verificador y el log; chequéalo tú
+mismo"* (un claim abierto citable por un tercero). El citation
+pattern no es un substituto de safety cases industriales; es un
+primitivo que esos cases podrían citar. No reclamamos equivalencia,
+scope o madurez frente a los trabajos arriba.
 
 ---
 
@@ -765,20 +788,22 @@ extraction); los números miden cosas distintas.
 | RLB-v1 | HOLDS |
 | FPB-v1 | HOLDS (fire_fraction = 0.9437) |
 
-**Scope honesto del veredicto.** El orchestrator usa el estimate
-EKF2 propio del ULog como belief Y como ground truth oracle (vacuo).
-Eso hace toda precondición BAUD trivialmente falsa y todas las
-propiedades HOLDS vacuamente. Lo no vacuo no es el "all-HOLDS" — es
-*el verificador se ejecutó sin modificaciones sobre telemetría de
-vuelo PX4 v1.10 real, vía un adapter real, en CI*. La cláusula
-"Sim, no hardware" de §9 sigue intacta para la lectura fuerte del
-safety claim; lo que v0.2.3 demuestra es que el plumbing del
-citation pattern alcanza un artefacto de vuelo real end-to-end.
+**Caveat sobre el veredicto.** El orchestrator usa el estimate
+EKF2 propio del ULog como belief Y como ground truth oracle vacuo,
+así que el all-HOLDS es vacuo como safety claim. Un ground truth
+no vacuo (mocap, RTK GPS, post-flight optimised) es ADR-0037
+candidato; la cláusula "Sim, no hardware" de §9 sigue intacta para
+la lectura fuerte.
 
-**Future work (candidate ADR-0037):** fuente de ground truth no
-vacua (mocap, RTK GPS, post-flight optimised solution); re-tune de
-parámetros de calibración por dataset; segunda familia pública
-(EuRoC MAV).
+**Lo que esta sección establece**, con la advertencia anterior
+explícita, es el hecho estructural que las versiones previas no
+podían enunciar:
+
+> **El verificador se ejecutó sin modificaciones sobre telemetría
+> de vuelo PX4 v1.10 real, en CI, con salida MCAP determinística
+> reproducible desde un único comando de shell.**
+
+Esa es la frase load-bearing de §8.7 — no la fila del veredicto.
 
 ### 8.8 Determinismo cross-replicates y cross-machine
 
@@ -840,8 +865,9 @@ que las secciones §Scope per-propiedad de los ADRs.
 
 ## 11. Conclusión
 
-Project Ghost es un **patrón de citación para afirmaciones de
-seguridad**. Su contribución load-bearing es la proposición de que
+**Ghost convierte las afirmaciones de seguridad en citas
+ejecutables.** Esa frase es lo que este paper existe para
+defender. La contribución load-bearing es la proposición de que
 una afirmación de seguridad debe emitirse junto con todo lo que un
 tercero necesita para rechazarla: un statement escrito vinculante
 (el ADR), un log content-addressed (el MCAP), un verificador
@@ -849,9 +875,10 @@ función-pura expuesto como CLI, property tests, checks mecánicos
 sobre los invariantes subyacentes (TLA+/TLC), y un canal de
 distribución firmado (OIDC PyPI). No claimamos haber descubierto
 los ingredientes individuales — cada uno es práctica estándar —
-pero no hemos localizado un tool que los distribuya como una sola
-unidad coherente alcanzable desde un comando de shell, y tratamos
-esa combinación como la unidad de análisis adecuada.
+pero hasta donde sabemos dentro de los venues revisados ningún
+tool los distribuye como una sola unidad coherente alcanzable
+desde un comando de shell, y tratamos esa combinación como la
+unidad de análisis adecuada.
 
 La instanciación de referencia sobre un supervisor de autonomía
 con cinco propiedades existe como evidencia de que el patrón es

@@ -10,10 +10,12 @@
 
 ---
 
+> *Ghost turns safety claims into executable citations.*
+>
 > *A safety claim should be issued together with everything a third
 > party needs to reject it.*
 >
-> — The thesis of this paper, in one line.
+> — The two sentences this paper exists to defend.
 
 ---
 
@@ -103,9 +105,7 @@ demonstration (§8.2) and a parametric policy sweep (§8.3).
 We make **four claimable contributions**, two formal and two
 operational:
 
-We order our contributions **from the most load-bearing
-(an engineering pattern) to the most narrow (a useful supporting
-bound)**:
+We claim **three contributions**, deliberately conservative:
 
 - **C1 — A safety citation pattern.** A composition of seven
   existing ingredients — ADR + content-addressed MCAP +
@@ -113,9 +113,10 @@ bound)**:
   tagged release + OIDC-signed PyPI wheel — assembled as a single
   reproducibility unit so a third party can verify any cited safety
   claim against the captured run via one shell command, without
-  trusting the producer. This is the pattern we believe is genuinely
+  trusting the producer. **Ghost turns safety claims into executable
+  citations.** The pattern is what we believe is genuinely
   differentiating; the rest of the paper is the evidence that it
-  works in practice.
+  works in practice, including on real flight telemetry (§8.7).
 - **C2 — A reproducibility primitive with demonstrated detection
   capacity.** A one-line CLI verifier `ghost verify-properties` over
   content-addressed MCAP logs, distributed via PyPI with OIDC
@@ -123,7 +124,7 @@ bound)**:
   in §8.2 via a six-category violation matrix (injected calibrator,
   decision, actuation, and threshold bugs; all six detected). The
   verifier produces deterministic JSON output across Linux and
-  Windows runners (enforced by CI, §8.7) and remains policy-agnostic
+  Windows runners (enforced by CI, §8.8) and remains policy-agnostic
   across three structurally distinct calibration policies (§8.4).
 - **C3 — A property set with mechanically-checked semantics for a
   reference autonomy supervisor.** Five properties (BAUD-v1,
@@ -134,20 +135,18 @@ bound)**:
   `BAUD ⊕ ERUR` and a monotonic-degradation invariant. The
   properties themselves are deliberately simple; the contribution
   is the end-to-end mechanisation, not the formulation.
-- **C4 — A closed-form tight recovery latency bound** for
-  sliding-window count-of-K-in-W filters (Theorem 1, §6.3):
-  `L ≤ peak + W − 1`, attained with equality by a witness trace
-  (`L = 38 = 7 + 32 − 1`). The bound follows directly from the
-  sliding-window mechanism and is elementary in hindsight; we did
-  not locate it stated as a closed form in our literature review
-  (§2.3) but we make no broader novelty claim and treat it as
-  supporting evidence for C3 rather than a stand-alone theoretical
-  result.
 
-C1 and C2 are the contributions we expect to age best. C3
-instantiates them on a representative supervisor; C4 supplies a
-useful bound that the spec `Rlb.tla` verifies mechanically. We
-position the work as a **systems / tools paper, not a theory paper**.
+Theorem 1 (§6.3) — the closed-form recovery latency bound
+`L ≤ peak + W − 1` for sliding-window count-of-K-in-W filters,
+attained with equality by a witness trace — is presented as an
+**auxiliary result** that the TLA+ spec `Rlb.tla` mechanises. We do
+not list it as a contribution: the bound is elementary in hindsight,
+follows directly from the sliding-window mechanism, and is included
+because the spec mechanises it cleanly, not because it carries the
+paper. Readers should grade the paper on C1–C3.
+
+We position the work as a **systems / tools paper, not a theory
+paper**.
 
 #### Figure 1: The safety citation pattern
 
@@ -217,19 +216,19 @@ supervisor.
 This is an engineering and infrastructure paper, not a theory
 paper. The filtering, calibration, and FDI ingredients Ghost rests
 on are well established (§2.1). Theorem 1's mathematics is
-elementary in hindsight, and we present it as evidence that the
-citation pattern can carry a sharp result, not as a stand-alone
-theoretical contribution. The partition theorem of §5.3 is novel
+elementary in hindsight and is presented as a useful auxiliary
+result, not a contribution. The partition theorem of §5.3 is novel
 *in the form we mechanised it* — a TLA+ `INV_PARTITION` over the
 reference closed loop — but the underlying observation that
 "drift fired" and "drift clean and KNOWN" partition the per-cycle
 condition space is structurally simple. We deliberately resist
-overclaiming on either result. The contribution we are most
-willing to defend is **the engineered combination** (C1) and its
-**operational demonstration** (C2): that a third party can issue
-one shell command and obtain a byte-exact verdict against a binding
-ADR — and that this combination, to our knowledge, is not currently
-shipped by any other autonomy-safety tool.
+overclaiming. The contribution we are most willing to defend is
+**the engineered combination** (C1) and its **operational
+demonstration** (C2 + C3): that a third party can issue one shell
+command and obtain a byte-exact verdict against a binding ADR —
+and that this combination, to the best of our knowledge within the
+surveyed venues, is not currently shipped by any other
+autonomy-safety tool.
 
 ---
 
@@ -363,9 +362,45 @@ single-author effort. With that scope in mind:
 
 We invite readers from sequential-analysis or change-point-detection
 backgrounds to point us at prior closed-form bounds we may have
-missed; the framing of C4 as supporting evidence rather than a
-stand-alone result is chosen precisely to keep this from being a
-load-bearing claim.
+missed; framing Theorem 1 as an auxiliary result rather than a
+stand-alone contribution is chosen precisely to keep this from
+being a load-bearing claim.
+
+### 2.5 Where Ghost sits relative to industrial practice
+
+The autonomy-safety landscape is dominated by industrial efforts that
+operate at scales Ghost does not: Waymo's safety case
+framework [Webb et al., Waymo Safety Report 2020] documents the
+arguments behind millions of miles of public-road driving and
+includes structured assurance cases that cite internal logs the
+public cannot replay. PX4's `commander` finite-state machine
+[PX4 Autopilot Developer Guide] enforces flight-mode safety
+preconditions live on the vehicle, with the ULogs we ingest in §8.7
+as their persistent record. NASA's Formal Methods Symposium tradition
+[NFM proceedings 2009–2026] produces formally verified
+software-of-the-air-vehicle artefacts at certification grade.
+Autoware's safety architecture [Autoware Foundation safety report
+2023] specifies layered runtime monitors over a self-driving stack.
+Cruise's safety case methodology [Cruise Safety Report 2022]
+follows the GSN/Claim–Argument–Evidence pattern over an internal
+data pipeline.
+
+These efforts share an organisational property Ghost does not:
+**teams of safety engineers and proprietary access to telemetry,
+testing infrastructure, and regulators**. They produce assurance
+artefacts that justify operational deployment. Ghost makes a much
+smaller claim — *a third party can verify a stated property against
+a captured run by issuing one shell command* — but it makes that
+claim **operationally**, not by appeal to internal review.
+
+The niche we believe Ghost fills, complementary to those efforts, is
+the gap between *"this software is safe"* (a closed claim signed by
+an organisation) and *"here is the verifier and the log; check it
+yourself"* (an open claim citable by a third party). The citation
+pattern is not a substitute for industrial safety cases; it is a
+primitive those cases could cite. We make no claim of equivalence,
+scope, or maturity vis-à-vis the works above. We do claim that the
+primitive itself is missing from the open tooling we surveyed.
 
 ---
 
@@ -1138,32 +1173,23 @@ is pinned by `test_real_ulog_smoke_known_fixture_verdict`; any
 change to the pipeline that would alter this table would also
 fail CI, forcing a paper revision.
 
-**Honest scope of the verdict.** The orchestrator uses the ULog's
-own EKF2 estimate as both the agent's belief and the (vacuous)
-oracle ground truth. That makes every BAUD precondition trivially
-false (no prediction-vs-truth gap by construction) and every
-property HOLDS vacuously. The non-vacuous part of this section is
-not the all-HOLDS row — it is the row that says *the verifier
-ran unchanged on real flight telemetry, against a real PX4 v1.10
-ULog, with a real adapter, in CI*. The "Sim, not hardware" honest
-scope of §9 remains intact for the strong reading of the safety
-claim; what v0.2.3 demonstrates is that the citation pattern's
-plumbing extends through to a real-flight artefact end-to-end.
+**Caveat on the verdict.** The orchestrator uses the ULog's own
+EKF2 estimate as both the agent's belief and the (vacuous) oracle
+ground truth, so the all-HOLDS row is vacuous as a safety claim.
+A non-vacuous ground truth (motion capture, RTK GPS, post-flight
+optimised solution) is candidate ADR-0037; the adapter's
+`GroundTruthSource` enum already names the policy. The "Sim, not
+hardware" clause of §9 remains intact for the strong reading.
 
-**What is still future work (candidate ADR-0037):**
+**What this section establishes**, with the caveat above duly
+noted, is the structural fact the previous versions of this paper
+could not state:
 
-- A non-vacuous ground-truth source — motion capture, RTK GPS, or
-  a post-flight optimised solution paired with the ULog. The
-  current adapter's `GroundTruthSource` enum
-  (`MOTION_CAPTURE / RTK_GPS / USE_EKF2_AS_GROUND_TRUTH_VACUOUS`)
-  already names the policy; only the `MOTION_CAPTURE` path uses an
-  external pose stream that we do not yet ingest.
-- Per-dataset calibration parameter tuning (paper §9 "Reference
-  policies only"). The reference smoke's `M=4, K=2, W=32` is
-  sim-tuned; flight-grade noise will likely require re-tuning, and
-  ADR-0037 will document the tuning procedure.
-- A second public dataset family (EuRoC MAV is the canonical
-  next choice — has IMU + stereo + VICON truth + open licence).
+> **The verifier was executed unchanged on real PX4 v1.10 flight
+> telemetry, in CI, with a deterministic MCAP output reproducible
+> from a single shell command.**
+
+That is the load-bearing sentence of §8.7 — not the verdict row.
 
 ### 8.8 Determinism across replicates and machines
 
@@ -1249,17 +1275,19 @@ per-property §Scope sections of the ADRs.
 
 ## 11. Conclusion
 
-Project Ghost is a **citation pattern for safety claims**. Its
-load-bearing contribution is the proposition that a safety claim
-should be issued together with everything a third party needs to
-reject it: a binding written statement (the ADR), a content-
-addressed log (the MCAP), a pure-function verifier exposed as a CLI,
-property tests, mechanical checks on the underlying invariants
-(TLA+/TLC), and a signed distribution channel (OIDC PyPI). We do
-not claim to have discovered the individual ingredients — each is
-standard practice — but we have not located a tool that ships them
-as one coherent unit reachable from a single shell command, and we
-treat that combination as the proper unit of analysis.
+**Ghost turns safety claims into executable citations.** That
+sentence is what this paper exists to defend. The load-bearing
+contribution is the proposition that a safety claim should be
+issued together with everything a third party needs to reject it:
+a binding written statement (the ADR), a content-addressed log
+(the MCAP), a pure-function verifier exposed as a CLI, property
+tests, mechanical checks on the underlying invariants (TLA+/TLC),
+and a signed distribution channel (OIDC PyPI). We do not claim to
+have discovered the individual ingredients — each is standard
+practice — but to the best of our knowledge within the surveyed
+venues no tool ships them as one coherent unit reachable from a
+single shell command, and we treat that combination as the proper
+unit of analysis.
 
 The reference instantiation on a five-property autonomy supervisor
 exists as evidence that the pattern is workable, not as the
