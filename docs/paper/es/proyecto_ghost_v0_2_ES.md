@@ -119,7 +119,14 @@ del verificador.
 
 ### 1.1 Contribuciones
 
-Reclamamos **tres contribuciones**, deliberadamente conservadoras:
+**Project Ghost introduce citas de seguridad ejecutables: un patrón
+de reproducibilidad que permite a un tercero verificar una
+afirmación de seguridad contra un log de autonomía content-addressed
+usando un único comando.**
+
+Si un lector recuerda una frase de este paper, esa es la que
+pedimos que recuerde. Las contribuciones de abajo son evidencia
+operacional de ella:
 
 - **C1 — Un patrón de citación de seguridad.** Una composición de
   siete ingredientes existentes — ADR + MCAP content-addressed +

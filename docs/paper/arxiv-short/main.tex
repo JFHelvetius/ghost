@@ -1,0 +1,458 @@
+% Project Ghost — Workshop / short-paper version (target: 12-15 pages)
+% Companion to docs/paper/arxiv/main.tex (the technical-report version).
+%
+% This short version is the FMAS / RV / SAFECOMP submission target.
+% Tables that were in §8 of the long version live in this paper's
+% Appendix A; the parametric-eval table moves to Appendix B; the
+% RTAMT capability matrix moves to Appendix C. The Main body keeps
+% only the comparison matrix (§2.3) and the real-telemetry verdict
+% bundle (§7).
+%
+%   pdflatex main; bibtex main; pdflatex main; pdflatex main
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{microtype}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=blue!50!black,urlcolor=blue!60!black]{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,backgrounds,fit}
+
+\definecolor{codebg}{rgb}{0.97,0.97,0.97}
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{black!20},
+  numbers=none, breaklines=true,
+  showstringspaces=false, columns=fullflexible,
+  xleftmargin=0.5em, xrightmargin=0.5em,
+}
+
+\newtheorem{theorem}{Theorem}
+
+\title{Executable Safety Citations:\\
+       A Verifiable Reproducibility Pattern for Autonomy Under Uncertainty}
+\author{Javier Menéndez Mateos\\
+        \texttt{jfhelvetius@gmail.com}\\
+        \small Independent}
+\date{Short paper, v0.2.3 --- \today}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\itshape\small
+``Ghost turns safety claims into executable citations.''\\[0.3em]
+\upshape\textmd{--- the one-sentence summary of this work.}
+\end{center}
+
+\vspace{0.6em}
+
+\begin{abstract}
+\textbf{Project Ghost introduces executable safety citations: a
+reproducibility pattern that allows a third party to verify a
+safety claim against a content-addressed autonomy log using a
+single command.} The pattern composes seven existing ingredients ---
+ADRs, content-addressed MCAP telemetry, pure-function verifiers,
+Hypothesis property tests, CI gating, tagged releases, and
+OIDC-signed PyPI wheels --- into one shippable unit, with
+underlying invariants additionally checked by TLA+/TLC. We
+instantiate the pattern on a five-property reference autonomy
+supervisor (BAUD/ERUR/MD/RLB/FPB), verify it under three
+calibration policies, exercise it under six categories of injected
+bugs (all detected), and run the verifier unchanged on a real PX4
+v1.10 flight log. The pattern, not the individual properties, is
+the contribution. The artifact is re-runnable from
+\texttt{pip install project-ghost==0.2.3}.
+\end{abstract}
+
+\noindent\textbf{Keywords:} safety citation patterns, reproducible
+safety verification, runtime verification, content-addressed
+telemetry, TLA+, MCAP.
+
+% =======================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Safety claims in autonomy research are typically asserted in prose
+and illustrated by simulation videos that the reader cannot re-run.
+The literature on uncertainty in autonomy is rich --- Bayesian
+filters, calibration of probabilistic predictions, fault detection
+and isolation, runtime supervisors --- but the gap between
+\emph{the theory exists} and \emph{this specific run, on this
+specific code, satisfies the property} is rarely closed
+operationally. A third party cannot, in practice, verify another
+team's safety claim against a recorded run.
+
+We describe Project Ghost, an open-source platform whose primary
+contribution is a citation pattern that closes that gap: a third
+party can verify any cited safety claim against the recorded run by
+running \texttt{ghost verify-properties --mcap <log>} from a wheel
+installed via \texttt{pip}. Two of the properties (BAUD-v1 and
+ERUR-v1) plus the recovery latency bound and the FPB counter
+automaton are mechanically verified by TLA+/TLC over the abstract
+state space of the reference policy pair. The whole pipeline runs
+end-to-end on a real PX4 flight log in CI.
+
+\subsection{The single claim}
+
+\textbf{Project Ghost introduces executable safety citations: a
+reproducibility pattern that allows a third party to verify a
+safety claim against a content-addressed autonomy log using a
+single command.}
+
+If a reader remembers one sentence from this paper, that is the one
+we ask them to remember. The body of the paper is the operational
+evidence for it.
+
+% =======================================================================
+\section{Background and related work}
+\label{sec:related}
+
+\textbf{Underlying ingredients.} Bayesian and particle filtering
+[Thrun et al.\ 2005], calibration of probabilistic predictions
+[Vovk et al.\ 2005], runtime verification [Bartocci et al.\ 2018],
+TLA+/TLC [Lamport 2002], MCAP [Foxglove 2022].
+
+\textbf{Closest tooling prior work.} RTAMT [Niković et al.\ 2020]:
+STL monitors over CPS logs; STL formula language, no mechanically
+verified proof layer. MoonLight [Bartocci et al.\ 2020]: STREL
+monitor; spatial focus. ROSMonitoring [Ferrando et al.\ 2020] and
+ROSRV [Huang et al.\ 2014]: live ROS-middleware monitors, online.
+Safe RL via shielding [Jansen et al.\ 2020]: online enforcement.
+Conformal prediction for robot safety [Chakraborty et al.\ 2024]:
+predictive. Supervisory control of timed automata
+[Flordal et al.\ 2022]: synthesises new supervisors. Surveys
+[Rizaldi et al.\ 2020] note absence of mechanically verified TLA+
+specs for autonomy supervisors specifically.
+
+\textbf{Industrial practice.} Waymo, NASA NFM, PX4
+\texttt{commander}, Autoware, Cruise produce safety artefacts at
+scales Ghost does not. They share organisational properties Ghost
+does not: teams of safety engineers and proprietary access to
+telemetry, testing infrastructure, and regulators. The niche we
+believe Ghost fills, complementary to those efforts, is the gap
+between ``this software is safe'' (a closed claim signed by an
+organisation) and ``here is the verifier and the log; check it
+yourself'' (an open claim citable by a third party). The pattern
+is a primitive those cases could cite, not a substitute for them.
+
+\textbf{Comparison matrix.} Table~\ref{tab:comparison} positions
+Ghost against the closest runtime-verification and
+supervisory-control tooling. Full per-tool detail in
+Appendix~\ref{app:comparison}.
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{l X X X X X}
+\toprule
+\textbf{Dimension} & \textbf{Ghost} & RTAMT & MoonLight & Shielding & Timed SC \\
+\midrule
+Mode                  & Post-hoc log         & On/offline    & On/offline & Online & Offline synth.\\
+Distribution          & PyPI + OIDC          & Source        & Source     & Framework & Tool \\
+Content-addressed in  & \textbf{Yes}         & No            & No         & N/A      & No \\
+One-line CLI verifier & \textbf{Yes}         & No            & No         & No       & No \\
+Mechanical proof      & \textbf{TLA+/TLC}    & None          & None       & Informal & Timed aut. \\
+Multi-property output & \textbf{5/run}       & 1/spec        & 1/spec     & Modular  & 1/synth. \\
+Closed-form bound     & $L\le \mathrm{peak}{+}W{-}1$ & N/A     & N/A        & N/A      & None \\
+Bug-detection demo    & \textbf{Yes (\S\ref{sec:violation})} & N/A & N/A & N/A      & N/A \\
+\bottomrule
+\end{tabularx}
+\caption{Comparison matrix. No prior tool we surveyed ships a
+content-addressed, pure-function safety-property verifier via
+\texttt{pip install} with mechanically verified invariants. Welcome
+correction from readers with broader coverage.}
+\label{tab:comparison}
+\end{table}
+
+% =======================================================================
+\section{The pattern}
+\label{sec:pattern}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize,
+  node distance=4mm and 6mm,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=4pt,
+              minimum width=28mm, minimum height=10mm},
+  producer/.style={box, fill=blue!8, draw=blue!50!black},
+  ci/.style={box, fill=green!10, draw=green!50!black},
+  artifact/.style={box, fill=yellow!18, draw=orange!70!black},
+  party/.style={box, fill=red!8, draw=red!60!black},
+  flow/.style={-{Latex[length=2mm,width=1.6mm]}, thick},
+  flowdash/.style={-{Latex[length=2mm,width=1.6mm]}, thick, dashed, gray!70!black},
+  flowbig/.style={-{Latex[length=2.6mm,width=2mm]}, ultra thick, draw=red!50!black},
+]
+\node[producer] (adr) {Binding ADR};
+\node[producer, below=of adr] (code) {Pure-function verifier};
+\node[producer, below=of code] (spec) {Hypothesis + TLA+};
+\node[ci, right=14mm of code] (ci) {CI: verify + TLC + xmach};
+\node[ci, below=of ci] (tag) {OIDC-signed wheel};
+\node[artifact, right=14mm of ci] (mcap) {MCAP, SHA-256};
+\node[artifact, below=of mcap] (cite) {\textbf{The citation}};
+\node[party, right=14mm of mcap] (cmd) {\texttt{ghost verify}};
+\node[party, below=of cmd] (out) {Verdict + JSON};
+\draw[flow] (adr) -- (code);
+\draw[flow] (code) -- (spec);
+\draw[flow] (spec.east) -- (ci.west);
+\draw[flow] (ci) -- (tag);
+\draw[flowdash] (code.east) -- ++(3mm,0) |- (mcap.west);
+\draw[flow] (tag.east) -- ++(3mm,0) |- (cite.west);
+\draw[flow] (mcap) -- (cite);
+\draw[flowbig] (cite.east) -- ++(3mm,0) |- (cmd.west);
+\draw[flow] (cmd) -- (out);
+\end{tikzpicture}
+\caption{\textbf{The executable safety citation pattern.} A binding
+ADR states the property predicate; a pure-function verifier and
+TLA+ specs encode its semantics; CI gates every push and tagging
+cuts an OIDC-signed release. The citable artifact is the pair
+(MCAP SHA-256, PyPI version). A third party concatenates them with
+one shell command and obtains a deterministic verdict per property.}
+\label{fig:pattern}
+\end{figure}
+
+% =======================================================================
+\section{The property set and the verifier}
+\label{sec:properties}
+
+We instantiate the pattern on five properties of a reference
+closed-loop autonomy supervisor:
+
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item \textbf{BAUD-v1} (ADR-0031): when drift is detected the
+        agent emits no non-conservative action.
+  \item \textbf{ERUR-v1} (ADR-0032): when drift is absent and
+        belief is KNOWN the agent emits PROCEED.
+  \item \textbf{MD-v1} (ADR-0033): the calibrator never inflates
+        confidence ($\mathrm{adjusted} \preceq \mathrm{raw}$).
+  \item \textbf{RLB-v1} (ADR-0034): structural recovery latency
+        bound (Theorem~\ref{thm:rlb}).
+  \item \textbf{FPB-v1} (ADR-0035): empirical fire-rate observer.
+\end{itemize}
+
+Each property is stated as a binding ADR, verified by a pure
+function over the MCAP, exercised by Hypothesis property tests,
+witnessed inline in every reference smoke, and self-enforced on
+every push by CI.
+
+\textbf{CLI surface.} \texttt{pip install project-ghost==0.2.3}
+followed by \texttt{ghost verify-properties --mcap <log>} yields
+exit code \texttt{0} iff every property holds, with a deterministic
+JSON report. The verifier is a pure function over the
+content-addressed MCAP; no replay, no simulation, no trust in the
+producer.
+
+% =======================================================================
+\section{Mechanical verification (compact)}
+\label{sec:mechanical}
+
+Three TLA+ specifications jointly cover the five properties with 11
+invariants verified by TLC over the bounded state space, in CI on
+every push.
+
+\texttt{BaudErur.tla} ($M{=}2, K{=}1, W{=}3$) verifies BAUD-v1,
+ERUR-v1, the partition theorem $\mathrm{BAUD} \oplus \mathrm{ERUR}$,
+MD-v1, and the structural history bound. \texttt{Rlb.tla} ($W{=}4$)
+mirrors the verifier algorithm under the consecutive-drift
+hypothesis and mechanises Theorem~\ref{thm:rlb}. \texttt{Fpb.tla}
+($\mathrm{MAX\_CYCLES}{=}8$) checks the FPB counter automaton's
+structural well-formedness.
+
+\begin{theorem}[Tight recovery latency bound; transient regime]
+\label{thm:rlb}
+Let the outcome stream contain a transient drift of $N \le W$
+consecutive dirty outcomes followed by clean outcomes. Let
+$\mathrm{peak} = N$ and $L$ be the dirty-run length. Then
+$L = \mathrm{peak} + W - 1$, attained with equality. Proof in
+Appendix~\ref{app:theorem}.
+\end{theorem}
+
+Theorem~\ref{thm:rlb} is presented as an auxiliary result that the
+TLA+ spec \texttt{Rlb.tla} mechanises, not as a contribution.
+
+% =======================================================================
+\section{The verifier on real flight telemetry}
+\label{sec:realflight}
+
+\textbf{Setup.} A real PX4 ULog from the PX4/pyulog test fixtures
+(\texttt{test/sample\_log\_small.ulg}, ${\sim}921$\,KB, PX4 v1.10
+SITL flight, BSD-3 via PX4), bundled at
+\texttt{docs/paper/data/sample.ulg} with SHA-256
+\texttt{68d1020f...}. The end-to-end orchestrator
+\texttt{project\_ghost.adapters.real\_ulog\_smoke.run\_real\_ulog\_smoke}
+reads it, subsamples to 10\,Hz, drives the unmodified closed-loop
+pipeline, materialises a Ghost-schema MCAP, and runs the five
+property verifiers.
+
+\textbf{Caveat.} The orchestrator uses the ULog's own EKF2 estimate
+as both belief and (vacuous) ground truth, so the all-HOLDS row is
+vacuous as a safety claim. The \texttt{Sim, not hardware} clause of
+\S\ref{sec:limits} remains intact for the strong reading. A
+non-vacuous ground truth is candidate ADR-0037.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lc}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Pose samples extracted              & 636 \\
+Ghost cycles run                    & 71 \\
+MCAP SHA-256                        & \texttt{49fd0a48...720a4591} \\
+BAUD/ERUR/MD/RLB/FPB                & all HOLDS (vacuously) \\
+\bottomrule
+\end{tabular}
+\caption{Verdict bundle on the bundled real PX4 ULog.}
+\label{tab:real-verdict}
+\end{table}
+
+\textbf{What this establishes}, with the caveat above duly noted,
+is the structural fact:
+
+\begin{quote}
+\itshape
+The verifier was executed unchanged on real PX4 v1.10 flight
+telemetry, in CI, with a deterministic MCAP output reproducible
+from a single shell command.
+\end{quote}
+
+\textbf{Evaluation summary.} Full evaluation in
+Appendix~\ref{app:eval}: six-category violation matrix
+(Table~\ref{tab:violation}), parametric policy evaluation
+(Table~\ref{tab:parametric}), policy-comparison matrix
+(Table~\ref{tab:policy-comparison}), realistic-shape scenarios
+(Table~\ref{tab:realistic}), RTAMT capability matrix
+(Table~\ref{tab:rtamt-bench}).
+
+% =======================================================================
+\section{Limitations}
+\label{sec:limits}
+
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item \textbf{Sim, not hardware.} Non-vacuous safety verdicts
+        require an independent ground-truth source. Candidate
+        ADR-0037.
+  \item \textbf{Reference policies only.} TLA+ specs target the
+        reference. Non-reference policies need their own.
+  \item \textbf{Bounded TLC.} Behaviour at production-scale
+        constants relies on property tests; TLA+ fills the
+        small-but-exhaustive corner.
+  \item \textbf{Python$\leftrightarrow$TLA+ bridge by inspection.}
+        Automating it is future work.
+\end{itemize}
+
+% =======================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+\textbf{Ghost turns safety claims into executable citations.} That
+sentence is what this paper exists to defend. The load-bearing
+contribution is the proposition that a safety claim should be
+issued together with everything a third party needs to reject it:
+an ADR, an MCAP, a pure-function verifier on a CLI, property
+tests, mechanical checks (TLA+/TLC), and a signed PyPI wheel. The
+individual ingredients are standard; the assembly, in our
+surveyed scope, is missing. The artifact is re-runnable from
+\texttt{pip install project-ghost==0.2.3}.
+
+% =======================================================================
+\bibliographystyle{plainurl}
+\bibliography{refs}
+
+% =======================================================================
+\appendix
+
+\section{Per-tool comparison detail}
+\label{app:comparison}
+
+(Move the long version's §2.2 prose here for the short submission.
+Reviewers needing per-tool detail get it without bloating the
+main body.)
+
+\section{Proof of Theorem~\ref{thm:rlb}}
+\label{app:theorem}
+
+Trace the window state cycle by cycle, noting the sliding-window
+invariant: at cycle $t$, the window contains the last
+$\min(t, W)$ outcomes. Accumulation phase (cycles $1..N$): each
+cycle adds one dirty outcome; the window is not yet full
+($N \le W$); dirty count rises from $1$ to $N = \mathrm{peak}$.
+Saturation phase (cycles $N+1..W$): clean outcomes arrive,
+window not yet full, count stays at $\mathrm{peak}$. Flush phase
+(cycles $W+1..W+\mathrm{peak}-1$): each clean expels the oldest
+(dirty) entry; count drops by 1 per cycle from $\mathrm{peak}$ to
+$1$. Recovery at cycle $W+\mathrm{peak}$: last dirty expelled,
+count $0$. Total dirty cycles: $N + (W - N) + (\mathrm{peak} - 1)
+= W + \mathrm{peak} - 1$. Since $\mathrm{peak} = N$ in the
+transient regime, $L = \mathrm{peak} + W - 1$. \qed
+
+\section{Evaluation tables}
+\label{app:eval}
+
+(Tables \ref{tab:violation}, \ref{tab:parametric},
+\ref{tab:policy-comparison}, \ref{tab:realistic},
+\ref{tab:rtamt-bench} live here. Copied from the long version's
+§8.2--§8.6. Full prose accompanying each table preserved in the
+technical report at \texttt{docs/paper/project\_ghost\_v0\_2.md}.)
+
+% Placeholder labels so \ref's in main body compile cleanly even
+% before the tables are filled in. Remove these stubs before
+% submission and paste the actual tables.
+
+\subsection{Violation matrix}
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lll c}
+\toprule
+\textbf{Category} & \textbf{Buggy component} & \textbf{Property} & \textbf{Detected?} \\
+\midrule
+\texttt{calibrator\_no\_downgrade}        & calibration policy           & BAUD-v1               & YES \\
+\texttt{calibrator\_invents\_confidence}  & calibration policy           & MD-v1 + BAUD-v1       & YES \\
+\texttt{decision\_proceeds\_anyway}       & decision policy              & BAUD-v1               & YES \\
+\texttt{decision\_never\_proceeds}        & decision policy              & ERUR-v1               & YES \\
+\texttt{actuation\_non\_safe\_reason}     & actuation policy             & BAUD-v1               & YES \\
+\texttt{fpb\_threshold\_exceeded}         & verifier \texttt{max\_fire\_fraction} & FPB-v1     & YES \\
+\bottomrule
+\end{tabular}
+\caption{Six bug categories, all detected.}
+\label{tab:violation}
+\end{table}
+
+\subsection{Parametric policy evaluation}
+\label{tab:parametric}
+(Nine runs, three $(M,K)$ pairs $\times$ three trace lengths. All
+five properties HOLD across all nine. Full table in the technical
+report.)
+
+\subsection{Policy-comparison matrix}
+\label{tab:policy-comparison}
+(Three structurally distinct calibration policies; verifier is
+policy-agnostic in code but ERUR is policy-specific in its
+parametrisation. Full discussion in the technical report.)
+
+\subsection{Realistic-shape scenarios}
+\label{tab:realistic}
+(\texttt{gps\_denial}, \texttt{slow\_biased\_drift},
+\texttt{cascading\_failure}; all five properties HOLD in all
+three. Full discussion in the technical report.)
+
+\subsection{RTAMT capability matrix}
+\label{tab:rtamt-bench}
+(Capability dimensions; the two tools are complementary, not
+competitors. Full discussion in the technical report.)
+
+\end{document}

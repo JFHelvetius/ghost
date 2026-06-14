@@ -105,7 +105,14 @@ demonstration (§8.2) and a parametric policy sweep (§8.3).
 We make **four claimable contributions**, two formal and two
 operational:
 
-We claim **three contributions**, deliberately conservative:
+**Project Ghost introduces executable safety citations: a
+reproducibility pattern that allows a third party to verify a safety
+claim against a content-addressed autonomy log using a single
+command.**
+
+If a reader remembers one sentence from this paper, that is the one
+we ask them to remember. The rest of the contributions, listed
+below, are operational evidence for it:
 
 - **C1 — A safety citation pattern.** A composition of seven
   existing ingredients — ADR + content-addressed MCAP +
@@ -226,9 +233,8 @@ overclaiming. The contribution we are most willing to defend is
 **the engineered combination** (C1) and its **operational
 demonstration** (C2 + C3): that a third party can issue one shell
 command and obtain a byte-exact verdict against a binding ADR —
-and that this combination, to the best of our knowledge within the
-surveyed venues, is not currently shipped by any other
-autonomy-safety tool.
+and that this combination is, we believe, missing from the open
+autonomy-safety tooling we surveyed.
 
 ---
 
@@ -327,18 +333,16 @@ methods, sequential analysis, or change-point detection — those
 fields are too large to claim exhaustive coverage from a
 single-author effort. With that scope in mind:
 
-- **C1 (the citation pattern)** — to the best of our knowledge,
-  within the surveyed venues, no prior tool ships the end-to-end
-  combination of ADR + content-addressed MCAP + pure-function CLI
-  verifier + Hypothesis tests + CI gate + OIDC-signed PyPI wheel +
-  TLA+ checked invariants as one unit. Individual ingredients are
-  standard. The novelty we claim is the assembly, not any single
-  component. A reader who can point us to a prior assembly we
+- **C1 (the citation pattern)** — no prior tool we surveyed ships
+  the end-to-end combination of ADR + content-addressed MCAP +
+  pure-function CLI verifier + Hypothesis tests + CI gate +
+  OIDC-signed PyPI wheel + TLA+ checked invariants as one unit.
+  Individual ingredients are standard; the novelty we claim is the
+  assembly. A reader who can point us to a prior assembly we
   missed is doing us a favour.
-- **C2 (the reproducibility primitive)** — similarly novel as a
-  shipped tool with the demonstrated detection properties of §8.2,
-  to the best of our knowledge within the surveyed venues; the
-  underlying ideas (pure-function verifiers over robotics
+- **C2 (the reproducibility primitive)** — novel as a shipped tool
+  with the demonstrated detection properties of §8.2 in the surveyed
+  scope; the underlying ideas (pure-function verifiers over robotics
   telemetry) are not.
 - **C3's partition theorem `BAUD ⊕ ERUR`** — we did not locate a
   prior TLA+ mechanisation of this exact partition for a
