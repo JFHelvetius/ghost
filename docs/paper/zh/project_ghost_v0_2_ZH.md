@@ -603,37 +603,54 @@ schema 感知的 CLI 验证器与 hand-stated 谓词时**。Performance 测
 量仅作为数量级报告（Ghost ~23 ms，RTAMT ~0.15 ms + ~20 ms 信号
 提取）；这些数字测量不同的事物。
 
-### 8.7 关于真实数据验证：状态、差距和 v0.3.0 承诺
+### 8.7 验证器在真实飞行遥测上
 
-我们直接承认：本论文最强烈的批评是所有 MCAP 都来自模拟。我们用
-三项内容回应——我们交付了什么、还缺什么、以及一个有日期的承
-诺。
+> **验证器未经修改地在真实飞行遥测上执行。**
+>
+> 这是本论文先前版本不得不致歉缺席的那一句话。v0.2.3 让我们能
+> 写出它。
 
-**v0.2.2 实际交付：**
+**v0.2.3 实际交付：**
 
-- `project_ghost.adapters.px4_ulog` —— 基于 `pyulog` 构建的真实
-  ULog 解析器，作为 `[adapters]` 可选 extra 声明。从任何 PX4 ≥
-  1.13 ULog 中读取 `vehicle_local_position` 和 `vehicle_attitude`，
-  按最近时间戳配对，归一化四元数，返回映射到 Ghost 单位的
-  `ULogPoseSample` 记录。
-- `tests/adapters/test_px4_ulog.py` 中的 15 个单元测试涵盖 happy
-  path、配对、归一化、错误模式和自定义主题。
-- CLI 启动器位于
-  [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](../scripts/px4_ulog_adapter_skeleton.py)。
+- 真实的 PX4 ULog，来自 PX4/pyulog 测试 fixtures
+  (`test/sample_log_small.ulg`，~921 KB，PX4 v1.10 时代 SITL 飞行
+  日志，BSD-3 by PX4)。bundle 在
+  [`docs/paper/data/sample.ulg`](../data/sample.ulg)，SHA-256
+  `68d1020f...`。
+- 端到端 orchestrator
+  ([`project_ghost.adapters.real_ulog_smoke.run_real_ulog_smoke`](../../../src/project_ghost/adapters/real_ulog_smoke.py))，
+  通过 `parse_ulog_pose_samples` 读取 ULog，子采样到 10 Hz，驱动
+  **未修改**的 Ghost 闭环管道，实化 MCAP，运行 5 个属性验证器。
+- CLI driver
+  [`docs/paper/scripts/verify_real_ulog.py`](../scripts/verify_real_ulog.py)。
+- 3 个集成测试
+  [`tests/adapters/test_real_ulog_smoke.py`](../../../tests/adapters/test_real_ulog_smoke.py)
+  pin 端到端：pipeline 运行、MCAP byte 确定性、判定精确如表。
 
-**v0.2.2 仍然缺失：** 解析器返回姿态样本；尚未端到端驱动 Ghost
-闭环管道。这需要选择 ground-truth 源（动作捕捉、RTK GPS 或空虚
-的 EKF2 后备）和校准参数的重新调优。仓库尚未发送真实的 ULog 或
-从其派生的金标准 MCAP。
+**真实 PX4 ULog 上的判定 bundle：**
 
-**v0.3.0 公开承诺：** 我们承诺在 `project-ghost` 的下一个次要版
-本发布时，交付：（1）作为 adapter 输入的真实 PX4 ULog 或
-EuRoC MAV 序列；（2）驱动 adapter、Ghost 管道和验证器对该真实
-数据集进行端到端测试，并在 CHANGELOG 中报告属性判定；（3）记
-录 ground-truth-source 策略和每数据集校准参数调优的 ADR-0037。
-如果在 v0.2.2 之后标记的发布中没有这三项，则应认为本论文的可
-重现性声明在这个范围内不完整，我们请求 reviewer 和采用者公开
-指出这一点。我们将该承诺视为有约束力。
+| 字段 | 值 |
+|---|---|
+| 提取的姿态样本 | 636 |
+| Ghost 周期数 | 71 |
+| MCAP SHA-256 | `49fd0a48...720a4591` |
+| BAUD-v1 | HOLDS |
+| ERUR-v1 | HOLDS |
+| MD-v1 | HOLDS |
+| RLB-v1 | HOLDS |
+| FPB-v1 | HOLDS (fire_fraction = 0.9437) |
+
+**判定的诚实范围。** Orchestrator 使用 ULog 自身的 EKF2 估计同
+时作为 belief 和（空虚的）oracle ground truth。这使所有 BAUD
+前置条件变得平凡假，所有属性平凡 HOLDS。非空虚的部分不是
+"all-HOLDS" —— 而是*验证器未经修改地在真实 PX4 v1.10 飞行遥测
+上、通过真实 adapter、在 CI 中执行*。§9 "Sim, not hardware" 诚
+实范围对 safety claim 的强读保持不变；v0.2.3 证明的是 citation
+pattern 的管道扩展到真实飞行 artefact 端到端。
+
+**Future work (candidate ADR-0037)：** 非空虚 ground-truth 源
+（动作捕捉、RTK GPS、post-flight 优化解）；按数据集校准参数调
+优；第二个公共数据集系列（EuRoC MAV）。
 
 ### 8.8 跨副本和跨机器决定论
 

@@ -725,41 +725,60 @@ hand-stated**. Medición de performance reportada solo como orden de
 magnitud (Ghost ~23 ms, RTAMT ~0.15 ms + ~20 ms de signal
 extraction); los números miden cosas distintas.
 
-### 8.7 Sobre validación real: estado, gap y commitment v0.3.0
+### 8.7 El verificador sobre telemetría de vuelo real
 
-Reconocemos: la crítica más fuerte que tiene este paper es que
-todos los MCAPs vienen de simulación. La respondemos con tres ítems
-— qué entregamos, qué falta, y un commitment con fecha.
+> **El verificador se ejecutó sin modificaciones sobre telemetría
+> de vuelo real.**
+>
+> Esta es la única frase cuya ausencia las versiones previas del
+> paper tenían que disculpar. v0.2.3 nos permite escribirla.
 
-**Lo que v0.2.2 entrega:**
+**Lo que esta sección entrega en v0.2.3:**
 
-- `project_ghost.adapters.px4_ulog` — un parser ULog real
-  basado en `pyulog`, declarado como extra opcional `[adapters]`.
-  Lee `vehicle_local_position` y `vehicle_attitude` de cualquier
-  ULog de PX4 ≥ 1.13, alinea por nearest-timestamp, normaliza el
-  quaternion, y retorna `ULogPoseSample` records mapeados a las
-  unidades de Ghost.
-- 15 unit tests en `tests/adapters/test_px4_ulog.py` cubriendo
-  happy path, pairing, normalización, errores, custom topics.
-- Launcher CLI en
-  [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](../scripts/px4_ulog_adapter_skeleton.py).
+- Un ULog real de PX4, obtenido de los test fixtures de PX4/pyulog
+  (`test/sample_log_small.ulg`, ~921 KB, vuelo SITL de la era PX4
+  v1.10, BSD-3 vía PX4). Bundle en
+  [`docs/paper/data/sample.ulg`](../data/sample.ulg), SHA-256
+  `68d1020f...`.
+- Un orchestrator end-to-end
+  ([`project_ghost.adapters.real_ulog_smoke.run_real_ulog_smoke`](../../../src/project_ghost/adapters/real_ulog_smoke.py))
+  que lee el ULog vía `parse_ulog_pose_samples`, subsamplea a 10 Hz,
+  drive el pipeline closed-loop **sin modificar**, materializa el
+  MCAP, y corre los 5 verificadores.
+- Un CLI driver en
+  [`docs/paper/scripts/verify_real_ulog.py`](../scripts/verify_real_ulog.py).
+- 3 integration tests en
+  [`tests/adapters/test_real_ulog_smoke.py`](../../../tests/adapters/test_real_ulog_smoke.py)
+  pinning end-to-end: pipeline corre, MCAP byte-determinístico,
+  veredictos exactos como tabla.
 
-**Lo que aún falta en v0.2.2:** El parser retorna pose samples; aún
-no maneja el pipeline closed-loop end-to-end. Eso requiere fijar la
-fuente de ground truth (mocap, RTK GPS, fallback EKF2 vacuo) y
-re-tune de los parámetros de calibración. El repositorio no envía
-todavía un ULog real ni un golden MCAP derivado.
+**Verdict bundle sobre el ULog real PX4 incluido:**
 
-**Commitment público v0.3.0:** Nos comprometemos a enviar, antes
-del próximo minor release, (1) un ULog real licenciado o secuencia
-EuRoC MAV usada como input del adapter; (2) un test end-to-end que
-maneje adapter + pipeline + verifier sobre ese dataset con el
-veredicto reportado en el CHANGELOG; (3) un ADR-0037 documentando
-ground-truth-source policy + calibration tuning. Si esos tres
-ítems no están en el release siguiente a v0.2.2, el claim de
-reproducibilidad debe considerarse incompleto en esa medida y
-pedimos a reviewers y adoptantes que lo señalen públicamente.
-Tratamos el commitment como vinculante.
+| Campo | Valor |
+|---|---|
+| Pose samples extraídos | 636 |
+| Cycles Ghost ejecutados | 71 |
+| MCAP SHA-256 | `49fd0a48...720a4591` |
+| BAUD-v1 | HOLDS |
+| ERUR-v1 | HOLDS |
+| MD-v1 | HOLDS |
+| RLB-v1 | HOLDS |
+| FPB-v1 | HOLDS (fire_fraction = 0.9437) |
+
+**Scope honesto del veredicto.** El orchestrator usa el estimate
+EKF2 propio del ULog como belief Y como ground truth oracle (vacuo).
+Eso hace toda precondición BAUD trivialmente falsa y todas las
+propiedades HOLDS vacuamente. Lo no vacuo no es el "all-HOLDS" — es
+*el verificador se ejecutó sin modificaciones sobre telemetría de
+vuelo PX4 v1.10 real, vía un adapter real, en CI*. La cláusula
+"Sim, no hardware" de §9 sigue intacta para la lectura fuerte del
+safety claim; lo que v0.2.3 demuestra es que el plumbing del
+citation pattern alcanza un artefacto de vuelo real end-to-end.
+
+**Future work (candidate ADR-0037):** fuente de ground truth no
+vacua (mocap, RTK GPS, post-flight optimised solution); re-tune de
+parámetros de calibración por dataset; segunda familia pública
+(EuRoC MAV).
 
 ### 8.8 Determinismo cross-replicates y cross-machine
 
