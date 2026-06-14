@@ -31,14 +31,15 @@
 
 ## Resumen
 
-Las afirmaciones de seguridad en investigación de autonomía
-típicamente se enuncian en prosa y se ilustran con vídeos de
-simulación que el lector no puede re-ejecutar. Describimos
-**Project Ghost**, una plataforma open source cuya contribución
-principal es **un patrón de citación que permite a un tercero
-verificar cualquier afirmación de seguridad contra el run grabado,
-byte-exact, mediante un único comando de shell**:
-`pip install project-ghost==0.2.2`, luego
+**Tesis: las afirmaciones de seguridad deberían ser ejecutables y
+falsables mediante una cita reproducible.** Hoy típicamente se
+enuncian en prosa y se ilustran con vídeos de simulación que el
+lector no puede re-ejecutar. Describimos **Project Ghost**, una
+plataforma open source cuya contribución principal es **un patrón
+de citación que permite a un tercero verificar cualquier
+afirmación de seguridad contra el run grabado, byte-exact,
+mediante un único comando de shell**:
+`pip install project-ghost==0.2.3`, luego
 `ghost verify-properties --mcap <log>`. El patrón compone siete
 ingredientes existentes — Architectural Decision Records (ADRs),
 telemetría MCAP content-addressed, verificadores función-pura,
@@ -125,41 +126,31 @@ más un único comando de shell (`ghost verify-properties --mcap
 o lo contradice. Llamamos a este patrón una **cita de seguridad
 ejecutable**.
 
-Hacemos **cuatro contribuciones reivindicables**, dos formales y
-dos operacionales; el patrón cita-de-seguridad-ejecutable es la
-primera y el resto son evidencia operacional de que funciona.
+Hacemos **tres contribuciones**:
 
-- **C1 — Un artefacto de seguridad reproducible que un tercero
-  puede verificar.** Ghost empaqueta el predicado de la propiedad
-  (ADR), el run (MCAP content-addressed) y el verificador (wheel
-  PyPI firmada por OIDC) en una sola unidad citable; invariantes
-  verificados mecánicamente (TLA+/TLC), Hypothesis property tests
-  y CI gating respaldan el verificador mismo. El artefacto citado
-  *es* el mecanismo de falsación — llamamos a este patrón una
-  *cita de seguridad ejecutable*. Es el patrón que creemos
-  genuinamente diferenciante; el resto del paper es la evidencia
-  de que funciona en la práctica, incluyendo sobre telemetría de
-  vuelo real (§8.7–§8.8).
-- **C2 — Un primitivo de reproducibilidad con capacidad de
-  detección demostrada.** Un verificador CLI de una línea
-  `ghost verify-properties` sobre logs MCAP content-addressed,
-  distribuido vía PyPI con OIDC trusted publishing. La detección de
-  bugs se demuestra sistemáticamente en §8.2 vía una violation
-  matrix de seis categorías (calibrador, decisión, actuación, y
-  threshold inyectados; las seis detectadas). El verificador
-  produce JSON output determinístico across Linux y Windows
-  (enforced por CI, §8.9) y se mantiene policy-agnostic across tres
-  policies de calibración estructuralmente distintas (§8.4).
-- **C3 — Un conjunto de propiedades con semánticas
-  mecánicamente-checked para un supervisor de autonomía de
-  referencia.** Cinco propiedades (BAUD-v1, ERUR-v1, MD-v1, RLB-v1,
-  FPB-v1) instanciando el patrón de citación sobre un ciclo cerrado
-  representativo. Tres specs TLA+ cubren el conjunto de propiedades
-  con 11 invariantes verificados por TLC sobre un modelo abstracto
-  bounded en CI, incluyendo un teorema de partición
-  `BAUD ⊕ ERUR` y un invariante de degradación monótona. Las
-  propiedades en sí son deliberadamente simples; la contribución
-  es la mecanización end-to-end, no la formulación.
+- **C1 — El patrón de cita de seguridad ejecutable (conceptual).**
+  Una afirmación de seguridad se publica como un run
+  content-addressed más un verificador función-pura, distribuible
+  como una sola unidad que un tercero re-deriva desde un único
+  comando sin confiar en el productor. El artefacto citado *es*
+  el mecanismo de falsación.
+
+- **C2 — Implementación de referencia: Ghost (artefacto).** Un
+  supervisor de autonomía closed-loop que instancia el patrón
+  sobre cinco propiedades (BAUD-v1, ERUR-v1, MD-v1, RLB-v1,
+  FPB-v1) con ADRs vinculantes, telemetría MCAP
+  content-addressed, `ghost verify-properties --mcap`, wheels PyPI
+  firmadas por OIDC, y un verificador policy-agnostic across tres
+  policies de calibración (§8.4).
+
+- **C3 — Verificación mecánica + evaluación empírica
+  (validación).** Tres specs TLA+ (11 invariantes en CI,
+  incluyendo el teorema de partición `BAUD ⊕ ERUR`), una
+  violation matrix de seis categorías (§8.2), perfiles de drift
+  shape-realistic (§8.5), un benchmark de capacidades contra
+  RTAMT (§8.6), y discriminación sobre telemetría real PX4: dos
+  componentes buggy substituidos en el mismo vuelo físico flipean
+  BAUD-v1 de HOLDS a VIOLATED (§8.8).
 
 La cota de latencia de recuperación (§6.3) — RLB-v1
 `L ≤ peak + W − 1` para filtros de ventana deslizante

@@ -70,16 +70,18 @@ party needs to reject it.''\\[0.3em]
 \vspace{1em}
 
 \begin{abstract}
-Safety claims in autonomy research are typically asserted in prose
-and illustrated by simulation videos that the reader cannot re-run.
-We describe \textbf{Project Ghost}, an open-source platform whose
-primary contribution is \textbf{a citation pattern that lets a third
-party verify any safety claim against the recorded run, byte-exact,
-via a single shell command}: \texttt{pip install project-ghost==0.2.2},
-then \texttt{ghost verify-properties --mcap <log>}. The pattern
-composes seven existing ingredients --- ADRs, content-addressed
-MCAP telemetry, pure-function verifiers, Hypothesis property tests,
-CI gating, tagged releases, and OIDC-signed PyPI wheels --- into one
+\textbf{Thesis: safety claims should be executable and
+falsifiable through a reproducible citation.} Today they are
+typically asserted in prose and illustrated by simulation videos
+the reader cannot re-run. We describe \textbf{Project Ghost}, an
+open-source platform whose primary contribution is \textbf{a
+citation pattern that lets a third party verify any safety claim
+against the recorded run, byte-exact, via a single shell command}:
+\texttt{pip install project-ghost==0.2.3}, then
+\texttt{ghost verify-properties --mcap <log>}. The pattern composes
+seven existing ingredients --- ADRs, content-addressed MCAP
+telemetry, pure-function verifiers, Hypothesis property tests, CI
+gating, tagged releases, and OIDC-signed PyPI wheels --- into one
 coherent reproducibility unit, with the underlying invariants
 additionally checked by TLA+/TLC.
 
@@ -169,52 +171,41 @@ with the wheel and the log reproduces the verdict --- or
 contradicts it. We call this pattern an \textbf{executable safety
 citation}.
 
-The contributions below are operational evidence that the pattern
-works.
+We make \textbf{three contributions}:
 
 \begin{itemize}
-  \item \textbf{C1 --- A reproducible safety artefact a third party
-        can verify.} Ghost packages the property predicate (ADR),
-        the run (content-addressed MCAP), and the verifier
-        (OIDC-signed PyPI wheel) into a single citable unit;
-        mechanically-checked invariants (TLA+/TLC), Hypothesis
-        property tests and CI gating back the verifier itself. The
-        cited artefact \emph{is} the falsification mechanism --- we
-        call the pattern an \emph{executable safety citation}. The
-        pattern is what we believe is genuinely differentiating;
-        the rest of the paper is the evidence that it works in
-        practice, including on real flight telemetry
-        (\S\ref{sec:realflight}--\S\ref{sec:realflight-discrim}).
-  \item \textbf{C2 --- A reproducibility primitive with demonstrated
-        detection capacity.} A one-line CLI verifier
-        \texttt{ghost verify-properties} over content-addressed MCAP
-        logs, distributed via PyPI with OIDC trusted publishing.
-        Bug-detection is demonstrated systematically in
-        \S\ref{sec:violation} via a six-category violation matrix
-        (injected calibrator, decision, actuation, and threshold
-        bugs; all six detected). The verifier produces deterministic
-        JSON output across Linux and Windows runners and remains
-        policy-agnostic across three structurally distinct
+  \item \textbf{C1 --- The executable safety citation pattern
+        (conceptual).} A safety claim is published as a
+        content-addressed run plus a pure-function verifier,
+        distributable as one shippable unit a third party
+        re-derives from a single command without trusting the
+        producer. The cited artefact \emph{is} the falsification
+        mechanism.
+  \item \textbf{C2 --- Reference implementation: Ghost
+        (artefact).} A closed-loop autonomy supervisor
+        instantiating the pattern on five properties (BAUD-v1,
+        ERUR-v1, MD-v1, RLB-v1, FPB-v1) with binding ADRs,
+        content-addressed MCAP telemetry,
+        \texttt{ghost verify-properties --mcap}, OIDC-signed PyPI
+        wheels, and a policy-agnostic verifier across three
         calibration policies (\S\ref{sec:multi-policy}).
-  \item \textbf{C3 --- A property set with mechanically-checked
-        semantics for a reference autonomy supervisor.} Five
-        properties (BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1)
-        instantiating the citation pattern on a representative closed
-        loop. Three TLA+ specifications cover the property set with
-        11 invariants verified by TLC on a bounded abstract model in
-        CI, including a partition theorem
-        $\mathrm{BAUD} \oplus \mathrm{ERUR}$. The properties
-        themselves are deliberately simple; the contribution is the
-        end-to-end mechanisation, not the formulation.
+  \item \textbf{C3 --- Mechanical verification + empirical
+        evaluation (validation).} Three TLA+ specifications
+        (11 invariants in CI, including the partition theorem
+        $\mathrm{BAUD} \oplus \mathrm{ERUR}$), a six-category
+        violation matrix (\S\ref{sec:violation}), shape-realistic
+        drift profiles, an RTAMT capability benchmark, and
+        discrimination on real PX4 flight telemetry: two buggy
+        components, swapped into the same physical flight, each
+        flip BAUD-v1 from HOLDS to VIOLATED
+        (\S\ref{sec:realflight-discrim}).
 \end{itemize}
 
-The recovery latency bound --- the closed-form RLB-v1 bound
-$L \le \mathrm{peak} + W - 1$ for sliding-window count-of-$K$-in-$W$
-filters --- is presented as an \textbf{auxiliary result} that the
-TLA+ spec \texttt{Rlb.tla} mechanises; it is an auxiliary result,
-not a contribution. We position the work as a \textbf{systems /
-tools paper, not a theory paper}; readers should grade
-C1--C3. Figure~\ref{fig:pattern} summarises the pattern.
+The recovery latency bound $L \le \mathrm{peak} + W - 1$ is
+presented as a \textbf{supporting result} that \texttt{Rlb.tla}
+mechanises, not as a contribution. We position the work as a
+\textbf{systems / tools paper, not a theory paper}.
+Figure~\ref{fig:pattern} summarises the pattern.
 
 \begin{figure}[t]
 \centering
