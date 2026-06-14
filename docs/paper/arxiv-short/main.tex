@@ -69,10 +69,14 @@ OIDC-signed PyPI wheels --- into one shippable unit, with
 underlying invariants additionally checked by TLA+/TLC. We
 instantiate the pattern on a five-property reference autonomy
 supervisor (BAUD/ERUR/MD/RLB/FPB), verify it under three
-calibration policies, exercise it under six categories of injected
-bugs (all detected), and run the verifier unchanged on a real PX4
-v1.10 flight log. The pattern, not the individual properties, is
-the contribution. The artifact is re-runnable from
+calibration policies, exercise it under six categories of
+injected bugs (all detected), and run the verifier unchanged on
+a real PX4 v1.10 flight log --- on which the verifier
+\emph{discriminates}: two independently buggy components, swapped
+into the same physical flight, each flip BAUD-v1 from HOLDS to
+VIOLATED, while the four other properties remain HOLD. The
+pattern, not the individual properties, is the contribution. The
+artifact is re-runnable from
 \texttt{pip install project-ghost==0.2.3}.
 \end{abstract}
 
@@ -292,43 +296,65 @@ TLA+ spec \texttt{Rlb.tla} mechanises, not as a contribution.
 SITL flight, BSD-3 via PX4), bundled at
 \texttt{docs/paper/data/sample.ulg} with SHA-256
 \texttt{68d1020f...}. The end-to-end orchestrator
-\texttt{project\_ghost.adapters.real\_ulog\_smoke.run\_real\_ulog\_smoke}
+\texttt{project\_ghost.adapters.real\_ulog\_smoke}
 reads it, subsamples to 10\,Hz, drives the unmodified closed-loop
 pipeline, materialises a Ghost-schema MCAP, and runs the five
 property verifiers.
 
-\textbf{Caveat.} The orchestrator uses the ULog's own EKF2 estimate
-as both belief and (vacuous) ground truth, so the all-HOLDS row is
-vacuous as a safety claim. The \texttt{Sim, not hardware} clause of
-\S\ref{sec:limits} remains intact for the strong reading. A
-non-vacuous ground truth is candidate ADR-0037.
+\subsection{Discrimination, not just all-HOLDS}
+\label{sec:realflight-discrim}
+
+A naive run produces all-HOLDS on the real ULog (MCAP SHA-256
+\texttt{49fd0a48\ldots}). That row alone does not establish that
+the verifier \emph{catches} anything on real telemetry --- a
+vacuous verifier would produce the same row. The load-bearing
+experiment is the verdict \emph{delta} on the same physical
+flight.
+
+\textbf{The experiment.} On the same real PX4 ULog, we re-run the
+closed-loop pipeline twice more, each time substituting one buggy
+component imported verbatim from the \S2 violation matrix
+(Appendix~\ref{app:eval}, Table~\ref{tab:violation}). Fusion
+oracle, MCAP schema, verifier and ULog input are held identical to
+the nominal run; only one named component differs per buggy case.
 
 \begin{table}[h]
-\centering
-\small
-\begin{tabular}{lc}
+\centering\small
+\begin{tabular}{l c c c c c l}
 \toprule
-\textbf{Field} & \textbf{Value} \\
+\textbf{Run} & BAUD & ERUR & MD & RLB & FPB & MCAP SHA-256 \\
 \midrule
-Pose samples extracted              & 636 \\
-Ghost cycles run                    & 71 \\
-MCAP SHA-256                        & \texttt{49fd0a48...720a4591} \\
-BAUD/ERUR/MD/RLB/FPB                & all HOLDS (vacuously) \\
+nominal (reference policies)         & HOLDS    & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{49fd0a48\ldots}\\
+\texttt{decision\_proceeds\_anyway}  & \textbf{VIOLATED} & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{37224e40\ldots}\\
+\texttt{actuation\_non\_safe\_reason}& \textbf{VIOLATED} & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{9a23b97a\ldots}\\
 \bottomrule
 \end{tabular}
-\caption{Verdict bundle on the bundled real PX4 ULog.}
+\caption{\textbf{Discrimination on real flight telemetry.} Two
+independently buggy components, each producing BAUD-v1 VIOLATED on
+the same physical PX4 flight that produced all-HOLDS under the
+reference policies. The violation is isolated to the property the
+bug attacks. End-to-end re-runnable from a single shell command;
+six integration tests pin the experiment.}
 \label{tab:real-verdict}
 \end{table}
 
-\textbf{What this establishes}, with the caveat above duly noted,
-is the structural fact:
+\textbf{What this establishes.}
 
 \begin{quote}
 \itshape
-The verifier was executed unchanged on real PX4 v1.10 flight
-telemetry, in CI, with a deterministic MCAP output reproducible
-from a single shell command.
+On the same real PX4 v1.10 flight log, the verifier flips its
+verdict from all-HOLDS under the reference policies to BAUD-v1
+VIOLATED when a one-line decision-policy or actuation-policy
+regression is substituted. The verifier is informative on real
+telemetry: it discriminates the reference run from two specific
+named regressions.
 \end{quote}
+
+\textbf{What this does not claim.} The buggy run did not fly
+anything; the substitution is at the policy layer. The diversity
+of bug categories that flip on real data depends on whether the
+ULog's drift pattern exercises their precondition --- generalising
+across more flights is scope for ADR-0037 (real-flight corpus).
 
 \textbf{Evaluation summary.} Full evaluation in
 Appendix~\ref{app:eval}: six-category violation matrix

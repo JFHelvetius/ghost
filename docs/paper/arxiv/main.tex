@@ -1024,6 +1024,70 @@ from a single shell command.
 That is the load-bearing sentence of this section --- not the
 verdict row.
 
+\subsection{Discrimination on real flight telemetry}
+\label{sec:realflight-discrim}
+
+The previous subsection establishes that the verifier \emph{runs}
+on real telemetry. It does not, on its own, establish that the
+verifier \emph{catches} anything on real telemetry --- the
+all-HOLDS row could be produced by a vacuous verifier as easily
+as by a correct one. This subsection closes that gap.
+
+\textbf{The experiment.} On the \emph{same} real PX4 ULog as
+\S\ref{sec:realflight}, we re-run the closed-loop pipeline twice
+more, each time substituting \emph{one} buggy component imported
+verbatim from the \S8.2 violation matrix. The fusion oracle, the
+MCAP schema, the verifier and the ULog input are held identical
+to the nominal run; only one named component differs per buggy
+case.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{l c c c c c l}
+\toprule
+\textbf{Run} & BAUD & ERUR & MD & RLB & FPB & MCAP SHA-256 (prefix) \\
+\midrule
+nominal (reference policies)         & HOLDS    & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{49fd0a48\ldots}\\
+\texttt{decision\_proceeds\_anyway}  & \textbf{VIOLATED} & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{37224e40\ldots}\\
+\texttt{actuation\_non\_safe\_reason}& \textbf{VIOLATED} & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{9a23b97a\ldots}\\
+\bottomrule
+\end{tabular}
+\caption{Verdict delta on the bundled real PX4 ULog. Both buggy
+runs flip BAUD-v1 from HOLDS to VIOLATED on the same physical
+flight; the other four properties remain HOLD, so the violation
+is isolated to the property the bug attacks.}
+\label{tab:realflight-discrim}
+\end{table}
+
+\textbf{Reproducibility.} End-to-end runnable from
+\texttt{pip install 'project-ghost[adapters]==0.2.3'}:
+
+\begin{lstlisting}
+python docs/paper/scripts/verify_real_ulog_discriminate.py \
+    --ulog docs/paper/data/sample.ulg \
+    --out-dir docs/paper/outputs/real_ulog_discrim
+\end{lstlisting}
+
+Exit code is 0 iff every buggy category flips its expected
+property. Six integration tests pin the experiment in CI
+(\texttt{tests/adapters/test\_real\_ulog\_discrimination.py}).
+
+\textbf{Why this answers the residual critique.} On the same
+physical flight, swapping the reference decision policy for a
+one-line buggy \texttt{PROCEED}-only policy, or the reference
+actuator for a one-line unsafe-reason actuator, flips the
+verdict. The synthetic violation-matrix detections of \S8.2
+transfer to real telemetry, on this ULog, for the bug categories
+whose precondition the real flight's drift pattern exercises.
+
+\textbf{What this section does not claim.} It does not claim that
+every class of bug in \S8.2 will flip on every real ULog --- that
+requires a more diverse fixture set, scope for ADR-0037. It does
+not claim that the buggy run is unsafe in a hardware sense --- the
+buggy run did not fly anything. It claims, precisely, that the
+verifier discriminates real telemetry against two specific named
+regressions whose synthetic counterparts \S8.2 already detects.
+
 \subsection{Determinism across replicates and machines}
 Within a single machine, replicate runs produce byte-identical
 MCAPs. \textbf{Cross-machine byte-equality of the MCAP} is enforced

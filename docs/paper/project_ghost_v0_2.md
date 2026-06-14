@@ -131,7 +131,7 @@ below, are operational evidence for it:
   in §8.2 via a six-category violation matrix (injected calibrator,
   decision, actuation, and threshold bugs; all six detected). The
   verifier produces deterministic JSON output across Linux and
-  Windows runners (enforced by CI, §8.8) and remains policy-agnostic
+  Windows runners (enforced by CI, §8.9) and remains policy-agnostic
   across three structurally distinct calibration policies (§8.4).
 - **C3 — A property set with mechanically-checked semantics for a
   reference autonomy supervisor.** Five properties (BAUD-v1,
@@ -1195,7 +1195,72 @@ could not state:
 
 That is the load-bearing sentence of §8.7 — not the verdict row.
 
-### 8.8 Determinism across replicates and machines
+### 8.8 Discrimination on real flight telemetry
+
+The §8.7 verdict establishes that the verifier *runs* on real
+telemetry. It does not, on its own, establish that the verifier
+*catches* anything on real telemetry — the all-HOLDS row could be
+produced by a vacuous verifier as easily as by a correct one. This
+subsection closes that gap.
+
+**The experiment.** On the **same real PX4 ULog** as §8.7, we re-run
+the closed-loop pipeline twice more, each time substituting **one**
+buggy component imported verbatim from the §8.2 violation matrix.
+The fusion oracle, the MCAP schema, the verifier, and the ULog input
+are held identical to the nominal run; only one named component
+differs per buggy case. The verifier is then asked the same question
+of each MCAP independently.
+
+**Verdict delta on the bundled real PX4 ULog:**
+
+| Run | BAUD | ERUR | MD | RLB | FPB | MCAP SHA-256 (prefix) |
+|---|:---:|:---:|:---:|:---:|:---:|---|
+| nominal (reference policies) | HOLDS | HOLDS | HOLDS | HOLDS | HOLDS | `49fd0a48…` |
+| `decision_proceeds_anyway` (BAUD-v1 attack) | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS | `37224e40…` |
+| `actuation_non_safe_reason` (BAUD-v1 attack) | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS | `9a23b97a…` |
+
+Both buggy runs flip **BAUD-v1 from HOLDS to VIOLATED** on the same
+real flight log that produced all-HOLDS under the reference
+policies; the other four properties remain HOLD, so the violation
+is **isolated to the property the bug attacks**. That isolation
+matters: it shows the verifier is not signalling "something
+changed" but "the specific invariant the buggy component violates."
+
+**Reproducibility.** The discrimination experiment is end-to-end
+runnable from `pip install 'project-ghost[adapters]==0.2.3'` via:
+
+```
+python docs/paper/scripts/verify_real_ulog_discriminate.py \
+    --ulog docs/paper/data/sample.ulg \
+    --out-dir docs/paper/outputs/real_ulog_discrim
+```
+
+Exit code is `0` iff every buggy category flips its expected
+property. Six integration tests pin the experiment in CI
+(`tests/adapters/test_real_ulog_discrimination.py`).
+
+**Why this answers the residual §8.7 critique.** A reviewer of the
+previous version could fairly say: "all-HOLDS shows the pipeline
+runs; it does not show the verdict is *informative* on real data."
+The §8.8 delta is exactly that — on the same physical flight,
+swapping the reference decision policy for a one-line buggy
+PROCEED-only policy, or the reference actuator for a one-line
+unsafe-reason actuator, flips the verdict. The synthetic
+violation-matrix detections of §8.2 transfer to real telemetry, on
+this ULog, for the bug categories whose precondition the real
+flight's drift pattern exercises.
+
+**What this section does not claim.** It does not claim that every
+class of bug in §8.2 will flip on every real ULog — that requires
+a more diverse fixture set than the single PX4 SITL log bundled
+here, and is scope for ADR-0037 (real-flight corpus). It does not
+claim that the buggy run is *unsafe* in a hardware sense — the
+buggy run did not fly anything. It claims, precisely, that the
+verifier discriminates real telemetry against two specific
+named regressions whose synthetic counterparts §8.2 already
+detects.
+
+### 8.9 Determinism across replicates and machines
 
 Within a single machine, replicate runs of the same `(M, K, n)`
 combination produce byte-identical MCAPs (verified by SHA-256

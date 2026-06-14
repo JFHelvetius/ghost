@@ -21,10 +21,23 @@ from .px4_ulog import (
     ULogTopicNames,
     parse_ulog_pose_samples,
 )
+from .real_ulog_discrimination import (
+    RealULogBugCategory,
+    RealULogDiscriminationCell,
+    RealULogDiscriminationResults,
+    run_real_ulog_discrimination,
+)
+from .real_ulog_smoke import RealULogSmokeSummary, run_real_ulog_smoke
 
 __all__ = [
+    "RealULogBugCategory",
+    "RealULogDiscriminationCell",
+    "RealULogDiscriminationResults",
+    "RealULogSmokeSummary",
     "ULogParseError",
     "ULogPoseSample",
     "ULogTopicNames",
     "parse_ulog_pose_samples",
+    "run_real_ulog_discrimination",
+    "run_real_ulog_smoke",
 ]

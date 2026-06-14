@@ -11,18 +11,22 @@ synthetic smoke). The output MCAP is then verifiable byte-exact with
 ``ghost verify-properties --mcap <out.mcap>``.
 
 **Honest scope of the ground-truth source.** This orchestrator uses
-the ULog's *own* EKF2 estimate as both the agent's belief and the
-oracle ground truth — i.e., it runs Ghost on real telemetry but
-declares the agent to be self-consistent with itself. That makes
-every BAUD precondition vacuously false (no prediction-vs-truth
-gap) and every property HOLDS vacuously. This is **not a non-vacuous
-safety verdict** — it is the smallest possible demonstration that
-*the verifier can be executed unchanged on real flight telemetry*.
-A non-vacuous verdict requires an independent ground-truth source
-(motion capture, RTK GPS, post-flight optimised solution) and is
-the scope of candidate ADR-0037.
+a stationary fusion oracle as the agent's belief and the ULog's own
+EKF2 estimate as the (vacuous) ground truth. With the reference
+policies, every cycle in which the real flight has moved measurably
+from the initial position registers a divergence event; the policy
+responds conservatively and every property HOLDS. The verdict bundle
+is reproducible from the same ULog input (verified by the
+``mcap_is_deterministic`` test).
 
-Paper §8.7 reports the full provenance:
+The companion module ``real_ulog_discrimination`` (paper §8.8)
+re-runs this exact pipeline on the same real ULog with one buggy
+policy substituted and demonstrates that the verifier flips its
+verdict — i.e., Ghost **discriminates** real flight telemetry
+against a known regression, which is the non-vacuous part of the
+real-data validation story.
+
+Paper §8.7 + §8.8 report the full provenance:
 
 - ULog source: PX4/pyulog ``test/sample_log_small.ulg`` (~921 KB,
   PX4 v1.10-era SITL log).
@@ -30,8 +34,9 @@ Paper §8.7 reports the full provenance:
   636 pose samples on the bundled sample.
 - Verifier: ``ghost verify-properties --mcap`` from
   ``pip install project-ghost==0.2.3``.
-- Verdict: all five properties HOLD (vacuously, EKF2-self ground
-  truth).
+- Nominal verdict (§8.7): all five properties HOLD.
+- Discrimination verdict (§8.8): with one buggy decision policy
+  substituted, BAUD-v1 flips to VIOLATED on the same real ULog.
 
 Stdlib + numpy + project_ghost internals + pyulog (via adapter).
 """
@@ -40,7 +45,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import numpy as np
 
@@ -203,51 +208,58 @@ def _samples_to_ground_truth_fn(
     return gt_fn
 
 
-def run_real_ulog_smoke(  # noqa: PLR0915
-    ulog_path: Path,
-    output_mcap_path: Path,
-    *,
-    max_cycles: int = _MAX_REAL_CYCLES,
-) -> RealULogSmokeSummary:
-    """End-to-end: real ULog → Ghost MCAP → property verdicts.
+def _subsample_to_cycle_rate(
+    samples: list[ULogPoseSample], max_cycles: int
+) -> list[ULogPoseSample]:
+    """Subsample real ULog samples to Ghost's 10 Hz cycle rate.
 
-    Reads ``ulog_path``, parses real pose samples via the PX4 adapter,
-    drives the Ghost closed-loop pipeline with the EKF2 estimate as
-    both belief and (vacuous) ground truth, materialises the resulting
-    MCAP to ``output_mcap_path``, and runs the five property
-    verifiers. Returns the verdict bundle.
-
-    The number of cycles is the lesser of ``max_cycles`` and the
-    number of ULog samples (one per cycle, after subsampling to
-    Ghost's 10 Hz rate). The MCAP SHA-256 is deterministic given the
-    same ULog input.
+    PX4 ``vehicle_local_position`` is typically 100 Hz; Ghost runs at
+    10 Hz. Take every n-th sample where n keeps us close to one cycle
+    per sample. Caps at ``max_cycles`` for tractability.
     """
-    samples = parse_ulog_pose_samples(ulog_path)
-    if not samples:
-        raise ValueError(f"ULog produced 0 pose samples: {ulog_path}")
-
-    # Subsample to Ghost cycle rate. PX4 vehicle_local_position is
-    # typically 100 Hz; Ghost runs at 10 Hz. We take every n-th sample
-    # where n keeps us close to one cycle per sample.
     ulog_dt_us = max(
         1,
         (samples[-1].stamp_us - samples[0].stamp_us) // max(1, len(samples) - 1),
     )
     cycles_dt_us = _DT_NS // 1000  # 100_000 us
     stride = max(1, cycles_dt_us // ulog_dt_us)
-    sub_samples = samples[::stride][:max_cycles]
+    return samples[::stride][:max_cycles]
+
+
+def _run_real_ulog_pipeline(
+    sub_samples: list[ULogPoseSample],
+    output_mcap_path: Path,
+    *,
+    feedback_policy: Any,
+    decision_policy: Any,
+    actuation_policy: Any,
+) -> int:
+    """Run the Ghost closed-loop pipeline over real ULog pose samples
+    with caller-supplied policies. Materialises the MCAP at
+    ``output_mcap_path`` and returns the number of cycles run.
+
+    Used by ``run_real_ulog_smoke`` (reference policies — paper §8.7)
+    and by ``real_ulog_discrimination`` (one buggy policy — §8.8).
+    The MCAP byte layout is identical when the same policies are
+    passed; that is what makes the discrimination experiment a
+    controlled A/B.
+    """
     n_cycles = len(sub_samples)
     if n_cycles < _MIN_CYCLES_FOR_PIPELINE:
         raise ValueError(
-            f"After subsampling {len(samples)} ULog samples by stride "
-            f"{stride}, only {n_cycles} cycles remain; need >= 2 to run "
-            "the closed-loop pipeline."
+            f"After subsampling, only {n_cycles} cycles remain; need "
+            f">= {_MIN_CYCLES_FOR_PIPELINE} to run the closed-loop "
+            "pipeline."
         )
 
     gt_fn = _samples_to_ground_truth_fn(sub_samples)
     thresholds = _make_thresholds()
 
-    # Oracle fusion seeded from the first real sample.
+    # Oracle fusion seeded from the first real sample. This is a
+    # stationary belief by design — the prediction-vs-truth gap is
+    # therefore non-zero on any real flight, which is what makes the
+    # nominal verdict non-trivially produced (drift is detected; the
+    # reference policy responds conservatively; the property HOLDS).
     first_pose = gt_fn(_T0_NS)
     oracle = LinearMotionOracleFusionPolicy(
         initial_position_enu_m=first_pose.position_enu_m.copy(),
@@ -256,12 +268,6 @@ def run_real_ulog_smoke(  # noqa: PLR0915
         covariance_diag=_COVARIANCE_DIAG,
     )
     predictor = ConstantVelocityForwardPredictor()
-    decision_policy = UncertaintyAwareReferencePolicy()
-    actuation_policy = AttitudeHoldReferencePolicy()
-    feedback_policy = MahalanobisDowngradePolicy(
-        min_outcomes=_FEEDBACK_MIN_OUTCOMES,
-        downgrade_threshold=_FEEDBACK_DOWNGRADE_THRESHOLD,
-    )
 
     predictions: list[BeliefForwardPrediction] = []
     outcomes: list[PredictionOutcome] = []
@@ -317,9 +323,21 @@ def run_real_ulog_smoke(  # noqa: PLR0915
             p_adp.publish(prediction)
             predictions.append(prediction)
 
+    return n_cycles
+
+
+def _verify_all_and_bundle(
+    output_mcap_path: Path,
+    *,
+    n_pose_samples_in_ulog: int,
+    n_cycles: int,
+    ulog_sha256: str,
+) -> RealULogSmokeSummary:
+    """Run the five property verifiers against ``output_mcap_path``
+    and assemble the verdict bundle.
+    """
     mcap_bytes = output_mcap_path.read_bytes()
     mcap_sha = hashlib.sha256(mcap_bytes).hexdigest()
-    ulog_sha = hashlib.sha256(ulog_path.read_bytes()).hexdigest()
 
     baud = verify_baud(
         output_mcap_path,
@@ -340,11 +358,11 @@ def run_real_ulog_smoke(  # noqa: PLR0915
     )
 
     return RealULogSmokeSummary(
-        n_pose_samples_in_ulog=len(samples),
+        n_pose_samples_in_ulog=n_pose_samples_in_ulog,
         n_cycles_run=n_cycles,
         mcap_path=output_mcap_path,
         mcap_sha256=mcap_sha,
-        ulog_sha256=ulog_sha,
+        ulog_sha256=ulog_sha256,
         baud_holds=baud.holds,
         erur_holds=erur.holds,
         md_holds=md.holds,
@@ -354,4 +372,55 @@ def run_real_ulog_smoke(  # noqa: PLR0915
     )
 
 
-__all__ = ["RealULogSmokeSummary", "run_real_ulog_smoke"]
+def run_real_ulog_smoke(
+    ulog_path: Path,
+    output_mcap_path: Path,
+    *,
+    max_cycles: int = _MAX_REAL_CYCLES,
+) -> RealULogSmokeSummary:
+    """End-to-end: real ULog → Ghost MCAP → property verdicts (reference policies).
+
+    Reads ``ulog_path``, parses real pose samples via the PX4 adapter,
+    drives the Ghost closed-loop pipeline with the reference
+    feedback, decision and actuation policies, materialises the
+    resulting MCAP to ``output_mcap_path``, and runs the five
+    property verifiers. Returns the verdict bundle.
+
+    The number of cycles is the lesser of ``max_cycles`` and the
+    number of ULog samples (one per cycle, after subsampling to
+    Ghost's 10 Hz rate). The MCAP SHA-256 is deterministic given the
+    same ULog input.
+    """
+    samples = parse_ulog_pose_samples(ulog_path)
+    if not samples:
+        raise ValueError(f"ULog produced 0 pose samples: {ulog_path}")
+    sub_samples = _subsample_to_cycle_rate(samples, max_cycles)
+
+    feedback_policy = MahalanobisDowngradePolicy(
+        min_outcomes=_FEEDBACK_MIN_OUTCOMES,
+        downgrade_threshold=_FEEDBACK_DOWNGRADE_THRESHOLD,
+    )
+    decision_policy = UncertaintyAwareReferencePolicy()
+    actuation_policy = AttitudeHoldReferencePolicy()
+
+    n_cycles = _run_real_ulog_pipeline(
+        sub_samples,
+        output_mcap_path,
+        feedback_policy=feedback_policy,
+        decision_policy=decision_policy,
+        actuation_policy=actuation_policy,
+    )
+
+    ulog_sha = hashlib.sha256(ulog_path.read_bytes()).hexdigest()
+    return _verify_all_and_bundle(
+        output_mcap_path,
+        n_pose_samples_in_ulog=len(samples),
+        n_cycles=n_cycles,
+        ulog_sha256=ulog_sha,
+    )
+
+
+__all__ = [
+    "RealULogSmokeSummary",
+    "run_real_ulog_smoke",
+]

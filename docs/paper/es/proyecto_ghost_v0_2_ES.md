@@ -147,7 +147,7 @@ operacional de ella:
   matrix de seis categorías (calibrador, decisión, actuación, y
   threshold inyectados; las seis detectadas). El verificador
   produce JSON output determinístico across Linux y Windows
-  (enforced por CI, §8.8) y se mantiene policy-agnostic across tres
+  (enforced por CI, §8.9) y se mantiene policy-agnostic across tres
   policies de calibración estructuralmente distintas (§8.4).
 - **C3 — Un conjunto de propiedades con semánticas
   mecánicamente-checked para un supervisor de autonomía de
@@ -812,7 +812,72 @@ podían enunciar:
 
 Esa es la frase load-bearing de §8.7 — no la fila del veredicto.
 
-### 8.8 Determinismo cross-replicates y cross-machine
+### 8.8 Discriminación sobre telemetría de vuelo real
+
+§8.7 establece que el verificador *se ejecuta* sobre telemetría
+real. No establece, por sí solo, que el verificador *detecte* algo
+sobre telemetría real — el all-HOLDS lo produciría tanto un
+verificador vacío como uno correcto. Esta subsección cierra ese
+hueco.
+
+**El experimento.** Sobre el **mismo ULog real** de §8.7,
+re-corremos la pipeline closed-loop dos veces más, cada una
+substituyendo **un solo** componente buggy importado verbatim de la
+violation matrix §8.2. El oracle de fusión, el esquema MCAP, el
+verificador y el ULog input se mantienen idénticos al nominal; solo
+un componente nombrado difiere por caso buggy.
+
+**Delta de veredictos sobre el ULog real bundleado:**
+
+| Run | BAUD | ERUR | MD | RLB | FPB | MCAP SHA-256 (prefix) |
+|---|:---:|:---:|:---:|:---:|:---:|---|
+| nominal (policies de referencia) | HOLDS | HOLDS | HOLDS | HOLDS | HOLDS | `49fd0a48…` |
+| `decision_proceeds_anyway` (ataque BAUD-v1) | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS | `37224e40…` |
+| `actuation_non_safe_reason` (ataque BAUD-v1) | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS | `9a23b97a…` |
+
+Ambos runs buggy flipean **BAUD-v1 de HOLDS a VIOLATED** sobre el
+mismo log de vuelo real que produjo all-HOLDS bajo las policies de
+referencia; las otras cuatro propiedades siguen HOLD, así que la
+violación está **aislada a la propiedad que el bug ataca**. Ese
+aislamiento importa: muestra que el verificador no está señalando
+"algo cambió" sino "el invariante específico que el componente
+buggy viola".
+
+**Reproducibilidad.** End-to-end runnable desde
+`pip install 'project-ghost[adapters]==0.2.3'`:
+
+```
+python docs/paper/scripts/verify_real_ulog_discriminate.py \
+    --ulog docs/paper/data/sample.ulg \
+    --out-dir docs/paper/outputs/real_ulog_discrim
+```
+
+Exit code 0 sii toda categoría buggy flipea su propiedad esperada.
+Seis tests de integración pinean el experimento en CI
+(`tests/adapters/test_real_ulog_discrimination.py`).
+
+**Por qué esto responde al crítico residual de §8.7.** Un reviewer
+de la versión anterior podía decir con razón: "all-HOLDS muestra
+que la pipeline corre; no muestra que el veredicto sea
+*informativo* sobre datos reales". El delta de §8.8 es exactamente
+eso — sobre el mismo vuelo físico, swappear la policy de decisión
+de referencia por una policy buggy de una línea que siempre emite
+PROCEED, o el actuador de referencia por un actuador buggy de una
+línea con razón insegura, flipea el veredicto. Las detecciones
+sintéticas de la violation matrix §8.2 transfieren a telemetría
+real, sobre este ULog, para las categorías de bug cuya
+precondición el patrón de drift del vuelo real ejercita.
+
+**Lo que esta sección NO afirma.** No afirma que toda clase de bug
+de §8.2 fliperá sobre todo ULog real — eso requiere un set de
+fixtures más diverso que el único PX4 SITL log bundleado aquí, y
+es scope de ADR-0037 (corpus real-flight). No afirma que el run
+buggy sea *inseguro* en sentido hardware — el run buggy no voló
+nada. Afirma, precisamente, que el verificador discrimina
+telemetría real contra dos regresiones nombradas específicas cuyas
+contrapartes sintéticas §8.2 ya detecta.
+
+### 8.9 Determinismo cross-replicates y cross-machine
 
 Enforced por CI con matrix ubuntu+windows que diff-ea SHA-256 del
 MCAP y del JSON canonicalizado.
