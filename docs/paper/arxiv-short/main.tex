@@ -329,7 +329,10 @@ Ghost ships five such contracts for a reference autonomy
 supervisor, packages each as an executable safety citation, and
 demonstrates discrimination on real PX4 flight telemetry. The
 cited artefact \emph{is} the falsification mechanism. The artifact
-is re-runnable from \texttt{pip install project-ghost==0.2.3}.
+is re-runnable from
+\texttt{pip install 'project-ghost[adapters]==0.2.3'} (the
+\texttt{[adapters]} extra brings the PX4 ULog parser used by
+\S\ref{sec:realflight}).
 
 % =======================================================================
 \bibliographystyle{plainurl}
@@ -341,9 +344,60 @@ is re-runnable from \texttt{pip install project-ghost==0.2.3}.
 \section{Per-tool comparison detail}
 \label{app:comparison}
 
-(Move the long version's §2.2 prose here for the short submission.
-Reviewers needing per-tool detail get it without bloating the
-main body.)
+The runtime-verification literature has produced several tools
+with overlapping concerns, none of which occupies the same niche
+as Ghost. We summarise each below.
+
+\paragraph{RTAMT} \cite{rtamt2020}.
+STL monitors over CPS logs with online/offline algorithms and a
+Python API. Property language is signal temporal logic, not
+hand-crafted predicates; there is no mechanically verified proof
+layer and no content-addressed reproducibility chain.
+
+\paragraph{MoonLight} \cite{moonlight2020}.
+STREL (spatio-temporal logic) monitor in Java with a CLI, used
+for automotive benchmarks. Spatial focus; no formal verification
+of the monitor semantics.
+
+\paragraph{ROSMonitoring} \cite{rosmonitoring2020} \textbf{and ROSRV}
+\cite{rosrv2014}.
+Live ROS-middleware monitors that intercept the master or wrap
+nodes. Both are online; neither performs post-hoc log
+verification with a one-line CLI.
+
+\paragraph{Safe RL via shielding} \cite{shielding2020}.
+Runtime enforcement of safety via action filters. Online,
+action-blocking; Ghost is offline, log-verifying.
+
+\paragraph{Control Barrier Functions} \cite{cbf2023}.
+Controller synthesis for continuous safety constraints.
+Complementary, not competing.
+
+\paragraph{Conformal prediction for robot safety}
+\cite{conformal2024}.
+Forward-looking distribution-free uncertainty bounds for gating
+actions. Predictive; Ghost is retrospective.
+
+\paragraph{Supervisory control of timed automata}
+\cite{timedaut2022}.
+Synthesises timed supervisors. Constructs new supervisors; Ghost
+verifies existing traces. Prior timed-automata recovery results
+do not give the closed-form bound of \S\ref{app:theorem}.
+
+\paragraph{Surveys of formal verification for autonomy}
+\cite{rizaldi2020}.
+Catalogue Coq/Lean/Isabelle/Alloy work. Note the absence of
+mechanically-verified TLA+ specs for autonomy supervisors
+specifically.
+
+To the best of our knowledge, no prior tool ships a
+content-addressed, pure-function safety-property verifier via
+\texttt{pip install} + OIDC-signed wheels with mechanically
+verified underlying invariants. The axis on which Ghost is
+genuinely different is the \emph{kind} of predicate it monitors:
+RTAMT, MoonLight, ROSMonitoring and shielding monitor predicates
+over the external world; Ghost's five contracts
+(\S\ref{sec:properties}) are over the agent's epistemic posture.
 
 \section{The recovery latency bound: statement and proof}
 \label{app:theorem}
@@ -372,17 +426,8 @@ transient regime, $L = \mathrm{peak} + W - 1$. \qed
 \section{Evaluation tables}
 \label{app:eval}
 
-(Tables \ref{tab:violation}, \ref{tab:parametric},
-\ref{tab:policy-comparison}, \ref{tab:realistic},
-\ref{tab:rtamt-bench} live here. Copied from the long version's
-§8.2--§8.6. Full prose accompanying each table preserved in the
-technical report at \texttt{docs/paper/project\_ghost\_v0\_2.md}.)
-
-% Placeholder labels so \ref's in main body compile cleanly even
-% before the tables are filled in. Remove these stubs before
-% submission and paste the actual tables.
-
 \subsection{Violation matrix}
+
 \begin{table}[h]
 \centering\small
 \begin{tabular}{lll c}
@@ -397,31 +442,114 @@ technical report at \texttt{docs/paper/project\_ghost\_v0\_2.md}.)
 \texttt{fpb\_threshold\_exceeded}         & verifier \texttt{max\_fire\_fraction} & FPB-v1     & YES \\
 \bottomrule
 \end{tabular}
-\caption{Six bug categories, all detected.}
+\caption{Six bug categories, all detected by the verifier. Each
+mini-smoke is engineered to break exactly one closed-loop
+component; the verifier reports the expected property as VIOLATED
+and the others as HOLDS. Reproducible via
+\texttt{python -m project\_ghost.examples.violation\_matrix};
+the script's exit code is 1 iff any false negative occurs.}
 \label{tab:violation}
 \end{table}
 
 \subsection{Parametric policy evaluation}
-\label{tab:parametric}
-(Nine runs, three $(M,K)$ pairs $\times$ three trace lengths. All
-five properties HOLD across all nine. Full table in the technical
-report.)
 
-\subsection{Policy-comparison matrix}
+\begin{table}[h]
+\centering\small
+\begin{tabular}{l r r r r r c}
+\toprule
+\textbf{Policy} $(M,K)$ & $n$ & \textbf{MCAP (B)} & \textbf{Smoke (ms)} & \textbf{Verifier (ms)} & \textbf{Fire frac.} & \textbf{All HOLDS} \\
+\midrule
+(4, 2) reference   & 10  & 6\,552  & 15.3  & 20.8  & 0.60 & \checkmark \\
+(4, 2) reference   & 50  & 18\,481 & 24.3  & 99.7  & 0.92 & \checkmark \\
+(4, 2) reference   & 200 & 64\,699 & 100.5 & 405.8 & 0.98 & \checkmark \\
+(3, 1) sensitive   & 10  & 6\,542  & 5.6   & 20.6  & 0.70 & \checkmark \\
+(3, 1) sensitive   & 50  & 18\,475 & 34.0  & 100.2 & 0.94 & \checkmark \\
+(3, 1) sensitive   & 200 & 64\,717 & 102.7 & 399.1 & 0.99 & \checkmark \\
+(5, 3) lax         & 10  & 6\,553  & 5.6   & 20.6  & 0.50 & \checkmark \\
+(5, 3) lax         & 50  & 18\,484 & 23.4  & 100.7 & 0.90 & \checkmark \\
+(5, 3) lax         & 200 & 64\,700 & 104.4 & 406.2 & 0.98 & \checkmark \\
+\bottomrule
+\end{tabular}
+\caption{Parametric policy sweep: three $(M,K)$ pairs $\times$
+three trace lengths $n \in \{10, 50, 200\}$. All nine combinations
+pass all five contracts. Verifier runtime is linear in trace
+length; MCAP SHA-256 is byte-identical across replicate runs of
+the same policy/$n$.}
+\label{tab:parametric}
+\end{table}
+
+\subsection{Policy-comparison matrix (ERUR-v1 vs ERUR-v2)}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{l c c c c c c}
+\toprule
+\textbf{Policy} & \textbf{BAUD} & \textbf{ERUR-v1} & \textbf{ERUR-v2} & \textbf{MD} & \textbf{RLB} & \textbf{FPB} \\
+\midrule
+\texttt{Mahalanobis}$(M{=}4,K{=}2)$ ref.   & OK & OK             & OK             & OK & OK & OK \\
+\texttt{EWMA}$(\alpha{=}0.5,\min{=}3,\tau{=}0.3)$ & OK & \textbf{VIOL} & \textbf{OK} & OK & OK & OK \\
+\texttt{PerAxisHysteresis}$(\mathrm{up}{=}3.0)$  & OK & \textbf{VIOL} & \textbf{OK} & OK & OK & OK \\
+\bottomrule
+\end{tabular}
+\caption{Verifier executed unchanged on three structurally
+distinct calibrators. ERUR-v1 (fixed to the reference predicate)
+reports VIOL on the alternatives because they do not behave like
+the reference --- not because they are unsafe; ERUR-v2
+(policy-parametric) captures the policy-agnostic contract that
+the comparison matrix claims. v0.2.3 ships v1; v2 is
+hand-evaluated for the three calibrators here (ADR-0040 lifts v2
+to a generic verifier in v0.2.4).}
 \label{tab:policy-comparison}
-(Three structurally distinct calibration policies; verifier is
-policy-agnostic in code but ERUR is policy-specific in its
-parametrisation. Full discussion in the technical report.)
+\end{table}
 
 \subsection{Realistic-shape scenarios}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{l r c c c c c r}
+\toprule
+\textbf{Scenario} & \textbf{Cycles} & \textbf{BAUD} & \textbf{ERUR} & \textbf{MD} & \textbf{RLB} & \textbf{FPB} & \textbf{fire frac.} \\
+\midrule
+\texttt{gps\_denial}        & 50 & OK & OK & OK & OK & OK & 0.64 \\
+\texttt{slow\_biased\_drift}& 50 & OK & OK & OK & OK & OK & 0.92 \\
+\texttt{cascading\_failure} & 30 & OK & OK & OK & OK & OK & 0.60 \\
+\bottomrule
+\end{tabular}
+\caption{Three drift profiles shaped after VIO/SLAM evaluation
+literature failure modes: short sustained drift +recovery
+(\texttt{gps\_denial}), low-magnitude chronic drift
+(\texttt{slow\_biased\_drift}), three-phase multi-axis cascade
+(\texttt{cascading\_failure}). All five contracts hold under the
+reference calibration policy.}
 \label{tab:realistic}
-(\texttt{gps\_denial}, \texttt{slow\_biased\_drift},
-\texttt{cascading\_failure}; all five properties HOLD in all
-three. Full discussion in the technical report.)
+\end{table}
 
 \subsection{RTAMT capability matrix}
+
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\linewidth}{X c c}
+\toprule
+\textbf{Capability} & \textbf{Ghost v0.2.3} & \textbf{RTAMT 0.3.5} \\
+\midrule
+Native property language & Python predicate on Ghost MCAP schema & Signal temporal logic (STL) \\
+Reads MCAP directly & Yes & No (caller extracts signals) \\
+Counts of $K$-in-$W$ as a single formula & Yes (intrinsic) & No (auxiliary counter signals) \\
+Robustness semantics & No (verdict-only) & Yes \\
+Arbitrary user-defined STL & Out of scope & Yes \\
+Bug-detection over Ghost's reference pipeline & Demonstrated systematically (Table~\ref{tab:violation}) & Requires user re-encoding as STL \\
+Distribution & PyPI + OIDC-signed wheel & PyPI source \\
+Per-property typed report (\texttt{holds}, \texttt{mcap\_sha256}, violation metadata) & Yes & No (robustness value per timestamp) \\
+\bottomrule
+\end{tabularx}
+\caption{Capability comparison, evaluated against published
+feature sets. The two tools are complementary: RTAMT is the right
+choice for declarative STL over user-defined signals with
+quantitative robustness; Ghost is the right choice for a
+content-addressed, schema-aware CLI verifier over epistemic
+contracts. Welcome correction from RTAMT maintainers on any row
+a recent release may have closed.}
 \label{tab:rtamt-bench}
-(Capability dimensions; the two tools are complementary, not
-competitors. Full discussion in the technical report.)
+\end{table}
 
 \end{document}
