@@ -107,9 +107,10 @@ verification \cite{bartocci2018}, TLA+/TLC \cite{lamport2002},
 MCAP \cite{foxglove2022}. Closest tooling:
 RTAMT~\cite{rtamt2020}, MoonLight~\cite{moonlight2020},
 ROSMonitoring~\cite{rosmonitoring2020}, ROSRV~\cite{rosrv2014},
-shielding~\cite{shielding2020}, conformal
-prediction~\cite{conformal2024}, supervisory control of timed
-automata~\cite{timedaut2022}; surveys of the field~\cite{rizaldi2020}. None of these ships a
+shielding~\cite{shielding2020}, control barrier
+functions~\cite{cbf2023}, conformal prediction~\cite{conformal2024},
+supervisory control of timed automata~\cite{timedaut2022};
+surveys of the field~\cite{rizaldi2020}. None of these ships a
 content-addressed pure-function verifier via signed wheels with
 a mechanically verified semantics layer; Table~\ref{tab:comparison}
 positions Ghost on the relevant axes. Industrial practice (Waymo,
@@ -134,6 +135,7 @@ One-line CLI verifier & \textbf{Yes}         & No            & No         & No  
 Mechanical proof      & \textbf{TLA+/TLC}    & None          & None       & Informal & Timed aut. \\
 Multi-property output & \textbf{5/run}       & 1/spec        & 1/spec     & Modular  & 1/synth. \\
 Closed-form bound     & $L\le \mathrm{peak}{+}W{-}1$ & N/A     & N/A        & N/A      & None \\
+Policy-agnostic?      & \textbf{Yes (v1/v2 lift, App.~C.3)} & STL-specific & STREL-specific & per-controller & per-supervisor \\
 Bug-detection demo    & \textbf{Yes (Table~\ref{tab:violation})} & N/A & N/A & N/A      & N/A \\
 \bottomrule
 \end{tabularx}
@@ -198,6 +200,36 @@ citable artefact is the pair (MCAP SHA-256, PyPI version); a third
 party reproduces the per-property verdict from one shell command.}
 \label{fig:pattern}
 \end{figure}
+
+The figure reads left-to-right as the operational pipeline of a
+safety claim under the pattern. On the \textbf{producer} side
+(blue) a binding ADR states the property predicate, a
+pure-function verifier implements its semantics, and Hypothesis
+property tests plus TLA+ specifications jointly exercise the
+underlying invariants. The \textbf{CI + release} stage (green)
+gates every push (verifier + TLC + cross-machine determinism
+diff) and, on tagging, emits an OIDC-signed PyPI wheel with no
+long-lived token escrowed. The \textbf{citable artefact} (yellow)
+carries two halves: the run, materialised as an MCAP log
+content-addressed by SHA-256, and the verification tool, pinned by
+PyPI version. The \textbf{third party} (red) concatenates the two
+halves with one shell command and obtains a deterministic JSON
+verdict per property.
+
+The pattern is therefore not just "upload the log next to the
+paper". Three structural choices distinguish it from publishing a
+PDF + a tarball next to a Zenodo DOI. \emph{First}, the verifier
+is part of the citation: a third party does not write their own
+oracle, they re-run ours. \emph{Second}, the verifier is a pure
+function over a content-addressed log: there is no replay of the
+producer, no simulation, no I/O beyond reading the MCAP. The
+verifier's verdict therefore depends only on bytes the third party
+already holds. \emph{Third}, the underlying invariants the
+verifier encodes are themselves mechanically checked by TLA+/TLC
+on every push: the third party inherits not only an oracle but the
+evidence that the oracle is consistent with the property
+statement. The cited artefact is, in this precise sense, the
+falsification mechanism.
 
 % =======================================================================
 \section{The property set: epistemic contracts}
@@ -469,6 +501,13 @@ the script's exit code is 1 iff any false negative occurs.}
 
 \subsection{Parametric policy evaluation}
 
+To verify that the contracts are stable under variation of the
+reference calibrator's parameters, we sweep three $(M,K)$ pairs
+across three trace lengths. The result quantifies what an FMAS
+reviewer expects to know before trusting a single all-HOLDS
+verdict: the property set is not over-fit to the
+$(M{=}4,K{=}2)$ point.
+
 \begin{table}[h]
 \centering\small
 \begin{tabular}{l r r r r r c}
@@ -496,6 +535,17 @@ the same policy/$n$.}
 
 \subsection{Policy-comparison matrix (ERUR-v1 vs ERUR-v2)}
 
+The verifier is policy-agnostic in the sense that the
+\texttt{CalibrationAdjustmentPolicy} Protocol is the only
+contract any calibrator must satisfy. ERUR, however, has a
+predicate that depends on what the policy itself classifies as
+"drift absent". Table~\ref{tab:policy-comparison} reports the
+verdict for three structurally distinct calibrators against both
+the v1 statement (fixed to the reference predicate) and the v2
+lifting (delegating to each policy's own drift criterion); the
+discrepancy is the operational evidence that the v2 lift is
+meaningful and not nominal.
+
 \begin{table}[h]
 \centering\small
 \begin{tabular}{l c c c c c c}
@@ -520,6 +570,13 @@ to a generic verifier in v0.2.4).}
 
 \subsection{Realistic-shape scenarios}
 
+To probe whether the contracts generalise beyond the
+sustained-drift / single-recovery shape of the basic smoke, we
+add three scenarios whose ground-truth functions are modelled
+after failure modes documented in the VIO/SLAM evaluation
+literature. They are still synthetic but they are no longer
+trivially shaped.
+
 \begin{table}[h]
 \centering\small
 \begin{tabular}{l r c c c c c r}
@@ -541,6 +598,11 @@ reference calibration policy.}
 \end{table}
 
 \subsection{RTAMT capability matrix}
+
+RTAMT and Ghost answer different questions; this matrix is not a
+race. It enumerates the capabilities each tool offers over the
+same MCAP so that a reader who is familiar with one can locate
+the other on the same axes without re-deriving the comparison.
 
 \begin{table}[h]
 \centering\small
