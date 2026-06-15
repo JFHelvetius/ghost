@@ -135,7 +135,7 @@ We make **three contributions**:
   fire-rate measurement) rather than to signals of the external
   world. Distinct from STL-style predicates over signals and from
   POMDP-style belief monitoring; the formal definition is in
-  §2.0 below.
+  §1.2 below.
 
 - **C2 — Reference implementation: Ghost (artefact).** A
   closed-loop autonomy supervisor instantiating five epistemic
@@ -362,7 +362,7 @@ overlapping concerns, none of which occupies the same niche:
 | Multi-property output | **5 reports/run** | 1/spec | 1/spec | Modular | 1/CBF | 1/model | 1/synth. |
 | Partition theorem | **BAUD ⊕ ERUR** | N/A | N/A | N/A | N/A | N/A | N/A |
 | Closed-form recovery bound | **L ≤ peak + W − 1** | N/A | N/A | N/A | N/A | Indirect | None |
-| Bug-detection demo | **Yes (§7.2)** | N/A | N/A | N/A | N/A | N/A | N/A |
+| Bug-detection demo | **Yes (§8.2)** | N/A | N/A | N/A | N/A | N/A | N/A |
 
 To the best of our knowledge, **no prior tool ships a
 content-addressed, pure-function safety-property verifier via
@@ -1446,8 +1446,11 @@ What we *do not* claim: that epistemic contracts subsume STL or
 shielding (they answer a different question); that this is the
 maximal contract set (FPB-v1 can be tightened, contracts on
 sensor-fusion provenance or actuation budgets remain to be
-written); that we have a unique licensing claim on the term
-(it overlaps with how epistemic-logic, doxastic-logic and
+written); that ERUR-v2 ships as a generic policy-parametric
+verifier today (v0.2.3 ships ERUR-v1; v2 is hand-evaluated for the
+three calibrators of §8.4 and lifts to a generic verifier in
+v0.2.4 as ADR-0040); that we have a unique licensing claim on the
+term (it overlaps with how epistemic-logic, doxastic-logic and
 self-assessment communities have used adjacent vocabulary).
 
 What we *do* claim: that the framing is operationally

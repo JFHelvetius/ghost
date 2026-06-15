@@ -263,7 +263,7 @@ Project Ghost 建立在属于机器人和控制标准实践的要素之上：贝
 | 多属性输出 | **5 reports/run** | 1/spec | 1/spec | 模块化 | 1/CBF | 1/model | 1/synth. |
 | 分区定理 | **BAUD ⊕ ERUR** | N/A | N/A | N/A | N/A | N/A | N/A |
 | 封闭式恢复界限 | **L ≤ peak + W − 1** | N/A | N/A | N/A | N/A | 间接 | 无 |
-| Bug 检测演示 | **是 (§7.2)** | N/A | N/A | N/A | N/A | N/A | N/A |
+| Bug 检测演示 | **是 (§8.2)** | N/A | N/A | N/A | N/A | N/A | N/A |
 
 据我们所知，**没有先前工具通过 `pip install` + OIDC 签名 wheel
 分发内容寻址、纯函数的安全属性验证器，并具有机械验证的底层不变

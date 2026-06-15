@@ -131,7 +131,7 @@ One-line CLI verifier & \textbf{Yes}         & No            & No         & No  
 Mechanical proof      & \textbf{TLA+/TLC}    & None          & None       & Informal & Timed aut. \\
 Multi-property output & \textbf{5/run}       & 1/spec        & 1/spec     & Modular  & 1/synth. \\
 Closed-form bound     & $L\le \mathrm{peak}{+}W{-}1$ & N/A     & N/A        & N/A      & None \\
-Bug-detection demo    & \textbf{Yes (\S\ref{sec:violation})} & N/A & N/A & N/A      & N/A \\
+Bug-detection demo    & \textbf{Yes (Table~\ref{tab:violation})} & N/A & N/A & N/A      & N/A \\
 \bottomrule
 \end{tabularx}
 \caption{Comparison matrix. No prior tool we surveyed ships a
@@ -144,7 +144,13 @@ The axis on which Ghost is genuinely different is the \emph{kind}
 of predicate it monitors. RTAMT, MoonLight and shielding monitor
 predicates over the external world; Ghost's five properties
 (\S\ref{sec:properties}) are contracts over the agent's
-\textbf{epistemic posture}.
+\textbf{epistemic posture}. The \emph{policy-agnostic} row of the
+matrix above is realised at the verifier level
+(Table~\ref{tab:policy-comparison}, three structurally distinct
+calibrators); ERUR is stated in two layers (v1 fixed to the
+reference predicate, v2 delegating to the policy's own drift
+criterion) so the verifier-agnostic claim does not silently
+inherit the reference policy's parameters.
 
 % =======================================================================
 \section{The pattern}
@@ -204,9 +210,16 @@ acted upon under uncertainty.} The five properties are:
   \item \textbf{BAUD-v1.} \emph{If you suspect you are wrong, act
         conservatively.} Drift detected $\Rightarrow$ no PROCEED
         and only a closed safe-reason action set.
-  \item \textbf{ERUR-v1.} \emph{When evidence is restored, return
-        to acting.} Drift absent and belief KNOWN $\Rightarrow$
-        PROCEED.
+  \item \textbf{ERUR-v1 / v2.} \emph{When evidence is restored,
+        return to acting.} Two layers: v1 fixes the precondition
+        to the reference predicate (\texttt{outcomes < M} or
+        \texttt{dirty\_count < K}, with $M=4, K=2$); v2 delegates
+        to \texttt{policy.drift\_precondition()}, lifting the
+        contract to any calibrator that exposes its own drift
+        criterion. v0.2.3 ships v1; v2 is hand-evaluated for the
+        three calibrators of Appendix~\ref{app:eval}, Table
+        \ref{tab:policy-comparison} (ADR-0040 lifts v2 to a
+        generic verifier in v0.2.4).
   \item \textbf{MD-v1.} \emph{Never claim more confidence than
         evidence supports.} $\mathrm{adjusted} \preceq
         \mathrm{raw}$.

@@ -334,7 +334,7 @@ telemetría de robótica.
 | Output multi-propiedad | **5 reports/run** | 1/spec | 1/spec | Modular | 1/CBF | 1/model | 1/synth. |
 | Teorema de partición | **BAUD ⊕ ERUR** | N/A | N/A | N/A | N/A | N/A | N/A |
 | Cota cerrada de recovery | **L ≤ peak + W − 1** | N/A | N/A | N/A | N/A | Indirecta | Ninguna |
-| Demo de detección de bugs | **Sí (§7.2)** | N/A | N/A | N/A | N/A | N/A | N/A |
+| Demo de detección de bugs | **Sí (§8.2)** | N/A | N/A | N/A | N/A | N/A | N/A |
 
 Hasta donde sabemos, **ningún tool previo distribuye un verificador
 content-addressed, función-pura, de propiedades de seguridad vía
