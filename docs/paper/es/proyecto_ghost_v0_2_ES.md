@@ -434,14 +434,43 @@ adjusted level baja en el lattice, la decisión no es PROCEED, y el
 actuator command (si lo hay) pertenece al safe-reason set cerrado
 `S_BAUD = {attitude_hold_hold, kill_zero_throttle}`. ADR-0031.
 
-### 3.2 ERUR-v1 — Eventual Reactivation Under Recovery
+### 3.2 ERUR — Eventual Reactivation Under Recovery (ADR-0032)
 
 > *Cuando la evidencia se restablece, el agente debe volver a
 > actuar.*
 
-Cuando drift está ausente y raw belief es KNOWN, adjusted level es
-KNOWN y decisión es PROCEED. Forma con BAUD el teorema de partición
-(C2). ADR-0032.
+El contrato se enuncia en dos capas: un predicado de referencia
+concreto (v1) y un lifting policy-paramétrico (v2).
+
+**ERUR-v1 (predicado de referencia).** Precondición: drift ausente
+bajo la regla *de referencia* count-of-K-in-W (`outcomes < M` o
+`dirty_count < K`, con `M=4, K=2`) y raw belief es KNOWN.
+Postcondición: adjusted level es KNOWN y la decisión es PROCEED.
+v1 fija los parámetros de la precondición al calibrador
+Mahalanobis de referencia; esto es lo que el verificador v0.2.3
+distribuye.
+
+**ERUR-v2 (policy-paramétrico).** Sea `policy.drift_precondition`
+un método del Protocol calibration-policy que retorna, para la
+historia de calibración actual, el juicio *propio* del policy
+sobre si hay drift (un Boolean por ciclo). La precondición de
+ERUR-v2 es: `not policy.drift_precondition(history)` y raw belief
+KNOWN. ERUR-v2 es lo que el claim **policy-agnostic** de §2.3
+realmente sostiene: ERUR se satisface por cualquier policy cuyo
+criterio propio de drift está ausente y cuya belief es KNOWN, no
+solo por calibradores que comparten los `(M,K)` de Mahalanobis. El
+verificador v2 delega la precondición a cada policy bajo test; el
+verificador v1 es el verificador v2 instanciado con el predicado
+del policy de referencia. §8.4 evalúa ambos y la discrepancia
+entre veredictos v1 y v2 sobre calibradores alternativos es la
+evidencia operacional de que el lifting es significativo.
+
+Forma con BAUD el **teorema de partición**: cada ciclo donde raw
+belief es KNOWN cumple o la precondición de BAUD o la de ERUR, y
+las dos nunca se solapan. El spec TLA+ promueve esto a un
+**teorema probado sobre el modelo abstracto** bajo v1 (Sección 5);
+el argumento de partición se eleva a v2 por construcción ya que
+v2 delega estrictamente la precondición al calibration policy.
 
 ### 3.3 MD-v1 — Monotonic Degradation
 
@@ -775,14 +804,40 @@ FPB-v1.
 HOLD en todas. Verificador lineal en longitud del trace: 21 ms para
 n=10, 100 ms para n=50, 406 ms para n=200.
 
-### 8.4 Verificador policy-agnostic, precondiciones policy-specific
+### 8.4 Verificador policy-agnostic, precondiciones policy-paramétricas
 
 Corriendo el smoke bajo `MahalanobisDowngradePolicy`,
 `EWMADowngradePolicy`, y `PerAxisHysteresisDowngradePolicy`, el
-verificador procesa los tres MCAPs sin cambios. ERUR-v1 viola en
-EWMA y PerAxis porque se evalúa con los parámetros del reference, no
-de la policy. Insight importante: la propiedad es policy-agnostic en
-código pero policy-specific en su parametrización.
+verificador procesa los tres MCAPs sin cambios — bajo **ambas**
+ERUR-v1 (predicado de referencia, §3.2) y ERUR-v2
+(policy-paramétrico, §3.2):
+
+| Policy | BAUD | ERUR-v1 | ERUR-v2 | MD | RLB | FPB |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `Mahalanobis(M=4,K=2)` referencia | OK | OK | OK | OK | OK | OK |
+| `EWMA(α=0.5,min=3,thr=0.3)` | OK | **VIOL** | **OK** | OK | OK | OK |
+| `PerAxisHysteresis(up=3.0)` | OK | **VIOL** | **OK** | OK | OK | OK |
+
+**Lectura de la matriz:** ERUR-v1 está fijada al predicado de
+referencia y por tanto reporta VIOL en EWMA y PerAxis — pero esa
+señal es "la policy alternativa no se comporta como la
+referencia", no "la policy alternativa es insegura". Esta es
+precisamente la discrepancia que motivó el lifting v2 de §3.2.
+**ERUR-v2 sostiene sobre las tres policies**: cada alternativa
+satisface su contrato propio: cuando su criterio *propio* de
+drift está ausente y la belief es KNOWN, emite PROCEED. ERUR-v2
+captura así la garantía policy-agnostic que la columna
+"multi-property output" de §2.3 promete.
+
+**Estado honesto de implementación.** v0.2.3 distribuye el
+verificador v1 (`verify_erur`) instanciado con el predicado de
+referencia; el lifting v2 se codifica re-corriendo el v1 con los
+parámetros de precondición propios de cada policy (EWMA usa
+min/threshold; PerAxis usa upper). Para los tres calibradores de
+arriba esta evaluación es manual via `compare_policies.py`; un
+verificador v2 genérico que acepte `policy.drift_precondition`
+como callable es scope de ADR-0040 para v0.2.4. El claim del
+paper es la *propiedad* v2, no el *verificador-as-shipped* v2.
 
 ### 8.5 Escenarios shape-realistic
 
@@ -1020,9 +1075,13 @@ Lo que *no* afirmamos: que los contratos epistémicos subsumen STL
 o shielding (responden una pregunta distinta); que este es el
 conjunto maximal de contratos (FPB-v1 puede ajustarse, faltan
 contratos sobre procedencia de sensor-fusion o presupuestos de
-actuación); que tenemos un claim de licencia exclusivo sobre el
-término (se solapa con cómo las comunidades de epistemic logic,
-doxastic logic y self-assessment han usado vocabulario adyacente).
+actuación); que ERUR-v2 se distribuye hoy como verificador
+genérico policy-paramétrico (v0.2.3 distribuye ERUR-v1; v2 está
+evaluada manualmente para los tres calibradores de §8.4 y se
+eleva a verificador genérico en v0.2.4 como ADR-0040); que
+tenemos un claim de licencia exclusivo sobre el término (se
+solapa con cómo las comunidades de epistemic logic, doxastic
+logic y self-assessment han usado vocabulario adyacente).
 
 Lo que *sí* afirmamos: que el framing es operacionalmente
 defendible — el artefacto es re-ejecutable desde

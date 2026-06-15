@@ -86,3 +86,8 @@ protos/_generated/
 .ipynb_checkpoints/
 *.ipynb
 site/
+
+# LaTeX build artefacts (round 20+ local compile)
+.tex-build/
+paper-deliverables/
+

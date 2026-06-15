@@ -336,12 +336,34 @@ pattern 不是工业 safety case 的替代品；它是这些 case 可以引用
 safe-reason 集合 `S_BAUD = {attitude_hold_hold, kill_zero_throttle}`。
 ADR-0031。
 
-### 3.2 ERUR-v1 — Eventual Reactivation Under Recovery
+### 3.2 ERUR — Eventual Reactivation Under Recovery (ADR-0032)
 
 > *当证据恢复时，代理必须回到行动。*
 
-当漂移缺失且原始 belief 为 KNOWN 时，调整等级为 KNOWN 且决策为
-PROCEED。与 BAUD 共同构成分区定理（C2）。ADR-0032。
+契约分两层陈述：具体的参考谓词（v1）与策略参数化的提升（v2）。
+
+**ERUR-v1（参考谓词）。** 前置条件：在*参考*的 count-of-K-in-W
+规则下漂移缺失（`outcomes < M` 或 `dirty_count < K`，使用
+`M=4, K=2`）且原始 belief 为 KNOWN。后置条件：调整等级为 KNOWN 且
+决策为 PROCEED。v1 将前置条件的参数固定为参考 Mahalanobis 校准
+器；这是 v0.2.3 验证器交付的内容。
+
+**ERUR-v2（策略参数化）。** 设 `policy.drift_precondition` 为
+校准策略 Protocol 上的方法，对于当前校准历史返回该策略*自身*
+对漂移是否存在的判断（每周期一个 Boolean）。ERUR-v2 的前置条
+件是：`not policy.drift_precondition(history)` 且原始 belief
+为 KNOWN。ERUR-v2 是 §2.3 中**策略无关**主张实际支持的内容：
+ERUR 由任何自身漂移准则缺失且 belief 为 KNOWN 的策略所满足，
+而不仅是共享 Mahalanobis 的 `(M,K)` 的校准器。v2 验证器将前置
+条件委托给每个待测策略；v1 验证器是 v2 验证器以参考策略的谓
+词实例化得到的。§8.4 评估两者，v1 与 v2 判定在替代校准器上的
+差异是 lifting 有意义的运行时证据。
+
+与 BAUD 共同构成**分区定理**：每个原始 belief 为 KNOWN 的周
+期或满足 BAUD 的前置条件或满足 ERUR 的，两者从不重叠。TLA+
+规范将此提升为在抽象模型上**在 v1 下证明的定理**（第 5 节）；
+分区论证按构造提升至 v2，因为 v2 严格地将前置条件委托给校准
+策略。
 
 ### 3.3 MD-v1 — Monotonic Degradation
 
@@ -637,13 +659,35 @@ case 的 TLAPS 证明大纲在
 9 次运行（3 个策略 × 3 个跟踪长度），所有 5 个属性在所有运行中
 成立。验证器在跟踪长度上线性：n=10 时 21 ms，n=200 时 406 ms。
 
-### 8.4 策略无关的验证器、策略特定的前置条件
+### 8.4 策略无关的验证器、策略参数化的前置条件
 
 在 `MahalanobisDowngradePolicy`、`EWMADowngradePolicy` 和
-`PerAxisHysteresisDowngradePolicy` 下运行 smoke，验证器无变化地
-处理所有三个 MCAP。ERUR-v1 在 EWMA 和 PerAxis 上违反，因为它使
-用 reference 的参数评估，而非策略的参数。重要见解：属性在代码上
-是策略无关的，但在参数化上是策略特定的。
+`PerAxisHysteresisDowngradePolicy` 下运行 smoke，验证器无变化
+地处理所有三个 MCAP —— 在**两者**之下：ERUR-v1（参考谓词，
+§3.2）和 ERUR-v2（策略参数化，§3.2）：
+
+| 策略 | BAUD | ERUR-v1 | ERUR-v2 | MD | RLB | FPB |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| `Mahalanobis(M=4,K=2)` 参考 | OK | OK | OK | OK | OK | OK |
+| `EWMA(α=0.5,min=3,thr=0.3)` | OK | **VIOL** | **OK** | OK | OK | OK |
+| `PerAxisHysteresis(up=3.0)` | OK | **VIOL** | **OK** | OK | OK | OK |
+
+**矩阵的解读：** ERUR-v1 固定为参考谓词，因此在 EWMA 和
+PerAxis 上报告 VIOL —— 但该信号表示"替代策略的行为与参考不
+同"，而非"替代策略不安全"。这正是 §3.2 中 v2 lifting 的动机。
+**ERUR-v2 在三个策略上都成立**：每个替代策略满足其自身契约：
+当其*自身*的漂移准则缺失且 belief 为 KNOWN 时，发出 PROCEED。
+ERUR-v2 因此捕获 §2.3 "multi-property output" 列承诺的策略无
+关保证。
+
+**诚实的实现状态。** v0.2.3 交付以参考谓词实例化的 v1 验证器
+（`verify_erur`）；v2 lifting 通过以每个策略自身的
+`(M,K)`-等价前置条件参数重新运行 v1 验证器来编码（EWMA 使用
+min/threshold；PerAxis 使用 upper）。对于上述三个校准器，此评
+估由 `compare_policies.py` 手动驱动；接受
+`policy.drift_precondition` 作为 callable 的通用 v2 验证器是
+v0.2.4 中 ADR-0040 的范围。论文的主张是 v2 *属性*，而非
+v2 *验证器交付状态*。
 
 ### 8.5 Shape-realistic 场景
 
@@ -836,9 +880,12 @@ JSON 的 SHA-256。
 
 我们*不*声明的内容：认识论契约包含 STL 或 shielding（它们回
 答不同的问题）；这是契约的最大集合（FPB-v1 可以收紧，关于
-sensor-fusion 来源或执行预算的契约尚未编写）；我们对该术语
-拥有独占许可声明（它与 epistemic-logic、doxastic-logic 和
-self-assessment 社区使用相邻词汇的方式有重叠）。
+sensor-fusion 来源或执行预算的契约尚未编写）；ERUR-v2 今天作
+为通用策略参数化验证器交付（v0.2.3 交付 ERUR-v1；v2 对 §8.4
+的三个校准器手工评估，并在 v0.2.4 中作为 ADR-0040 提升为通用
+验证器）；我们对该术语拥有独占许可声明（它与 epistemic-logic、
+doxastic-logic 和 self-assessment 社区使用相邻词汇的方式有重
+叠）。
 
 我们*确实*声明的内容：该 framing 在操作上是可辩护的 —— 工件
 可从 `pip install project-ghost==0.2.3` 重新运行；真实 PX4
