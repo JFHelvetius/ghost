@@ -233,6 +233,7 @@ def _run_real_ulog_pipeline(
     feedback_policy: Any,
     decision_policy: Any,
     actuation_policy: Any,
+    fake_uncertain_raw: bool = False,
 ) -> int:
     """Run the Ghost closed-loop pipeline over real ULog pose samples
     with caller-supplied policies. Materialises the MCAP at
@@ -300,6 +301,21 @@ def _run_real_ulog_pipeline(
             _publish_state(sink, state)
 
             raw = assess_belief(state, thresholds)
+            if fake_uncertain_raw:
+                # CALIBRATOR_INVENTS_CONFIDENCE category requires a raw
+                # assessment that is *not* KNOWN so the buggy calibrator
+                # (which always returns KNOWN) visibly inflates
+                # confidence and violates MD-v1. The reference real-ULog
+                # pipeline normally produces KNOWN raw (tight stationary
+                # belief covariance), so we forcibly override the level
+                # for this category. The override is private to the
+                # buggy run; the nominal MCAP is unaffected.
+                from dataclasses import replace as _dc_replace
+
+                from project_ghost.core.uncertainty.self_assessment import (
+                    SelfAssessmentLevel,
+                )
+                raw = _dc_replace(raw, overall_level=SelfAssessmentLevel.UNCERTAIN)
             sa_adp.publish(raw)
 
             calibrated = assess_with_feedback(

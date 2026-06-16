@@ -784,21 +784,30 @@ hardware" 子句对强读保持不变。
 有缺陷组件。融合预言机、MCAP schema、验证器和 ULog 输入与
 nominal 运行保持相同；每个有缺陷情况只有一个命名组件不同。
 
-**捆绑真实 PX4 ULog 上的判定差异：**
+**捆绑真实 PX4 ULog 上的判定差异。** v0.2.4 将实验从两个有缺陷
+类别扩展为违规矩阵（§8.2）的全部六个类别。每行替换一个从合成
+矩阵逐字导入的命名组件；融合预言机、MCAP schema、验证器和
+ULog 输入在各行间保持相同：
 
-| 运行 | BAUD | ERUR | MD | RLB | FPB | MCAP SHA-256 (前缀) |
-|---|:---:|:---:|:---:|:---:|:---:|---|
-| nominal（参考策略） | HOLDS | HOLDS | HOLDS | HOLDS | HOLDS | `49fd0a48…` |
-| `decision_proceeds_anyway` (BAUD-v1 攻击) | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS | `37224e40…` |
-| `actuation_non_safe_reason` (BAUD-v1 攻击) | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS | `9a23b97a…` |
+| 运行 | 预期违反者 | BAUD | ERUR | MD | RLB | FPB |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| nominal（参考策略） | — | HOLDS | HOLDS | HOLDS | HOLDS | HOLDS |
+| `calibrator_no_downgrade` | BAUD-v1 | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS |
+| `calibrator_invents_confidence` | MD-v1 | **VIOLATED** | HOLDS | **VIOLATED** | HOLDS | HOLDS |
+| `decision_proceeds_anyway` | BAUD-v1 | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS |
+| `decision_never_proceeds` | ERUR-v1 | HOLDS | **VIOLATED** | HOLDS | HOLDS | HOLDS |
+| `actuation_non_safe_reason` | BAUD-v1 | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS |
+| `fpb_threshold_exceeded` | FPB-v1 | HOLDS | HOLDS | HOLDS | HOLDS | **VIOLATED** |
 
-两个有缺陷运行都在产生 all-HOLDS 的同一真实飞行日志上将
-**BAUD-v1 从 HOLDS 翻转为 VIOLATED**；其他四个属性保持 HOLD，
-因此违规**隔离到 bug 攻击的属性**。这种隔离很重要：它表明
-验证器不是在标志"某些东西改变了"而是"有缺陷组件违反的特定
-不变量"。
+**6/6 类别翻转其预期属性；5/6 隔离。** 唯一非隔离行是
+`calibrator_invents_confidence`：膨胀置信度的校准器*同时*违反
+MD-v1 和 BAUD-v1，因为对置信度撒谎的校准器同时破坏 Mahalanobis
+降级契约（它最直接攻击的属性）和漂移下弃权契约（静止信念仍在
+漂移，但校准器不再标记它）。这是真实的共违规，不是验证器
+伪影：校准器可能通过多个不变量同时损坏下游行为，验证器报告
+两者。
 
-**可重现性。** 从 `pip install 'project-ghost[adapters]==0.2.3'`
+**可重现性。** 从 `pip install 'project-ghost[adapters]==0.2.4'`
 端到端可运行：
 
 ```
@@ -811,16 +820,74 @@ python docs/paper/scripts/verify_real_ulog_discriminate.py \
 测试在 CI 中固定该实验
 （`tests/adapters/test_real_ulog_discrimination.py`）。
 
-**为何这回应了 §8.7 的残留批评。** 上一版本的审稿人可以公正
-地说："all-HOLDS 表明管道运行；它没有表明判定在真实数据上是
-*有信息的*。" §8.8 的差异正是如此 —— 在同一物理飞行上，将
-参考决策策略换成一行总是发出 PROCEED 的有缺陷策略，或将
-参考执行器换成一行使用不安全原因的有缺陷执行器，都会翻转判
-定。§8.2 的综合违规矩阵检测在此 ULog 上、对于真实飞行漂移
-模式所触发的 bug 类别，转移到真实遥测。
+#### 8.8.1 推广到 3-ULog 语料库
 
-有缺陷的替换在策略层；有缺陷的运行没有让任何东西飞行，
-跨更多 ULog 的泛化是 ADR-0037（真实飞行语料库）的范围。
+§8.8 的结果建立在*一个* PX4 SITL ULog 上。这是审稿人对此类
+结果最常见的攻击，v0.2.4 通过将实验扩展为**三个结构上不同的
+PX4 ULog 语料库**直接解决，取自 PX4 公开测试 fixture（BSD-3，
+license-clean，无需我们居中即可重现）：
+
+| ULog | Pose 样本 | 持续时间 | FPB `fire_fraction` |
+|---|---:|---:|---:|
+| `sample.ulg`（§8.8 锚点） | 636 | 6.5 s | 0.9437 |
+| `corpus/sample_appended.ulg`（多段） | 1110 | 112.6 s | 0.9800 |
+| `corpus/sample_logging_tagged.ulg`（logging-tagged） | 1268 | 10.1 s | 0.0000 |
+
+语料库故意跨越 16× 持续时间范围，并包含一个日志
+（`sample_logging_tagged.ulg`）其记录段**大部分静止** ——
+`fire_fraction = 0.00` 意味着静止信念从未观察到与记录 GT 的
+漂移。我们没有过滤该日志：语料库是 PX4 公开测试集 as-shipped，
+而手工挑选每个属性都触发的日志的论文按定义就是 cherry-picked。
+
+**语料库检测矩阵**由 CI 在每次推送时重新生成，并作为
+[`docs/paper/outputs/multi_ulog_discrimination/matrix.json`](../outputs/multi_ulog_discrimination/matrix.json)
+发出（自描述 —— `schema_version`、每 ULog 诊断、两个矩阵）。
+YES = 验证器在该 ULog 上翻转预期属性；NO = 该属性在 nominal 和
+buggy 之间均保持 HOLDS：
+
+| Bug 类别 | `sample.ulg` | `sample_appended.ulg` | `sample_logging_tagged.ulg` |
+|---|:---:|:---:|:---:|
+| `calibrator_no_downgrade` | YES | YES | **NO** |
+| `calibrator_invents_confidence` | YES | YES | YES |
+| `decision_proceeds_anyway` | YES | YES | **NO** |
+| `decision_never_proceeds` | YES | YES | YES |
+| `actuation_non_safe_reason` | YES | YES | **NO** |
+| `fpb_threshold_exceeded` | YES | YES | **NO** |
+
+**诚实解读：18 个单元中 12 个判别。** 在两个**活跃** ULog 上
+（`fire_fraction > 0.9`），矩阵全绿 —— 每个 ULog 上六个类别中
+有六个翻转预期属性，并具有与 §8.8 相同的单一共违规行。在
+**静止** ULog 上（`fire_fraction = 0.00`），六个类别中有四个
+在 nominal 和 buggy 之间报告 HOLDS。
+
+这是**有信息的非判别**，不是验证器失败。四个全 HOLDS 类别
+（`calibrator_no_downgrade`, `decision_proceeds_anyway`,
+`actuation_non_safe_reason`, `fpb_threshold_exceeded`）共享
+一个前置条件：BAUD-v1 漂移信号必须至少触发一次。在代理大部分
+静止且静止信念从未偏离 GT 的日志上，该前置条件对 nominal 和
+buggy 均空真满足，属性正确地对两者报告 HOLDS。其余两个
+（`calibrator_invents_confidence`, `decision_never_proceeds`）
+不要求漂移信号触发 —— 无论是否观察到漂移，校准器都膨胀置信度，
+never-PROCEED 策略也违反 ERUR-v1 的 "K 个失效周期后释放" 分支。
+这些在所有三个 ULog 上都正确翻转。
+
+因此验证器**确实做了它声称要做的事**：它精确地标记 ULog 实际
+触发其前置条件的生产者 bug。更精致的结果将过滤语料库或从
+独立参考获取漂移；我们在此报告诚实矩阵，并将"独立 GT 源"
+缓解推迟到 ADR-0037（v0.2.4 部分覆盖 SITL 语料库，v0.2.5
+完全关闭）。
+
+**可重现性。** 运行
+`python docs/paper/scripts/run_multi_ulog_corpus.py` —— 发出
+`docs/paper/outputs/multi_ulog_discrimination/matrix.json`，
+若活跃 ULog 不变式回归则以非零退出码退出。六个集成测试
+（`tests/adapters/test_real_ulog_corpus.py`）固定矩阵形状、
+活跃 ULog 不变式、静止 ULog "≤ 2/6 检测" 健康检查和 JSON 工件
+schema。
+
+有缺陷的替换在策略层；没有任何 buggy 运行飞行。推广到
+**非 PX4** 飞行栈（ROSBag、ArduPilot、EuRoC）仍是 ADR-0037
+路线图的范围。
 
 ### 8.9 跨副本和跨机器决定论
 
@@ -845,16 +912,23 @@ JSON 的 SHA-256。
   决策策略更改时审查并重新运行 TLC。
 - **统计 FPB 超出范围。** FPB-v1 是观察性的；带 Monte Carlo 界
   限的统计 FPB-v2 是未来 ADR 候选。
+- **静止 ULog 上的空真 HOLDS。** §8.8.1 诚实报告，在语料库的
+  第三个 ULog（`fire_fraction = 0`）上，六个 buggy 类别中的
+  四个在 nominal 和 buggy 之间产生 HOLDS，因为 BAUD-v1 的漂移
+  前置条件从未被记录段触发。验证器是正确的（"没有触发，没有
+  违反"），但作为判别测试该行不具信息量。ADR-0037 的"独立
+  GT 源"缓解通过从非自洽参考获取漂移来关闭此问题，推迟到
+  v0.2.5。
 
 ---
 
 ## 10. 未来工作
 
-- **ADR-0037（候选）**：通过 PX4 ULog / ROSBag / EuRoC MAV
-  adapter 集成真实飞行数据。在
-  [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](../scripts/px4_ulog_adapter_skeleton.py)
-  提供可运行但未实现的骨架，展示集成的确切形状（config
-  dataclass、ground-truth-source 枚举、转换契约）。
+- **ADR-0037（部分解决，v0.2.4）**：真实飞行数据集成。
+  v0.2.4 交付 PX4 ULog adapter 并在 3-ULog SITL 语料库上演练
+  （§8.8.1）；矩阵在两个非静止 ULog 上全绿，在静止 ULog 上
+  信息性部分。ROSBag / EuRoC MAV adapter 和非 PX4 栈仍待开放，
+  静止段的"独立 GT 源"缓解也是如此。
 - **ADR-0038（候选）**：恢复延迟界限 unbounded 版本和分区定理的
   TLAPS 证明。
 - **ADR-0039（候选）**：基于 Monte Carlo 对经验 fire rate 的统

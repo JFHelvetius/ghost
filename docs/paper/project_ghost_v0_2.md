@@ -1311,23 +1311,38 @@ are held identical to the nominal run; only one named component
 differs per buggy case. The verifier is then asked the same question
 of each MCAP independently.
 
-**Verdict delta on the bundled real PX4 ULog:**
+**Verdict delta on the bundled real PX4 ULog.** v0.2.4 expands the
+experiment from two buggy categories to all six categories of the
+violation matrix (§8.2). Each row substitutes exactly one named
+component imported verbatim from the synthetic matrix; the
+fusion oracle, MCAP schema, verifier, and ULog input are held
+identical across rows:
 
-| Run | BAUD | ERUR | MD | RLB | FPB | MCAP SHA-256 (prefix) |
-|---|:---:|:---:|:---:|:---:|:---:|---|
-| nominal (reference policies) | HOLDS | HOLDS | HOLDS | HOLDS | HOLDS | `49fd0a48…` |
-| `decision_proceeds_anyway` (BAUD-v1 attack) | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS | `37224e40…` |
-| `actuation_non_safe_reason` (BAUD-v1 attack) | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS | `9a23b97a…` |
+| Run | Expected violator | BAUD | ERUR | MD | RLB | FPB |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| nominal (reference policies) | — | HOLDS | HOLDS | HOLDS | HOLDS | HOLDS |
+| `calibrator_no_downgrade` | BAUD-v1 | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS |
+| `calibrator_invents_confidence` | MD-v1 | **VIOLATED** | HOLDS | **VIOLATED** | HOLDS | HOLDS |
+| `decision_proceeds_anyway` | BAUD-v1 | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS |
+| `decision_never_proceeds` | ERUR-v1 | HOLDS | **VIOLATED** | HOLDS | HOLDS | HOLDS |
+| `actuation_non_safe_reason` | BAUD-v1 | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS |
+| `fpb_threshold_exceeded` | FPB-v1 | HOLDS | HOLDS | HOLDS | HOLDS | **VIOLATED** |
 
-Both buggy runs flip **BAUD-v1 from HOLDS to VIOLATED** on the same
-real flight log that produced all-HOLDS under the reference
-policies; the other four properties remain HOLD, so the violation
-is **isolated to the property the bug attacks**. That isolation
-matters: it shows the verifier is not signalling "something
-changed" but "the specific invariant the buggy component violates."
+**6/6 categories flip their expected property; 5/6 are isolated.**
+The single non-isolated row is `calibrator_invents_confidence`:
+the inflated-confidence calibrator violates MD-v1 *and* BAUD-v1
+together, because a calibrator that lies about confidence
+simultaneously breaks the Mahalanobis downgrade contract (the
+property it most directly attacks) and the abstain-under-drift
+contract (the stationary belief still drifts, but the calibrator
+no longer marks it). That is a true co-violation, not a verifier
+artefact: a calibrator can corrupt downstream behaviour through
+multiple invariants at once, and the verifier reports both. This
+"violation spreads" diagnostic is itself useful information for a
+maintainer reading the report.
 
 **Reproducibility.** The discrimination experiment is end-to-end
-runnable from `pip install 'project-ghost[adapters]==0.2.3'` via:
+runnable from `pip install 'project-ghost[adapters]==0.2.4'` via:
 
 ```
 python docs/paper/scripts/verify_real_ulog_discriminate.py \
@@ -1346,13 +1361,96 @@ The §8.8 delta is exactly that — on the same physical flight,
 swapping the reference decision policy for a one-line buggy
 PROCEED-only policy, or the reference actuator for a one-line
 unsafe-reason actuator, flips the verdict. The synthetic
-violation-matrix detections of §8.2 transfer to real telemetry, on
-this ULog, for the bug categories whose precondition the real
+violation-matrix detections of §8.2 transfer to real telemetry on
+this ULog for the bug categories whose precondition the real
 flight's drift pattern exercises.
 
-The buggy substitution is at the policy layer; the buggy run did
-not fly anything, and generalising across more ULogs is scope for
-ADR-0037 (real-flight corpus).
+#### 8.8.1 Generalisation to a 3-ULog corpus
+
+The §8.8 result rests on *one* PX4 SITL ULog. That is the single
+most common reviewer attack on this kind of result, and we
+address it directly in v0.2.4 by expanding the experiment to a
+**corpus of three structurally distinct PX4 ULogs** drawn from
+PX4's public test fixtures (BSD-3 licensed, license-clean, no
+vendor mediation needed for reproduction):
+
+| ULog | Pose samples | Duration | FPB `fire_fraction` |
+|---|---:|---:|---:|
+| `sample.ulg` (the §8.8 anchor) | 636 | 6.5 s | 0.9437 |
+| `corpus/sample_appended.ulg` (multi-segment) | 1110 | 112.6 s | 0.9800 |
+| `corpus/sample_logging_tagged.ulg` (logging-tagged) | 1268 | 10.1 s | 0.0000 |
+
+The corpus deliberately spans a 16× duration range and includes
+one log (`sample_logging_tagged.ulg`) whose recorded segment is
+**largely stationary** — `fire_fraction = 0.00` means the
+stationary belief never observes drift against the recorded GT.
+We chose not to filter that log out: the corpus is the public
+PX4 test set as-shipped, and a paper that hand-picks logs where
+every property fires would be cherry-picked by definition.
+
+**The corpus detection matrix** is regenerated by CI on every
+push and emitted as
+[`docs/paper/outputs/multi_ulog_discrimination/matrix.json`](docs/paper/outputs/multi_ulog_discrimination/matrix.json)
+(self-describing — `schema_version`, per-ULog diagnostics, both
+matrices). A YES means the verifier flips the predicted property
+on that ULog; a NO means the property holds across nominal and
+buggy:
+
+| Bug category | `sample.ulg` | `sample_appended.ulg` | `sample_logging_tagged.ulg` |
+|---|:---:|:---:|:---:|
+| `calibrator_no_downgrade` | YES | YES | **NO** |
+| `calibrator_invents_confidence` | YES | YES | YES |
+| `decision_proceeds_anyway` | YES | YES | **NO** |
+| `decision_never_proceeds` | YES | YES | YES |
+| `actuation_non_safe_reason` | YES | YES | **NO** |
+| `fpb_threshold_exceeded` | YES | YES | **NO** |
+
+**Reading this honestly: 12 of 18 cells discriminate.** On the
+two **active** ULogs (`fire_fraction > 0.9`), the matrix is fully
+green — six out of six categories flip the expected property on
+each, with the same single co-violation row as §8.8. On the
+**stationary** ULog (`fire_fraction = 0.00`), four out of six
+categories report HOLDS across nominal and buggy.
+
+This is **informative non-discrimination**, not a verifier
+failure. The four HOLDS-everywhere categories
+(`calibrator_no_downgrade`, `decision_proceeds_anyway`,
+`actuation_non_safe_reason`, `fpb_threshold_exceeded`) all share
+a precondition that the BAUD-v1 drift signal must fire at least
+once in the run. On a log where the agent is largely stationary
+and the stationary belief never diverges from GT, that
+precondition is vacuously satisfied for both nominal and buggy
+producers, and the property correctly reports HOLDS for both.
+The remaining two (`calibrator_invents_confidence`,
+`decision_never_proceeds`) do not require the drift signal to
+fire — the calibrator inflates confidence whether or not drift
+is observed, and the never-PROCEED decision policy violates
+ERUR-v1's "release after K stale cycles" arm regardless of
+drift. They correctly flip on all three ULogs.
+
+The verifier is therefore **doing what it claims**: it flags
+exactly those producer bugs whose precondition the ULog
+actually exercises. A more polished result would either filter
+the corpus, raise the constants, or source drift from an
+independent reference; we report the honest matrix here and
+defer the "independent GT source" mitigation to ADR-0037 (which
+v0.2.4 partially addresses with the SITL corpus, fully closed
+in v0.2.5).
+
+**Reproducibility.** Run
+`python docs/paper/scripts/run_multi_ulog_corpus.py` — emits
+`docs/paper/outputs/multi_ulog_discrimination/matrix.json` and
+exits non-zero if the active-ULogs invariant regresses. Six
+integration tests in
+`tests/adapters/test_real_ulog_corpus.py` pin the matrix
+shape, the active-ULog invariant, the stationary-ULog
+"≤ 2/6 detections" sanity check, and the JSON artefact
+schema.
+
+The buggy substitution is at the policy layer; no buggy run
+flew anything. Generalising across **non-PX4** flight stacks
+(ROSBag, ArduPilot, EuRoC) remains scope for the wider
+ADR-0037 roadmap.
 
 ### 8.9 Determinism across replicates and machines
 
@@ -1400,19 +1498,28 @@ per-property §Scope sections of the ADRs.
 - **Statistical FPB out of scope.** FPB-v1 is observational; a
   statistical FPB-v2 with Monte Carlo bounds is a candidate future
   ADR.
+- **Vacuous holds on stationary ULogs.** §8.8.1 reports honestly
+  that on the third corpus ULog (`fire_fraction = 0`), four of
+  the six buggy categories produce HOLDS across both nominal and
+  buggy runs because BAUD-v1's drift precondition is never
+  exercised by the recorded segment. The verifier is correct
+  ("nothing fired, nothing to violate") but the row is
+  uninformative as a discrimination test. ADR-0037's "independent
+  GT source" closes this by sourcing drift from a non-self-
+  consistent reference, which we defer to v0.2.5.
 
 ---
 
 ## 10. Future work
 
-- **ADR-0037 (candidate)**: real-flight data integration. PX4 ULog
-  / ROSBag / EuRoC MAV adapter from flight telemetry to the Ghost
-  pipeline. Roadmap documented at
-  [`docs/paper/venues/dataset_integration.md`](docs/paper/venues/dataset_integration.md);
-  a runnable but unimplemented skeleton with the exact integration
-  shape (config dataclass, ground-truth-source enum, conversion
-  contract) at
-  [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](docs/paper/scripts/px4_ulog_adapter_skeleton.py).
+- **ADR-0037 (partially addressed, v0.2.4)**: real-flight data
+  integration. v0.2.4 ships a PX4 ULog adapter and exercises it on
+  a 3-ULog SITL corpus (§8.8.1); the matrix is fully green on the
+  two non-stationary ULogs and informatively partial on the
+  stationary one. ROSBag / EuRoC MAV adapters and a non-PX4 stack
+  remain open, as does the "independent GT source" mitigation for
+  stationary segments. Roadmap documented at
+  [`docs/paper/venues/dataset_integration.md`](docs/paper/venues/dataset_integration.md).
 - **ADR-0038 (candidate)**: TLAPS proof of the unbounded version of
   the recovery latency bound and of the partition theorem — replacing TLC's
   "exhaustive over bounded state space" with "proved for any

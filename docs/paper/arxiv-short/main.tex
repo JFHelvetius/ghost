@@ -319,27 +319,40 @@ the nominal run; only one named component differs per buggy case.
 
 \begin{table}[h]
 \centering\small
-\begin{tabular}{l c c c c c l}
+\begin{tabular}{l c c c c c c}
 \toprule
-\textbf{Run} & BAUD & ERUR & MD & RLB & FPB & MCAP SHA-256 \\
+\textbf{Run} & \textbf{Exp.\ violator} & BAUD & ERUR & MD & RLB & FPB \\
 \midrule
-nominal (reference policies)         & HOLDS    & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{49fd0a48\ldots}\\
-\texttt{decision\_proceeds\_anyway}  & \textbf{VIOLATED} & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{37224e40\ldots}\\
-\texttt{actuation\_non\_safe\_reason}& \textbf{VIOLATED} & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{9a23b97a\ldots}\\
+nominal (reference policies)              & ---     & HOLDS & HOLDS & HOLDS & HOLDS & HOLDS \\
+\texttt{calibrator\_no\_downgrade}        & BAUD-v1 & \textbf{V.} & HOLDS & HOLDS & HOLDS & HOLDS \\
+\texttt{calibrator\_invents\_confidence}  & MD-v1   & \textbf{V.} & HOLDS & \textbf{V.} & HOLDS & HOLDS \\
+\texttt{decision\_proceeds\_anyway}       & BAUD-v1 & \textbf{V.} & HOLDS & HOLDS & HOLDS & HOLDS \\
+\texttt{decision\_never\_proceeds}        & ERUR-v1 & HOLDS & \textbf{V.} & HOLDS & HOLDS & HOLDS \\
+\texttt{actuation\_non\_safe\_reason}     & BAUD-v1 & \textbf{V.} & HOLDS & HOLDS & HOLDS & HOLDS \\
+\texttt{fpb\_threshold\_exceeded}         & FPB-v1  & HOLDS & HOLDS & HOLDS & HOLDS & \textbf{V.} \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Discrimination on real flight telemetry.} Two
-independently buggy components, each producing BAUD-v1 VIOLATED on
-the same physical PX4 flight that produced all-HOLDS under the
-reference policies. The violation is isolated to the property the
-bug attacks. End-to-end re-runnable from a single shell command;
-six integration tests pin the experiment.}
+\caption{\textbf{Discrimination on real flight telemetry
+(v0.2.4).} 6/6 categories flip the expected property; 5/6 are
+isolated. The non-isolated row is a true co-violation: an
+inflated-confidence calibrator breaks MD-v1 and BAUD-v1 together.}
 \label{tab:real-verdict}
 \end{table}
 
-The substitution is at the policy layer and the buggy run did
-not fly anything; generalising across more flights is scope for
-ADR-0037 (\S\ref{sec:limits}).
+\textbf{Corpus generalisation.} v0.2.4 also runs the matrix on a
+3-ULog PX4 SITL corpus (\texttt{sample.ulg},
+\texttt{sample\_appended.ulg}, \texttt{sample\_logging\_tagged.ulg}).
+12/18 cells discriminate: the two ULogs with
+$\mathit{fire\_fraction} > 0.9$ are fully green (6/6 each); the
+third ULog ($\mathit{fire\_fraction} = 0$, largely stationary)
+reports HOLDS for 4/6 categories because BAUD-v1's drift
+precondition is never exercised. This is informative
+non-discrimination, not failure --- the JSON artefact at
+\texttt{docs/paper/outputs/multi\_ulog\_discrimination/}
+\texttt{matrix.json} carries per-ULog \texttt{fire\_fraction}
+diagnostics so readers can distinguish "verifier missed the bug"
+from "ULog did not exercise the precondition". The "independent
+GT source" mitigation is deferred to ADR-0037 (\S\ref{sec:limits}).
 
 \textbf{Evaluation summary.} Full evaluation in
 Appendix~\ref{app:eval}: six-category violation matrix
@@ -354,9 +367,9 @@ Appendix~\ref{app:eval}: six-category violation matrix
 \label{sec:limits}
 
 \begin{itemize}[noitemsep,topsep=2pt]
-  \item \textbf{Sim, not hardware.} Non-vacuous safety verdicts
-        require an independent ground-truth source. Candidate
-        ADR-0037.
+  \item \textbf{Sim, not hardware.} v0.2.4 ships the PX4 ULog
+        adapter and a 3-ULog SITL corpus; non-PX4 stacks and the
+        "independent GT source" mitigation remain under ADR-0037.
   \item \textbf{Reference policies only.} TLA+ specs target the
         reference. Non-reference policies need their own.
   \item \textbf{Bounded TLC.} Behaviour at production-scale

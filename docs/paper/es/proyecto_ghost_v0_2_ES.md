@@ -953,24 +953,38 @@ violation matrix §8.2. El oracle de fusión, el esquema MCAP, el
 verificador y el ULog input se mantienen idénticos al nominal; solo
 un componente nombrado difiere por caso buggy.
 
-**Delta de veredictos sobre el ULog real bundleado:**
+**Delta de veredictos sobre el ULog real bundleado.** v0.2.4
+expande el experimento de dos categorías buggy a las seis
+categorías de la violation matrix (§8.2). Cada fila substituye
+exactamente un componente nombrado importado verbatim de la
+matrix sintética; oracle de fusión, esquema MCAP, verificador y
+ULog input se mantienen idénticos entre filas:
 
-| Run | BAUD | ERUR | MD | RLB | FPB | MCAP SHA-256 (prefix) |
-|---|:---:|:---:|:---:|:---:|:---:|---|
-| nominal (policies de referencia) | HOLDS | HOLDS | HOLDS | HOLDS | HOLDS | `49fd0a48…` |
-| `decision_proceeds_anyway` (ataque BAUD-v1) | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS | `37224e40…` |
-| `actuation_non_safe_reason` (ataque BAUD-v1) | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS | `9a23b97a…` |
+| Run | Violador esperado | BAUD | ERUR | MD | RLB | FPB |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| nominal (policies de referencia) | — | HOLDS | HOLDS | HOLDS | HOLDS | HOLDS |
+| `calibrator_no_downgrade` | BAUD-v1 | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS |
+| `calibrator_invents_confidence` | MD-v1 | **VIOLATED** | HOLDS | **VIOLATED** | HOLDS | HOLDS |
+| `decision_proceeds_anyway` | BAUD-v1 | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS |
+| `decision_never_proceeds` | ERUR-v1 | HOLDS | **VIOLATED** | HOLDS | HOLDS | HOLDS |
+| `actuation_non_safe_reason` | BAUD-v1 | **VIOLATED** | HOLDS | HOLDS | HOLDS | HOLDS |
+| `fpb_threshold_exceeded` | FPB-v1 | HOLDS | HOLDS | HOLDS | HOLDS | **VIOLATED** |
 
-Ambos runs buggy flipean **BAUD-v1 de HOLDS a VIOLATED** sobre el
-mismo log de vuelo real que produjo all-HOLDS bajo las policies de
-referencia; las otras cuatro propiedades siguen HOLD, así que la
-violación está **aislada a la propiedad que el bug ataca**. Ese
-aislamiento importa: muestra que el verificador no está señalando
-"algo cambió" sino "el invariante específico que el componente
-buggy viola".
+**6/6 categorías flipean su propiedad esperada; 5/6 quedan
+aisladas.** La única fila no aislada es
+`calibrator_invents_confidence`: el calibrador con confianza
+inflada viola MD-v1 *y* BAUD-v1 a la vez, porque un calibrador
+que miente sobre confianza simultáneamente rompe el contrato
+de downgrade Mahalanobis (la propiedad que ataca más
+directamente) y el contrato de abstain-under-drift (la creencia
+estacionaria sigue drift-eando, pero el calibrador ya no lo
+marca). Es una co-violación real, no un artefacto del
+verificador: un calibrador puede corromper comportamiento
+downstream a través de varios invariantes a la vez, y el
+verificador reporta ambos.
 
 **Reproducibilidad.** End-to-end runnable desde
-`pip install 'project-ghost[adapters]==0.2.3'`:
+`pip install 'project-ghost[adapters]==0.2.4'`:
 
 ```
 python docs/paper/scripts/verify_real_ulog_discriminate.py \
@@ -982,21 +996,97 @@ Exit code 0 sii toda categoría buggy flipea su propiedad esperada.
 Seis tests de integración pinean el experimento en CI
 (`tests/adapters/test_real_ulog_discrimination.py`).
 
-**Por qué esto responde al crítico residual de §8.7.** Un reviewer
-de la versión anterior podía decir con razón: "all-HOLDS muestra
-que la pipeline corre; no muestra que el veredicto sea
-*informativo* sobre datos reales". El delta de §8.8 es exactamente
-eso — sobre el mismo vuelo físico, swappear la policy de decisión
-de referencia por una policy buggy de una línea que siempre emite
-PROCEED, o el actuador de referencia por un actuador buggy de una
-línea con razón insegura, flipea el veredicto. Las detecciones
+**Por qué esto responde al crítico residual de §8.7.** El delta de
+§8.8 muestra — sobre el mismo vuelo físico — que swappear cualquiera
+de seis componentes nombrados por su versión buggy de una línea
+flipea la propiedad esperada del veredicto. Las detecciones
 sintéticas de la violation matrix §8.2 transfieren a telemetría
-real, sobre este ULog, para las categorías de bug cuya
-precondición el patrón de drift del vuelo real ejercita.
+real sobre este ULog para las categorías cuya precondición el
+patrón de drift real ejercita.
 
-La sustitución buggy es en la capa de policy; el run buggy no
-voló nada, y generalizar across más ULogs es scope de ADR-0037
-(corpus real-flight).
+#### 8.8.1 Generalización a un corpus de 3 ULogs
+
+§8.8 descansa sobre *un* ULog PX4 SITL. Ese es el ataque más
+común que un reviewer hace contra este tipo de resultado, y en
+v0.2.4 lo cerramos directamente expandiendo el experimento a un
+**corpus de tres ULogs PX4 estructuralmente distintos**
+tomados del set público de fixtures de PX4 (BSD-3, license-
+clean, reproducción sin mediación nuestra):
+
+| ULog | Pose samples | Duración | FPB `fire_fraction` |
+|---|---:|---:|---:|
+| `sample.ulg` (anchor §8.8) | 636 | 6.5 s | 0.9437 |
+| `corpus/sample_appended.ulg` (multi-segmento) | 1110 | 112.6 s | 0.9800 |
+| `corpus/sample_logging_tagged.ulg` (logging-tagged) | 1268 | 10.1 s | 0.0000 |
+
+El corpus deliberadamente cubre rango de duración 16× e incluye
+un log (`sample_logging_tagged.ulg`) cuyo segmento grabado es
+**mayormente estacionario** — `fire_fraction = 0.00` significa
+que la creencia estacionaria nunca observa drift contra GT
+grabado. No filtramos ese log: el corpus es el set público de
+PX4 as-shipped, y un paper que hand-pickea logs donde toda
+propiedad dispara es cherry-picked por definición.
+
+**La matriz de detección del corpus** se regenera por CI en cada
+push y se emite como
+[`docs/paper/outputs/multi_ulog_discrimination/matrix.json`](../outputs/multi_ulog_discrimination/matrix.json)
+(self-describing — `schema_version`, diagnósticos per-ULog,
+ambas matrices). YES = el verificador flipea la propiedad
+esperada en ese ULog; NO = la propiedad mantiene HOLDS entre
+nominal y buggy:
+
+| Categoría de bug | `sample.ulg` | `sample_appended.ulg` | `sample_logging_tagged.ulg` |
+|---|:---:|:---:|:---:|
+| `calibrator_no_downgrade` | YES | YES | **NO** |
+| `calibrator_invents_confidence` | YES | YES | YES |
+| `decision_proceeds_anyway` | YES | YES | **NO** |
+| `decision_never_proceeds` | YES | YES | YES |
+| `actuation_non_safe_reason` | YES | YES | **NO** |
+| `fpb_threshold_exceeded` | YES | YES | **NO** |
+
+**Lectura honesta: 12 de 18 celdas discriminan.** En los dos
+ULogs **activos** (`fire_fraction > 0.9`), la matriz está
+totalmente verde — seis de seis categorías flipean la propiedad
+esperada en cada uno, con la misma fila de co-violación que §8.8.
+En el ULog **estacionario** (`fire_fraction = 0.00`), cuatro de
+seis categorías reportan HOLDS entre nominal y buggy.
+
+Esto es **no-discriminación informativa**, no un fallo del
+verificador. Las cuatro categorías HOLDS-everywhere
+(`calibrator_no_downgrade`, `decision_proceeds_anyway`,
+`actuation_non_safe_reason`, `fpb_threshold_exceeded`) comparten
+una precondición: la señal de drift BAUD-v1 debe dispararse al
+menos una vez. En un log donde el agente está mayormente
+estacionario y la creencia estacionaria nunca diverge de GT,
+esa precondición se cumple vacuamente para nominal y buggy, y
+la propiedad reporta correctamente HOLDS para ambos. Las dos
+restantes (`calibrator_invents_confidence`,
+`decision_never_proceeds`) no requieren que la señal de drift
+dispare — el calibrador infla confianza haya drift observado o
+no, y la policy never-PROCEED viola el brazo "release después
+de K ciclos stale" de ERUR-v1 independientemente del drift.
+Estas flipean correctamente en los tres ULogs.
+
+El verificador hace **lo que dice hacer**: flagea exactamente
+los bugs del producer cuya precondición el ULog realmente
+ejercita. Un resultado más pulido filtraría el corpus o
+sourcearía drift desde una referencia independiente; reportamos
+la matriz honesta aquí y deferimos la mitigación "fuente de GT
+independiente" a ADR-0037 (que v0.2.4 cubre parcialmente con
+el corpus SITL, cierre completo en v0.2.5).
+
+**Reproducibilidad.** Ejecutar
+`python docs/paper/scripts/run_multi_ulog_corpus.py` — emite
+`docs/paper/outputs/multi_ulog_discrimination/matrix.json` y
+sale con código no-cero si el invariante de ULogs activos
+regresa. Seis tests de integración en
+`tests/adapters/test_real_ulog_corpus.py` pinean la forma de la
+matriz, el invariante de ULogs activos, el sanity check
+estacionario "≤ 2/6 detecciones" y el schema del artefacto JSON.
+
+La sustitución buggy es en la capa de policy; ningún run buggy
+voló nada. Generalizar a stacks **no-PX4** (ROSBag,
+ArduPilot, EuRoC) sigue siendo scope del roadmap ADR-0037.
 
 ### 8.9 Determinismo cross-replicates y cross-machine
 
@@ -1032,17 +1122,29 @@ que las secciones §Scope per-propiedad de los ADRs.
 - **FPB estadístico fuera de scope.** FPB-v1 es observacional; un
   FPB-v2 estadístico con cotas Monte Carlo es candidato ADR
   futuro.
+- **HOLDS vacuos en ULogs estacionarios.** §8.8.1 reporta
+  honestamente que sobre el tercer ULog del corpus
+  (`fire_fraction = 0`), cuatro de las seis categorías buggy
+  producen HOLDS entre nominal y buggy porque la precondición
+  de drift de BAUD-v1 nunca se ejercita en el segmento grabado.
+  El verificador es correcto ("nada disparó, nada que violar")
+  pero la fila es no-informativa como test de discriminación.
+  La mitigación "fuente de GT independiente" de ADR-0037
+  cierra esto sourceando drift desde una referencia
+  no-self-consistente; diferida a v0.2.5.
 
 ---
 
 ## 10. Future work
 
-- **ADR-0037 (candidate)**: integración con datos de flight reales
-  vía adapter PX4 ULog / ROSBag / EuRoC MAV. Skeleton ejecutable
-  pero no implementado con el shape exacto de la integración
-  (config dataclass, ground-truth-source enum, contrato de
-  conversión) en
-  [`docs/paper/scripts/px4_ulog_adapter_skeleton.py`](../scripts/px4_ulog_adapter_skeleton.py).
+- **ADR-0037 (parcialmente abordado, v0.2.4)**: integración con
+  datos de flight reales. v0.2.4 entrega un adapter PX4 ULog y lo
+  ejercita sobre un corpus SITL de 3 ULogs (§8.8.1); la matriz
+  está totalmente verde en los dos ULogs no-estacionarios y
+  parcialmente informativa en el estacionario. Adapters ROSBag /
+  EuRoC MAV y un stack no-PX4 quedan abiertos, igual que la
+  mitigación "fuente de GT independiente" para segmentos
+  estacionarios.
 - **ADR-0038 (candidate)**: prueba TLAPS de la versión unbounded de
   la cota de latencia de recuperación y del teorema de partición.
 - **ADR-0039 (candidate)**: FPB-v2 estadístico con cota Monte Carlo

@@ -69,9 +69,13 @@ from project_ghost.core.actuation import AttitudeHoldReferencePolicy
 from project_ghost.core.decisions import UncertaintyAwareReferencePolicy
 from project_ghost.core.feedback import MahalanobisDowngradePolicy
 from project_ghost.examples.violation_matrix import (
+    _BuggyConfidenceInventerCalibrator,
+    _BuggyHoldOnlyDecisionPolicy,
     _BuggyNonSafeReasonActuationPolicy,
+    _BuggyPassthroughCalibrator,
     _BuggyProceedOnlyDecisionPolicy,
 )
+from project_ghost.properties import verify_fpb
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -86,11 +90,17 @@ class RealULogBugCategory(StrEnum):
     """Closed catalogue of buggy components exercised on the real ULog.
 
     Each name matches the corresponding ``BugCategory`` of the
-    synthetic violation matrix (§8.2).
+    synthetic violation matrix (§8.2). The expansion in v0.2.4
+    covers all six synthetic categories on the real-ULog pipeline
+    (paper §8.8 multi-ULog matrix), not just the two of v0.2.3.
     """
 
+    CALIBRATOR_NO_DOWNGRADE = "calibrator_no_downgrade"
+    CALIBRATOR_INVENTS_CONFIDENCE = "calibrator_invents_confidence"
     DECISION_PROCEEDS_ANYWAY = "decision_proceeds_anyway"
+    DECISION_NEVER_PROCEEDS = "decision_never_proceeds"
     ACTUATION_NON_SAFE_REASON = "actuation_non_safe_reason"
+    FPB_THRESHOLD_EXCEEDED = "fpb_threshold_exceeded"
 
 
 @dataclass(frozen=True)
@@ -129,10 +139,18 @@ def _expected_violator_for(category: RealULogBugCategory) -> str:
     Mirrors the violation matrix; the same buggy class breaks the
     same property whether the ground truth is synthetic or real.
     """
+    if category is RealULogBugCategory.CALIBRATOR_NO_DOWNGRADE:
+        return "BAUD-v1"
+    if category is RealULogBugCategory.CALIBRATOR_INVENTS_CONFIDENCE:
+        return "MD-v1"
     if category is RealULogBugCategory.DECISION_PROCEEDS_ANYWAY:
         return "BAUD-v1"
+    if category is RealULogBugCategory.DECISION_NEVER_PROCEEDS:
+        return "ERUR-v1"
     if category is RealULogBugCategory.ACTUATION_NON_SAFE_REASON:
         return "BAUD-v1"
+    if category is RealULogBugCategory.FPB_THRESHOLD_EXCEEDED:
+        return "FPB-v1"
     raise ValueError(f"unhandled category: {category}")
 
 
@@ -150,6 +168,18 @@ def _holds_by_id(summary: RealULogSmokeSummary, prop_id: str) -> bool:
     raise ValueError(f"unknown property id: {prop_id}")
 
 
+_FPB_TIGHT_THRESHOLD: Final[float] = 0.1
+"""Threshold for FPB_THRESHOLD_EXCEEDED on real telemetry.
+
+The reference real-ULog pipeline produces ``fire_fraction ≈ 0.94``
+(§8.7). Setting ``max_fire_fraction = 0.1`` makes FPB-v1 report
+VIOLATED on any reference run on real telemetry. This category
+tests verifier-side regression gating rather than a buggy
+producer component; the producer is the reference, the
+"perturbation" is the tighter verifier parameter.
+"""
+
+
 def _run_buggy_case(
     category: RealULogBugCategory,
     sub_samples: list,  # type: ignore[type-arg]
@@ -160,20 +190,51 @@ def _run_buggy_case(
 ) -> RealULogDiscriminationCell:
     """Run one buggy category against the same real-ULog samples and
     return the discrimination cell.
+
+    Six dispatch paths:
+
+    - Three producer-component swaps that already worked in v0.2.3
+      (DECISION_PROCEEDS_ANYWAY, DECISION_NEVER_PROCEEDS,
+      ACTUATION_NON_SAFE_REASON) plus two new ones
+      (CALIBRATOR_NO_DOWNGRADE, CALIBRATOR_INVENTS_CONFIDENCE).
+    - FPB_THRESHOLD_EXCEEDED keeps the reference producer
+      components and probes the verifier parameter instead — the
+      verifier is run with ``max_fire_fraction=0.1`` which any real
+      flight will exceed, demonstrating the regression-gate use
+      case of FPB-v1.
     """
-    feedback_policy = MahalanobisDowngradePolicy(
+    decision_policy: Any
+    actuation_policy: Any
+    feedback_policy: Any = MahalanobisDowngradePolicy(
         min_outcomes=_FEEDBACK_MIN_OUTCOMES,
         downgrade_threshold=_FEEDBACK_DOWNGRADE_THRESHOLD,
     )
+    fake_uncertain_raw = False
 
-    decision_policy: Any
-    actuation_policy: Any
-    if category is RealULogBugCategory.DECISION_PROCEEDS_ANYWAY:
+    if category is RealULogBugCategory.CALIBRATOR_NO_DOWNGRADE:
+        feedback_policy = _BuggyPassthroughCalibrator()
+        decision_policy = UncertaintyAwareReferencePolicy()
+        actuation_policy = AttitudeHoldReferencePolicy()
+    elif category is RealULogBugCategory.CALIBRATOR_INVENTS_CONFIDENCE:
+        feedback_policy = _BuggyConfidenceInventerCalibrator()
+        decision_policy = UncertaintyAwareReferencePolicy()
+        actuation_policy = AttitudeHoldReferencePolicy()
+        fake_uncertain_raw = True
+    elif category is RealULogBugCategory.DECISION_PROCEEDS_ANYWAY:
         decision_policy = _BuggyProceedOnlyDecisionPolicy()
+        actuation_policy = AttitudeHoldReferencePolicy()
+    elif category is RealULogBugCategory.DECISION_NEVER_PROCEEDS:
+        decision_policy = _BuggyHoldOnlyDecisionPolicy()
         actuation_policy = AttitudeHoldReferencePolicy()
     elif category is RealULogBugCategory.ACTUATION_NON_SAFE_REASON:
         decision_policy = UncertaintyAwareReferencePolicy()
         actuation_policy = _BuggyNonSafeReasonActuationPolicy()
+    elif category is RealULogBugCategory.FPB_THRESHOLD_EXCEEDED:
+        # Reference producer everywhere; the bug is in the verifier
+        # parameter (tight max_fire_fraction). Handled by re-running
+        # verify_fpb after the bundle is built.
+        decision_policy = UncertaintyAwareReferencePolicy()
+        actuation_policy = AttitudeHoldReferencePolicy()
     else:
         raise ValueError(f"unhandled category: {category}")
 
@@ -183,6 +244,7 @@ def _run_buggy_case(
         feedback_policy=feedback_policy,
         decision_policy=decision_policy,
         actuation_policy=actuation_policy,
+        fake_uncertain_raw=fake_uncertain_raw,
     )
     summary = _verify_all_and_bundle(
         output_mcap_path,
@@ -190,7 +252,25 @@ def _run_buggy_case(
         n_cycles=n_cycles,
         ulog_sha256=ulog_sha256,
     )
+
     expected = _expected_violator_for(category)
+
+    if category is RealULogBugCategory.FPB_THRESHOLD_EXCEEDED:
+        # Verifier-side bug: re-run verify_fpb on the same MCAP with a
+        # tighter max_fire_fraction. The summary's fpb_holds was
+        # computed with the default observational threshold (1.0) and
+        # therefore always holds; override that cell with the tight
+        # verdict before computing discrimination.
+        fpb_tight = verify_fpb(
+            output_mcap_path,
+            min_outcomes=_FEEDBACK_MIN_OUTCOMES,
+            downgrade_threshold=_FEEDBACK_DOWNGRADE_THRESHOLD,
+            max_fire_fraction=_FPB_TIGHT_THRESHOLD,
+        )
+        from dataclasses import replace as _dc_replace
+
+        summary = _dc_replace(summary, fpb_holds=fpb_tight.holds)
+
     discriminates = not _holds_by_id(summary, expected)
     return RealULogDiscriminationCell(
         category=category,

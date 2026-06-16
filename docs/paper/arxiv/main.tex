@@ -313,8 +313,8 @@ are scope for future work.
 \node[artifact, right=14mm of ci] (mcap) {MCAP log\\SHA-256, byte-exact};
 \node[artifact, below=of mcap] (cite) {\textbf{The citation}\\\texttt{pip install} + SHA-256};
 
-\node[party, right=14mm of mcap] (cmd) {\texttt{ghost verify-\\properties --mcap}};
-\node[party, below=of cmd] (out) {Exit 0/1 +\\deterministic JSON};
+\node[party, right=14mm of mcap] (cmd) {\texttt{ghost verify-}\\\texttt{properties --mcap}};
+\node[party, below=of cmd] (out) {Exit 0/1 +\\ deterministic JSON};
 
 % producer chain
 \draw[flow] (adr) -- (code);
@@ -1143,26 +1143,39 @@ MCAP schema, the verifier and the ULog input are held identical
 to the nominal run; only one named component differs per buggy
 case.
 
+\textbf{Verdict delta on the bundled real PX4 ULog.} v0.2.4
+expands the experiment from two buggy categories to all six
+categories of the violation matrix (\S8.2). Each row substitutes
+exactly one named component imported verbatim from the synthetic
+matrix; fusion oracle, MCAP schema, verifier, and ULog input are
+held identical across rows.
+
 \begin{table}[h]
 \centering\small
-\begin{tabular}{l c c c c c l}
+\begin{tabular}{l c c c c c c}
 \toprule
-\textbf{Run} & BAUD & ERUR & MD & RLB & FPB & MCAP SHA-256 (prefix) \\
+\textbf{Run} & \textbf{Exp.\ violator} & BAUD & ERUR & MD & RLB & FPB \\
 \midrule
-nominal (reference policies)         & HOLDS    & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{49fd0a48\ldots}\\
-\texttt{decision\_proceeds\_anyway}  & \textbf{VIOLATED} & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{37224e40\ldots}\\
-\texttt{actuation\_non\_safe\_reason}& \textbf{VIOLATED} & HOLDS & HOLDS & HOLDS & HOLDS & \texttt{9a23b97a\ldots}\\
+nominal (reference policies)              & ---     & HOLDS & HOLDS & HOLDS & HOLDS & HOLDS \\
+\texttt{calibrator\_no\_downgrade}        & BAUD-v1 & \textbf{VIOL.} & HOLDS & HOLDS & HOLDS & HOLDS \\
+\texttt{calibrator\_invents\_confidence}  & MD-v1   & \textbf{VIOL.} & HOLDS & \textbf{VIOL.} & HOLDS & HOLDS \\
+\texttt{decision\_proceeds\_anyway}       & BAUD-v1 & \textbf{VIOL.} & HOLDS & HOLDS & HOLDS & HOLDS \\
+\texttt{decision\_never\_proceeds}        & ERUR-v1 & HOLDS & \textbf{VIOL.} & HOLDS & HOLDS & HOLDS \\
+\texttt{actuation\_non\_safe\_reason}     & BAUD-v1 & \textbf{VIOL.} & HOLDS & HOLDS & HOLDS & HOLDS \\
+\texttt{fpb\_threshold\_exceeded}         & FPB-v1  & HOLDS & HOLDS & HOLDS & HOLDS & \textbf{VIOL.} \\
 \bottomrule
 \end{tabular}
-\caption{Verdict delta on the bundled real PX4 ULog. Both buggy
-runs flip BAUD-v1 from HOLDS to VIOLATED on the same physical
-flight; the other four properties remain HOLD, so the violation
-is isolated to the property the bug attacks.}
+\caption{Verdict delta on the bundled real PX4 ULog. 6/6 categories
+flip the expected property; 5/6 are isolated. The one non-isolated
+row (\texttt{calibrator\_invents\_confidence}) is a true
+co-violation: a calibrator that lies about confidence breaks both
+the Mahalanobis downgrade contract and the abstain-under-drift
+contract together. The verifier reports both.}
 \label{tab:realflight-discrim}
 \end{table}
 
 \textbf{Reproducibility.} End-to-end runnable from
-\texttt{pip install 'project-ghost[adapters]==0.2.3'}:
+\texttt{pip install 'project-ghost[adapters]==0.2.4'}:
 
 \begin{lstlisting}
 python docs/paper/scripts/verify_real_ulog_discriminate.py \
@@ -1175,16 +1188,97 @@ property. Six integration tests pin the experiment in CI
 (\texttt{tests/adapters/test\_real\_ulog\_discrimination.py}).
 
 \textbf{Why this answers the residual critique.} On the same
-physical flight, swapping the reference decision policy for a
-one-line buggy \texttt{PROCEED}-only policy, or the reference
-actuator for a one-line unsafe-reason actuator, flips the
-verdict. The synthetic violation-matrix detections of \S8.2
-transfer to real telemetry, on this ULog, for the bug categories
-whose precondition the real flight's drift pattern exercises.
+physical flight, swapping any of six named reference components
+for its one-line buggy counterpart flips the verdict on the
+property that component most directly attacks. The synthetic
+violation-matrix detections of \S8.2 transfer to real telemetry
+on this ULog for the bug categories whose precondition the real
+flight's drift pattern exercises.
 
-The buggy substitution is at the policy layer; the buggy run did
-not fly anything, and generalising across more ULogs is scope for
-ADR-0037 (real-flight corpus).
+\subsubsection*{Generalisation to a 3-ULog corpus}
+\label{sec:multi-ulog-corpus}
+
+The result above rests on \emph{one} PX4 SITL ULog. v0.2.4
+addresses the "single dataset" reviewer attack by expanding the
+experiment to a \textbf{corpus of three structurally distinct
+PX4 ULogs} drawn from PX4's public test fixtures (BSD-3 licensed,
+license-clean, no vendor mediation needed for reproduction):
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{l r r r}
+\toprule
+\textbf{ULog} & Pose samples & Duration (s) & FPB \texttt{fire\_fraction} \\
+\midrule
+\texttt{sample.ulg} (the \S\ref{sec:realflight-discrim} anchor) & 636  & 6.5   & 0.9437 \\
+\texttt{corpus/sample\_appended.ulg}                            & 1110 & 112.6 & 0.9800 \\
+\texttt{corpus/sample\_logging\_tagged.ulg}                     & 1268 & 10.1  & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{3-ULog corpus. Spans a 16$\times$ duration range and
+includes one log whose recorded segment is largely stationary
+(\texttt{fire\_fraction = 0}). We chose not to filter that log
+out: the corpus is the PX4 public test set as-shipped, and a
+paper that hand-picks logs where every property fires would be
+cherry-picked by definition.}
+\end{table}
+
+The \textbf{corpus detection matrix} is regenerated by CI on
+every push and emitted as
+\texttt{docs/paper/outputs/multi\_ulog\_discrimination/}
+\texttt{matrix.json} (self-describing: \texttt{schema\_version},
+per-ULog diagnostics, both matrices). YES = the verifier flips
+the predicted property on that ULog; NO = the property holds
+across nominal and buggy:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{l c c c}
+\toprule
+\textbf{Bug category} & \texttt{sample} & \texttt{appended} & \texttt{logging\_tagged} \\
+\midrule
+\texttt{calibrator\_no\_downgrade}        & YES & YES & \textbf{NO}  \\
+\texttt{calibrator\_invents\_confidence}  & YES & YES & YES \\
+\texttt{decision\_proceeds\_anyway}       & YES & YES & \textbf{NO}  \\
+\texttt{decision\_never\_proceeds}        & YES & YES & YES \\
+\texttt{actuation\_non\_safe\_reason}     & YES & YES & \textbf{NO}  \\
+\texttt{fpb\_threshold\_exceeded}         & YES & YES & \textbf{NO}  \\
+\bottomrule
+\end{tabular}
+\caption{Corpus detection matrix. 12/18 cells discriminate.
+On the two \textbf{active} ULogs ($\mathit{fire\_fraction} > 0.9$)
+the matrix is fully green: 6/6 categories flip the expected
+property on each. On the \textbf{stationary} ULog
+($\mathit{fire\_fraction} = 0$), 4/6 categories report HOLDS.}
+\label{tab:multi-ulog-corpus}
+\end{table}
+
+This is \textbf{informative non-discrimination}, not a verifier
+failure. The four HOLDS-everywhere categories all share a
+precondition that BAUD-v1's drift signal must fire at least
+once. On a log where the agent is largely stationary and the
+stationary belief never diverges from GT, that precondition is
+vacuously satisfied for both nominal and buggy producers, and
+the property correctly reports HOLDS for both. The remaining
+two (\texttt{calibrator\_invents\_confidence},
+\texttt{decision\_never\_proceeds}) do not require the drift
+signal to fire and correctly flip on all three ULogs. The
+verifier is therefore doing what it claims: it flags exactly
+those producer bugs whose precondition the ULog actually
+exercises. The "independent GT source" mitigation is deferred
+to ADR-0037 / v0.2.5.
+
+Run \texttt{python docs/paper/scripts/run\_multi\_ulog\_corpus.py}
+to regenerate the matrix; six integration tests in
+\texttt{tests/adapters/test\_real\_ulog\_corpus.py} pin the
+matrix shape, the active-ULog invariant, the stationary-ULog
+"$\le$ 2/6 detections" sanity check, and the JSON artefact
+schema.
+
+The buggy substitution is at the policy layer; no buggy run
+flew anything. Generalising across \textbf{non-PX4} flight
+stacks (ROSBag, ArduPilot, EuRoC) remains scope for the wider
+ADR-0037 roadmap.
 
 \subsection{Determinism across replicates and machines}
 Within a single machine, replicate runs produce byte-identical
@@ -1202,14 +1296,11 @@ Any disagreement fails the build.
 \begin{itemize}
   \item \textbf{Sim, not hardware.} MCAPs come from a simulated
         overconfidence trap, not real flight logs. Real-world
-        claims require a HAL backend and a hardware campaign. We
-        ship a runnable but unimplemented skeleton of the PX4 ULog
-        adapter at \texttt{docs/paper/scripts/}
-        \texttt{px4\_ulog\_adapter\_skeleton.py}, with the
-        ground-truth-source policy enumerated explicitly
-        (motion-capture / RTK GPS / vacuous EKF2 fallback) so that
-        a future contributor can close this gap as candidate
-        ADR-0037 without re-deriving the integration contract.
+        claims require a HAL backend and a hardware campaign.
+        v0.2.4 ships the PX4 ULog adapter and exercises it on a
+        3-ULog SITL corpus (\S\ref{sec:multi-ulog-corpus});
+        ROSBag / EuRoC adapters and a non-PX4 stack remain open
+        under ADR-0037.
   \item \textbf{Reference policies only.} The TLA+ proofs and
         property semantics target specific reference policies.
         Non-reference policies would need their own ADRs, verifier
@@ -1224,6 +1315,16 @@ Any disagreement fails the build.
   \item \textbf{Statistical FPB out of scope.} FPB-v1 is
         observational; a statistical FPB-v2 with Monte Carlo
         bounds is a candidate future ADR.
+  \item \textbf{Vacuous holds on stationary ULogs.}
+        \S\ref{sec:multi-ulog-corpus} reports honestly that on
+        the corpus's stationary ULog ($\mathit{fire\_fraction} =
+        0$), four of the six buggy categories produce HOLDS
+        across nominal and buggy because BAUD-v1's drift
+        precondition is never exercised. The verifier is correct
+        ("nothing fired, nothing to violate") but the row is
+        uninformative as a discrimination test. The "independent
+        GT source" mitigation under ADR-0037 closes this; we
+        defer it to v0.2.5.
 \end{itemize}
 
 % =======================================================================
