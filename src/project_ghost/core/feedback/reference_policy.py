@@ -107,11 +107,7 @@ class MahalanobisDowngradePolicy:
                 adjustment_policy_id=self._policy_id,
                 adjustment_reason=_REASON_NO_OUTCOMES,
             )
-        beyond_3_or_worse = history.count_beyond_3_std + history.count_beyond_5_std
-        should_downgrade = (
-            history.outcomes_considered >= self._min_outcomes
-            and beyond_3_or_worse >= self._downgrade_threshold
-        )
+        should_downgrade = self.drift_precondition(history)
         if should_downgrade:
             adjusted = _DOWNGRADE[raw.overall_level]
             reason = _REASON_DOWNGRADE
@@ -124,6 +120,36 @@ class MahalanobisDowngradePolicy:
             adjusted_overall_level=adjusted,
             adjustment_policy_id=self._policy_id,
             adjustment_reason=reason,
+        )
+
+    def drift_precondition(self, history: CalibrationHistory) -> bool:
+        """Return True iff *this policy's* own drift criterion fires
+        on ``history``.
+
+        Implements :class:`DriftPreconditionProvider` (ADR-0040): the
+        same count-of-K-in-W rule that ``adjust`` uses to decide
+        whether to downgrade. By construction this method returns
+        ``True`` iff ``adjust(raw, history)`` would downgrade for any
+        non-INVALID raw level (the
+        ``outcomes_considered == 0`` short-circuit in ``adjust``
+        produces a passthrough with reason ``no_outcomes_yet``;
+        ``outcomes_considered < min_outcomes`` returns ``False`` here
+        and produces passthrough with reason
+        ``calibration_within_tolerance`` in ``adjust``; the
+        downgrade branch is reached when both ``outcomes_considered
+        >= min_outcomes`` and ``count_beyond_3_or_worse >=
+        downgrade_threshold``).
+
+        Used by ERUR-v2 (``project_ghost.properties.erur_v2``) to
+        evaluate the precondition without re-deriving the
+        Mahalanobis-specific rule inside the verifier.
+        """
+        if history.outcomes_considered == 0:
+            return False
+        beyond_3_or_worse = history.count_beyond_3_std + history.count_beyond_5_std
+        return (
+            history.outcomes_considered >= self._min_outcomes
+            and beyond_3_or_worse >= self._downgrade_threshold
         )
 
 

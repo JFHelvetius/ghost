@@ -23,7 +23,8 @@
         "hold": 6,
         "proceed": 4
       },
-      "erur_holds": true,
+      "erur_v1_holds": true,
+      "erur_v2_holds": true,
       "fpb_holds": true,
       "mcap_sha256": "2986ee9dfd1240e2c37258cacc47b5dd7f5359b22c808f5d815104d39d92f412",
       "md_holds": true,
@@ -51,7 +52,8 @@
         "hold": 7,
         "proceed": 3
       },
-      "erur_holds": false,
+      "erur_v1_holds": false,
+      "erur_v2_holds": true,
       "fpb_holds": true,
       "mcap_sha256": "7994a41c742193a9dc06882aa0d713b4e121e74839336bf1312f33dd54737852",
       "md_holds": true,
@@ -79,7 +81,8 @@
         "hold": 8,
         "proceed": 2
       },
-      "erur_holds": false,
+      "erur_v1_holds": false,
+      "erur_v2_holds": true,
       "fpb_holds": true,
       "mcap_sha256": "300d6bf7b945e0c1f8b28326c3a926f787efee2a2ded48e59d26ac455cd2f79b",
       "md_holds": true,

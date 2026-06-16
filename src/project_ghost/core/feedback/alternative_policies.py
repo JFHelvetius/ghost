@@ -188,6 +188,24 @@ class EWMADowngradePolicy:
             adjustment_reason=_REASON_WITHIN_TOLERANCE,
         )
 
+    def drift_precondition(self, history: CalibrationHistory) -> bool:
+        """Return True iff *this policy's* own EWMA-based drift
+        criterion fires on ``history``.
+
+        Implements :class:`DriftPreconditionProvider` (ADR-0040).
+        Mirrors the rule used by ``adjust``: with fewer than
+        ``min_outcomes`` records the policy is in
+        ``calibration_within_tolerance`` mode and returns ``False``;
+        otherwise the aggregate dirty fraction (asymptotic EWMA for a
+        stationary stream, unbiased estimator otherwise) is compared
+        against ``downgrade_ewma_threshold``. Used by ERUR-v2.
+        """
+        if history.outcomes_considered < self._min_outcomes:
+            return False
+        dirty_count = history.count_beyond_3_std + history.count_beyond_5_std
+        dirty_fraction = dirty_count / history.outcomes_considered
+        return dirty_fraction > self._threshold
+
 
 class PerAxisHysteresisDowngradePolicy:
     """Per-axis downgrade with hysteresis.
@@ -295,11 +313,7 @@ class PerAxisHysteresisDowngradePolicy:
                 adjustment_reason=_REASON_WITHIN_TOLERANCE,
             )
 
-        triggers = (
-            history.worst_position_mahalanobis >= self._upper
-            or history.worst_orientation_mahalanobis >= self._upper
-        )
-        if triggers:
+        if self.drift_precondition(history):
             return CalibratedSelfAssessment(
                 raw_assessment=raw,
                 calibration_history=history,
@@ -314,6 +328,25 @@ class PerAxisHysteresisDowngradePolicy:
             adjusted_overall_level=raw.overall_level,
             adjustment_policy_id=self._policy_id,
             adjustment_reason=_REASON_WITHIN_TOLERANCE,
+        )
+
+    def drift_precondition(self, history: CalibrationHistory) -> bool:
+        """Return True iff *this policy's* per-axis Mahalanobis
+        criterion fires on ``history``.
+
+        Implements :class:`DriftPreconditionProvider` (ADR-0040).
+        Mirrors the rule used by ``adjust``: with fewer than
+        ``min_outcomes`` records the policy is in tolerance and
+        returns ``False``; otherwise drift is present iff the worst
+        Mahalanobis distance on *either* the position or the
+        orientation axis is at or above ``upper_mahalanobis``. Used
+        by ERUR-v2.
+        """
+        if history.outcomes_considered < self._min_outcomes:
+            return False
+        return (
+            history.worst_position_mahalanobis >= self._upper
+            or history.worst_orientation_mahalanobis >= self._upper
         )
 
 

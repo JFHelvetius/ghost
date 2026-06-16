@@ -829,15 +829,20 @@ drift está ausente y la belief es KNOWN, emite PROCEED. ERUR-v2
 captura así la garantía policy-agnostic que la columna
 "multi-property output" de §2.3 promete.
 
-**Estado honesto de implementación.** v0.2.3 distribuye el
-verificador v1 (`verify_erur`) instanciado con el predicado de
-referencia; el lifting v2 se codifica re-corriendo el v1 con los
-parámetros de precondición propios de cada policy (EWMA usa
-min/threshold; PerAxis usa upper). Para los tres calibradores de
-arriba esta evaluación es manual via `compare_policies.py`; un
-verificador v2 genérico que acepte `policy.drift_precondition`
-como callable es scope de ADR-0040 para v0.2.4. El claim del
-paper es la *propiedad* v2, no el *verificador-as-shipped* v2.
+**Estado de implementación (v0.2.4).** Ambos verificadores se
+distribuyen como funciones genéricas policy-agnostic.
+`verify_erur` (v1) evalúa el predicado de referencia con
+parámetros `(M, K)` provistos por el caller; nada cambió en
+v0.2.4 — backwards-compat absoluta. `verify_erur_v2` (nuevo en
+v0.2.4, ADR-0040 aceptado) acepta un
+`Mapping[policy_id, Callable[[CalibrationHistory], bool]]` y
+delega la precondición al método propio `drift_precondition` de
+cada policy vía el Protocol `DriftPreconditionProvider`
+implementado por los tres calibradores arriba. El verificador
+sigue siendo función pura sobre el MCAP. **La matriz de arriba
+es generada por el verificador en cada push de CI**, no manual;
+`docs/paper/scripts/compare_policies.py` la produce junto con
+`docs/paper/outputs/policy_comparison.json`.
 
 ### 8.5 Escenarios shape-realistic
 
@@ -1042,9 +1047,13 @@ que las secciones §Scope per-propiedad de los ADRs.
   la cota de latencia de recuperación y del teorema de partición.
 - **ADR-0039 (candidate)**: FPB-v2 estadístico con cota Monte Carlo
   sobre el fire rate empírico.
-- **ADR-0040 (candidate)**: ERUR-v2 enunciado abstractamente sobre
-  `policy.precondition(history)`, generalizando la
-  parametrización.
+- **ADR-0040 (aceptado, v0.2.4)**: ERUR-v2 enunciado
+  abstractamente sobre `policy.drift_precondition(history)`,
+  generalizando la parametrización. Distribuido en v0.2.4 como
+  `project_ghost.properties.erur_v2.verify_erur_v2` junto con el
+  Protocol `DriftPreconditionProvider`; las tres policies
+  (Mahalanobis, EWMA, PerAxisHysteresis) lo implementan.
+  Testeado por `tests/properties/test_erur_v2_property.py`.
 - **HAL backend campaign**: backend hardware (Pixhawk + companion).
 - **Conformance suite** poblando el marker `conformance` de pytest
   con el contrato HAL.
@@ -1075,13 +1084,10 @@ Lo que *no* afirmamos: que los contratos epistémicos subsumen STL
 o shielding (responden una pregunta distinta); que este es el
 conjunto maximal de contratos (FPB-v1 puede ajustarse, faltan
 contratos sobre procedencia de sensor-fusion o presupuestos de
-actuación); que ERUR-v2 se distribuye hoy como verificador
-genérico policy-paramétrico (v0.2.3 distribuye ERUR-v1; v2 está
-evaluada manualmente para los tres calibradores de §8.4 y se
-eleva a verificador genérico en v0.2.4 como ADR-0040); que
-tenemos un claim de licencia exclusivo sobre el término (se
-solapa con cómo las comunidades de epistemic logic, doxastic
-logic y self-assessment han usado vocabulario adyacente).
+actuación); que tenemos un claim de licencia exclusivo sobre el
+término (se solapa con cómo las comunidades de epistemic logic,
+doxastic logic y self-assessment han usado vocabulario
+adyacente).
 
 Lo que *sí* afirmamos: que el framing es operacionalmente
 defendible — el artefacto es re-ejecutable desde

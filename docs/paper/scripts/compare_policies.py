@@ -84,6 +84,7 @@ from project_ghost.properties import (
     verify_md,
     verify_rlb,
 )
+from project_ghost.properties.erur_v2 import verify_erur_v2
 from project_ghost.state.messages import Pose
 from project_ghost.telemetry import (
     ActuationToTelemetryAdapter,
@@ -121,7 +122,8 @@ class PolicyComparisonRow:
     calibrated_levels_observed: list[str]
     baud_holds: bool
     baud_fire_fraction: float
-    erur_holds: bool
+    erur_v1_holds: bool
+    erur_v2_holds: bool
     md_holds: bool
     rlb_holds: bool
     fpb_holds: bool
@@ -241,21 +243,40 @@ def _verify_all_with_baud_params(
     *,
     baud_min_outcomes: int,
     baud_downgrade_threshold: int,
-) -> tuple[bool, bool, bool, bool, bool, float]:
-    """Verify the property set with parameters matching the reference's
-    BAUD precondition. EWMA and PerAxis have different internal
-    parameters but the BAUD property statement itself is the
-    reference's M=4, K=2 — that is what third parties will check.
+    policy: Any,
+) -> tuple[bool, bool, bool, bool, bool, bool, float]:
+    """Verify the property set against an MCAP.
+
+    Five of the six verdicts use the reference-style verifiers
+    (BAUD/MD/RLB/FPB) parametrised with the reference's M=4, K=2 —
+    that is what third parties will check.
+
+    Two verdicts are produced for ERUR:
+
+    - **ERUR-v1** (``verify_erur``): the reference predicate fixed to
+      M=4, K=2. Reports VIOL on calibrators whose own drift criterion
+      differs from the reference (EWMA, PerAxisHysteresis); that is
+      *informative*, not a defect.
+    - **ERUR-v2** (``verify_erur_v2``): policy-parametric lifting that
+      delegates the precondition to the policy's own
+      ``drift_precondition`` method (ADR-0040). Reports HOLDS iff the
+      policy's *own* contract is satisfied. v0.2.4 ships v2 as a
+      generic verifier; the paper §8.4 dual matrix is generated from
+      this script.
     """
     baud = verify_baud(
         mcap_path,
         min_outcomes=baud_min_outcomes,
         downgrade_threshold=baud_downgrade_threshold,
     )
-    erur = verify_erur(
+    erur_v1 = verify_erur(
         mcap_path,
         min_outcomes=baud_min_outcomes,
         downgrade_threshold=baud_downgrade_threshold,
+    )
+    erur_v2 = verify_erur_v2(
+        mcap_path,
+        drift_predicates={policy.policy_id: policy.drift_precondition},
     )
     md = verify_md(mcap_path)
     rlb = verify_rlb(mcap_path, max_history=_FEEDBACK_MAX_HISTORY)
@@ -264,7 +285,15 @@ def _verify_all_with_baud_params(
         min_outcomes=baud_min_outcomes,
         downgrade_threshold=baud_downgrade_threshold,
     )
-    return baud.holds, erur.holds, md.holds, rlb.holds, fpb.holds, fpb.fire_fraction
+    return (
+        baud.holds,
+        erur_v1.holds,
+        erur_v2.holds,
+        md.holds,
+        rlb.holds,
+        fpb.holds,
+        fpb.fire_fraction,
+    )
 
 
 def main() -> None:
@@ -300,10 +329,19 @@ def main() -> None:
         mcap_path = (out_dir / f"compare_policy_{slug}.mcap").resolve()
         decisions, levels = _run_smoke_with_policy(mcap_path, policy)
         sha = hashlib.sha256(mcap_path.read_bytes()).hexdigest()
-        baud_h, erur_h, md_h, rlb_h, fpb_h, fire_frac = _verify_all_with_baud_params(
+        (
+            baud_h,
+            erur_v1_h,
+            erur_v2_h,
+            md_h,
+            rlb_h,
+            fpb_h,
+            fire_frac,
+        ) = _verify_all_with_baud_params(
             mcap_path,
             baud_min_outcomes=_FEEDBACK_MIN_OUTCOMES,
             baud_downgrade_threshold=_FEEDBACK_DOWNGRADE_THRESHOLD,
+            policy=policy,
         )
         rows.append(
             PolicyComparisonRow(
@@ -315,7 +353,8 @@ def main() -> None:
                 calibrated_levels_observed=levels,
                 baud_holds=baud_h,
                 baud_fire_fraction=round(fire_frac, 4),
-                erur_holds=erur_h,
+                erur_v1_holds=erur_v1_h,
+                erur_v2_holds=erur_v2_h,
                 md_holds=md_h,
                 rlb_holds=rlb_h,
                 fpb_holds=fpb_h,
@@ -337,7 +376,8 @@ def main() -> None:
                 "calibrated_levels_observed": r.calibrated_levels_observed,
                 "baud_holds": r.baud_holds,
                 "baud_fire_fraction": r.baud_fire_fraction,
-                "erur_holds": r.erur_holds,
+                "erur_v1_holds": r.erur_v1_holds,
+                "erur_v2_holds": r.erur_v2_holds,
                 "md_holds": r.md_holds,
                 "rlb_holds": r.rlb_holds,
                 "fpb_holds": r.fpb_holds,
@@ -354,14 +394,15 @@ def main() -> None:
     print(f"Wrote {json_path}")
     print()
     print(
-        f"{'Policy':40s} {'BAUD':>6s} {'ERUR':>6s} {'MD':>4s} {'RLB':>4s} {'FPB':>4s} "
-        f"{'fire_frac':>10s}"
+        f"{'Policy':40s} {'BAUD':>6s} {'ERUR-v1':>8s} {'ERUR-v2':>8s} "
+        f"{'MD':>4s} {'RLB':>4s} {'FPB':>4s} {'fire_frac':>10s}"
     )
     for r in rows:
         print(
             f"{r.policy_label:40s} "
             f"{'OK' if r.baud_holds else 'VIOL':>6s} "
-            f"{'OK' if r.erur_holds else 'VIOL':>6s} "
+            f"{'OK' if r.erur_v1_holds else 'VIOL':>8s} "
+            f"{'OK' if r.erur_v2_holds else 'VIOL':>8s} "
             f"{'OK' if r.md_holds else 'VIOL':>4s} "
             f"{'OK' if r.rlb_holds else 'VIOL':>4s} "
             f"{'OK' if r.fpb_holds else 'VIOL':>4s} "
