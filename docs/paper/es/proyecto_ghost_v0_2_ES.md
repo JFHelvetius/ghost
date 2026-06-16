@@ -1249,10 +1249,15 @@ que las secciones §Scope per-propiedad de los ADRs.
   las propiedades targetan los policies específicos de referencia.
   Cada policy no-referencia necesitaría su propio ADR, su propia
   especialización del verificador, y su propio spec TLA+.
-- **TLC bounded.** La prueba TLA+ es exhaustiva sobre un espacio de
-  estados finito en constantes pequeñas; comportamiento en
-  constantes de escala de producción descansa en los property
-  tests, no en la prueba TLA+.
+- **TLC bounded, cobertura unbounded parcial.** TLC es exhaustiva
+  sobre el espacio de estados finito en cada `W` configurada.
+  v0.2.5 entrega un sweep paramétrico sobre `W ∈ {4, 8, 16}` (§6.3,
+  ADR-0038) y una prueba manual rigurosa del teorema unbounded;
+  la prueba TLAPS-mecánica completa de la afirmación unbounded
+  queda abierta. El outline TLAPS en `Rlb_unbounded.tla` contiene
+  la estructura de lemmas + discharge guidance por step para un
+  futuro contributor con TLAPS instalado (Linux/macOS; Windows
+  nativo no soportado).
 - **Bridge Python↔TLA+ por inspección.** Una divergencia futura
   entre el código Python y la definición TLA+ podría silenciosamente
   debilitar el claim. Mitigación: revisar y re-correr TLC en cada
@@ -1294,8 +1299,16 @@ que las secciones §Scope per-propiedad de los ADRs.
   Abierto: motion-capture y RTK-GPS están enumerados pero sin
   implementar; adapters ROSBag / EuRoC MAV y un stack no-PX4
   siguen abiertos.
-- **ADR-0038 (candidate)**: prueba TLAPS de la versión unbounded de
-  la cota de latencia de recuperación y del teorema de partición.
+- **ADR-0038 (aceptado con discharge parcial, v0.2.5)**: evidencia
+  unbounded para RLB-v1. Entrega tres artefactos: (1) sweep
+  paramétrico TLC en `W ∈ {4, 8, 16}` (mecánico, enumeración
+  completa de estados por escala), (2) prueba manual rigurosa del
+  teorema unbounded sin dependencia de `W` en los argumentos
+  (auditable, no SMT-checked), y (3) outline TLAPS refinado con
+  discharge guidance per lemma. Una prueba TLAPS-mecánica completa
+  queda abierta como follow-up ADR-0042 candidate. La prueba TLAPS
+  unbounded del partition theorem es independiente y queda como
+  future work.
 - **ADR-0039 (accepted, v0.2.5)**: FPB-v2 estadístico. Ships
   Hoeffding closed-form (default, stdlib-only) y Clopper-Pearson
   exact (opt-in, SciPy) cotas superiores unilaterales sobre la

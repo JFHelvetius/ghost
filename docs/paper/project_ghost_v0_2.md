@@ -927,12 +927,38 @@ transient regime (`N ≤ W`); in the sustained regime no recovery
 transition occurs during drift, and the property is vacuously held
 on the captured trace until drift ends.
 
-`Rlb.tla` proves the theorem by TLC over a bounded abstract model
-(`W=4`); a TLAPS proof outline for the unbounded case lives at
-[`docs/proofs/Rlb_unbounded.tla`](docs/proofs/Rlb_unbounded.tla)
-with the discharge plan documented at
-[`docs/proofs/TLAPS_roadmap.md`](docs/proofs/TLAPS_roadmap.md).
-Lifting that outline to a verified proof is a candidate ADR-0038.
+**Evidence for the unbounded statement.** `Rlb.tla` proves the
+theorem by TLC over a bounded abstract model (`W=4`). v0.2.5
+extends that with three further artefacts (ADR-0038, accepted with
+partial discharge):
+
+1. **TLC parametric sweep** over `W ∈ {4, 8, 16}`, exhaustively
+   model-checked by
+   [`docs/paper/scripts/run_rlb_tlc_sweep.py`](docs/paper/scripts/run_rlb_tlc_sweep.py).
+   Each `W` enumerates the full reachable state space (25, 81, 289
+   distinct states respectively) and reports `INV_RLB` holds; the
+   JSON artefact at
+   [`docs/paper/outputs/rlb_tlc_sweep/sweep.json`](docs/paper/outputs/rlb_tlc_sweep/sweep.json)
+   carries the per-`W` metrics. This is *empirical* evidence the
+   bound generalises across structurally distinct `W`.
+2. **Rigorous hand proof of the unbounded theorem** at
+   [`docs/proofs/Rlb_unbounded_handproof.md`](docs/proofs/Rlb_unbounded_handproof.md):
+   four lemmas + theorem by structural induction, with no `W`
+   dependence in the arguments. Auditable line by line; not
+   SMT-checked.
+3. **TLAPS outline with discharge guidance per lemma** at
+   [`docs/proofs/Rlb_unbounded.tla`](docs/proofs/Rlb_unbounded.tla),
+   refined in v0.2.5 with per-lemma `BY`-step guidance and
+   estimated effort. The bridge document a future contributor
+   with TLAPS installed would use to mechanise the hand proof.
+   Discharge plan at
+   [`docs/proofs/TLAPS_roadmap.md`](docs/proofs/TLAPS_roadmap.md).
+
+The three artefacts compose into ADR-0038's "triple evidence"
+package. A full TLAPS-mechanical proof remains an open follow-up
+(ADR-0042 candidate); the v0.2.5 round ships the partial
+discharge, with §9 explicitly acknowledging which leg is still
+unfilled.
 
 ---
 
@@ -1618,9 +1644,15 @@ per-property §Scope sections of the ADRs.
   `AttitudeHoldReferencePolicy`). Each non-reference policy would
   need its own ADR, its own verifier specialisation (or a contract
   the verifier can dispatch on), and its own TLA+ spec.
-- **Bounded TLC.** The TLA+ proof is exhaustive over a finite state
-  space at small constants; behaviour at production-scale constants
-  rests on the property tests, not the TLA+ proof.
+- **Bounded TLC, partial unbounded coverage.** TLC is exhaustive
+  over the finite state space at each configured `W`. v0.2.5
+  ships a parametric sweep over `W ∈ {4, 8, 16}` (§6.3,
+  ADR-0038) and a rigorous hand proof of the unbounded theorem;
+  the full TLAPS-mechanical proof of the unbounded statement
+  remains open. The TLAPS outline at `Rlb_unbounded.tla`
+  contains the lemma structure + per-step discharge guidance for
+  a future contributor with TLAPS installed (Linux/macOS;
+  Windows native unsupported).
 - **Python↔TLA+ bridge by inspection.** A future divergence between
   the Python policy and the TLA+ definition could silently weaken the
   claim. Mitigation: review and re-run TLC on every change to the
@@ -1662,13 +1694,17 @@ per-property §Scope sections of the ADRs.
   unimplemented; ROSBag / EuRoC MAV adapters and a non-PX4
   stack remain open. Roadmap documented at
   [`docs/paper/venues/dataset_integration.md`](docs/paper/venues/dataset_integration.md).
-- **ADR-0038 (candidate)**: TLAPS proof of the unbounded version of
-  the recovery latency bound and of the partition theorem — replacing TLC's
-  "exhaustive over bounded state space" with "proved for any
-  finite W, M, K". Proof outline already at
-  [`docs/proofs/Rlb_unbounded.tla`](docs/proofs/Rlb_unbounded.tla);
-  discharge plan at
-  [`docs/proofs/TLAPS_roadmap.md`](docs/proofs/TLAPS_roadmap.md).
+- **ADR-0038 (accepted with partial discharge, v0.2.5)**:
+  unbounded RLB-v1 evidence. Ships three artefacts: (1) TLC
+  parametric sweep at `W ∈ {4, 8, 16}` (mechanical, full state
+  enumeration at each scale), (2) rigorous hand proof of the
+  unbounded theorem with no `W` dependence in its arguments
+  (auditable, not SMT-checked), and (3) refined TLAPS outline
+  with per-lemma discharge guidance. A full TLAPS-mechanical
+  proof remains open as a candidate ADR-0042 follow-up. The
+  partition-theorem unbounded TLAPS proof is independent and
+  remains a future-work item. Sweep driver:
+  [`docs/paper/scripts/run_rlb_tlc_sweep.py`](docs/paper/scripts/run_rlb_tlc_sweep.py).
 - **ADR-0039 (accepted, v0.2.5)**: statistical FPB-v2. Ships
   closed-form Hoeffding (default, stdlib-only) and exact
   Clopper-Pearson (opt-in, SciPy) one-sided confidence upper

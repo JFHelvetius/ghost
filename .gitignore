@@ -91,3 +91,9 @@ site/
 .tex-build/
 paper-deliverables/
 
+# TLA+ tooling (CI downloads tla2tools.jar from upstream releases)
+tla2tools.jar
+# TLC scratch artefacts emitted next to the .tla file
+docs/proofs/states/
+docs/proofs/*.log
+

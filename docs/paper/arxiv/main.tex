@@ -763,6 +763,53 @@ $L_{\mathrm{observed}} = 38 = 7 + 32 - 1$. The integration test
 asserts the recovery transition fires at exactly cycle 39 and
 nowhere earlier or later.
 
+\subsection{Unbounded-W evidence (ADR-0038, v0.2.5)}
+\label{sec:rlb-unbounded}
+
+\texttt{Rlb.tla} proves \texttt{INV\_RLB} by TLC at $W = 4$.
+v0.2.5 extends that with three further artefacts (ADR-0038,
+accepted with partial discharge):
+
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item \textbf{TLC parametric sweep over $W \in \{4, 8, 16\}$.}
+        Driven by
+        \texttt{docs/paper/scripts/run\_rlb\_tlc\_sweep.py}; full
+        state-space enumeration at each scale (25, 81, 289
+        distinct states respectively). All three configurations
+        report \texttt{INV\_RLB} holds. JSON artefact at
+        \texttt{docs/paper/outputs/rlb\_tlc\_sweep/sweep.json}
+        with per-$W$ \texttt{states\_generated},
+        \texttt{distinct\_states} and \texttt{elapsed\_seconds}.
+        This is the \emph{empirical} half of the unbounded
+        evidence: the bound holds at three structurally distinct
+        scales.
+  \item \textbf{Rigorous hand proof of the unbounded theorem}
+        in
+        \texttt{docs/proofs/Rlb\_unbounded\_handproof.md}: four
+        lemmas + theorem by structural induction over the
+        accumulating-then-clean trace family
+        $\mathit{DirtyAcc}(N)$, $\mathit{CleanAfterDirty}(N, k)$,
+        with no $W$ dependence in the arguments. The hand proof
+        is auditable line by line; it is \emph{not} SMT-checked,
+        and that gap is exactly what the TLAPS leg below would
+        close.
+  \item \textbf{Refined TLAPS outline} at
+        \texttt{docs/proofs/Rlb\_unbounded.tla}: every lemma
+        statement is present with \texttt{PROOF OMITTED};
+        v0.2.5 adds per-lemma \texttt{DISCHARGE GUIDANCE}
+        blocks naming the specific \texttt{BY} steps, the
+        auxiliary lemmas to hoist, and the estimated effort.
+        A future contributor with a working TLAPS install
+        (Linux/macOS; Windows native unsupported) can use the
+        outline + hand proof together as the script for
+        discharging each obligation.
+\end{enumerate}
+
+The three together constitute the v0.2.5 "triple evidence"
+package for the unbounded RLB-v1 claim. The full TLAPS-mechanical
+proof remains an open follow-up (ADR-0042 candidate); the §9
+limitation explicitly acknowledges that leg is unfilled.
+
 % =======================================================================
 \section{Reproducibility surface}
 \label{sec:reproducibility}
@@ -1380,9 +1427,17 @@ Any disagreement fails the build.
         property semantics target specific reference policies.
         Non-reference policies would need their own ADRs, verifier
         specialisations, and TLA+ specs.
-  \item \textbf{Bounded TLC.} The TLA+ proofs are exhaustive over
-        finite state spaces at small constants; behaviour at
-        production-scale constants rests on the property tests.
+  \item \textbf{Bounded TLC, partial unbounded coverage.}
+        TLC is exhaustive at each configured $W$. v0.2.5 ships a
+        parametric sweep over $W \in \{4, 8, 16\}$ and a
+        rigorous hand proof of the unbounded theorem
+        (\S\ref{sec:rlb-unbounded}, ADR-0038); the full
+        TLAPS-mechanical proof of the unbounded statement
+        remains open. The TLAPS outline at
+        \texttt{Rlb\_unbounded.tla} contains the lemma structure
+        + per-step discharge guidance for a future contributor
+        with TLAPS installed (Linux/macOS; Windows native
+        unsupported).
   \item \textbf{Python\,$\leftrightarrow$\,TLA+ bridge by
         inspection.} A future divergence could silently weaken the
         claim. Mitigation: review and re-run TLC on every change
@@ -1417,8 +1472,13 @@ Any disagreement fails the build.
 \begin{itemize}
   \item TLA+ spec for FPB-v1 closing the formal-verification
         coverage of the full property set.
+  \item TLAPS-mechanical discharge of the unbounded RLB-v1
+        outline (\S\ref{sec:rlb-unbounded}; v0.2.5 ships the
+        sweep + hand proof legs, leaving the SMT-checked
+        certificate to a future contributor with TLAPS
+        installed).
   \item TLAPS proof of the unbounded version of the partition
-        theorem and of the recovery latency bound.
+        theorem (separate from the RLB-v1 leg above).
   \item HAL backend campaign lifting the reproducibility surface
         from simulation to flight logs.
   \item Conformance suite populating the \texttt{conformance}

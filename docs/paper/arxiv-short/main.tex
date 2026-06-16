@@ -385,9 +385,15 @@ Appendix~\ref{app:eval}: six-category violation matrix
         SITL GT topics and non-PX4 stacks remain under ADR-0037.
   \item \textbf{Reference policies only.} TLA+ specs target the
         reference. Non-reference policies need their own.
-  \item \textbf{Bounded TLC.} Behaviour at production-scale
-        constants relies on property tests; TLA+ fills the
-        small-but-exhaustive corner.
+  \item \textbf{Bounded TLC, partial unbounded coverage.}
+        v0.2.5 extends TLC's $W = 4$ baseline with a parametric
+        sweep at $W \in \{4, 8, 16\}$ (all green, 25/81/289
+        distinct states) and a rigorous hand proof of the
+        unbounded RLB-v1 theorem (no $W$ dependence in the
+        argument). The full TLAPS-mechanical certificate is
+        the open follow-up under ADR-0038. The TLAPS outline
+        ships per-lemma discharge guidance for a future
+        contributor (Linux/macOS install required).
   \item \textbf{Python$\leftrightarrow$TLA+ bridge by inspection.}
         Automating it is future work.
 \end{itemize}

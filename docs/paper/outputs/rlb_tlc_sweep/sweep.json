@@ -1,0 +1,41 @@
+{
+  "W_values": [
+    4,
+    8,
+    16
+  ],
+  "all_W_INV_RLB_holds": true,
+  "constants_swept": "W (MAX_DRIFT = W per config)",
+  "experiment": "rlb_tlc_parametric_sweep",
+  "results": [
+    {
+      "W": 4,
+      "config": "Rlb.cfg",
+      "distinct_states": 25,
+      "elapsed_seconds": 0.892,
+      "exit_code": 0,
+      "invariant_holds": true,
+      "states_generated": 29
+    },
+    {
+      "W": 8,
+      "config": "Rlb_W8.cfg",
+      "distinct_states": 81,
+      "elapsed_seconds": 0.939,
+      "exit_code": 0,
+      "invariant_holds": true,
+      "states_generated": 89
+    },
+    {
+      "W": 16,
+      "config": "Rlb_W16.cfg",
+      "distinct_states": 289,
+      "elapsed_seconds": 0.918,
+      "exit_code": 0,
+      "invariant_holds": true,
+      "states_generated": 305
+    }
+  ],
+  "schema_version": 1,
+  "spec": "docs/proofs/Rlb.tla"
+}
