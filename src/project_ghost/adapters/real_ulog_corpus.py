@@ -218,6 +218,9 @@ def _emit_matrix_json(
             "fpb_fire_fraction": round(
                 results.per_ulog[p.name].nominal.fpb_fire_fraction, 4
             ),
+            "groundtruth_source": (
+                results.per_ulog[p.name].nominal.groundtruth_source.value
+            ),
             "size_bytes": p.stat().st_size if p.exists() else None,
         }
         for p in ulog_paths

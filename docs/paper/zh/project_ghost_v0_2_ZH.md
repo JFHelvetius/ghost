@@ -882,12 +882,84 @@ never-PROCEED 策略也违反 ERUR-v1 的 "K 个失效周期后释放" 分支。
 `docs/paper/outputs/multi_ulog_discrimination/matrix.json`，
 若活跃 ULog 不变式回归则以非零退出码退出。六个集成测试
 （`tests/adapters/test_real_ulog_corpus.py`）固定矩阵形状、
-活跃 ULog 不变式、静止 ULog "≤ 2/6 检测" 健康检查和 JSON 工件
-schema。
+活跃 ULog 不变式、静止 ULog "SITL GT 自动检测" 不变式
+（§8.8.2）和 JSON 工件 schema。
 
 有缺陷的替换在策略层；没有任何 buggy 运行飞行。推广到
 **非 PX4** 飞行栈（ROSBag、ArduPilot、EuRoC）仍是 ADR-0037
 路线图的范围。
+
+#### 8.8.2 独立 GT 关闭静止 ULog gap
+
+§8.8.1 报告在 `sample_logging_tagged.ulg` 上验证器对 4/6 buggy
+类别返回 HOLDS —— 有信息的非判别，因为 BAUD-v1 的漂移前置
+条件从未在该 ULog 触发。该行就是 §8.8.2 在 v0.2.5 中关闭的
+残留 gap。
+
+**§8.8.1 在该 ULog 上为何空真。** 闭环管道计算
+`divergence = predict(belief) − ground_truth`，而 GT 流从
+*同一* ULog 的 `vehicle_local_position` topic 重建 —— 即代理
+自己的 EKF2 估计。在静止段，EKF2 估计几乎不动（报告的
+x-range ≈ 2 mm），静止信念几乎不偏离。验证器对任何前置条件
+要求观察到漂移的属性正确报告 HOLDS，但 GT 信号**按构造与
+代理的融合自洽** —— 实验无法证伪代理。
+
+**§8.8.2 改变了什么。** `sample_logging_tagged.ulg` 携带
+`vehicle_local_position_groundtruth` + `vehicle_attitude_groundtruth`，
+由 PX4 SITL 模拟器直接发出，**与 EKF2 独立**。该 ULog 上的 GT
+姿态 x-range ≈ 33 mm —— EKF2 隐藏了悬停设定点附近的次厘米
+振荡。v0.2.5 添加 `project_ghost.adapters.px4_ulog.GroundTruthSource`
+和一个自动检测器，当 GT topic 存在时将 ULog 从 `EKF2_FALLBACK`
+切换到 `SITL_SIMULATOR`。位姿适配器、验证器和 MCAP schema
+未改变；只有 GT 源翻转。
+
+**同一静止 ULog，同一 buggy 组件，同一验证器的 A/B：**
+
+| 指标 | `EKF2_FALLBACK` (v0.2.4) | `SITL_SIMULATOR` (v0.2.5) |
+|---|---:|---:|
+| FPB `fire_fraction` | 0.0000 | 0.8585 |
+| 判别类别数 | 2 / 6 | **6 / 6** |
+| `all_discriminate` | False | **True** |
+
+§8.8.1 中 4 个空真 HOLDS 的类别在独立 GT 下都正确翻转。已经
+工作的两个继续工作。
+
+**刷新的语料库矩阵。** 启用自动检测后，语料库矩阵全绿
+（**18/18 单元判别**，`all_discriminate=True`）。15/18 隔离；
+3 个非隔离单元全是 `calibrator_invents_confidence`，与 §8.8
+的 BAUD-v1 ∧ MD-v1 共违规行相同。3 个 ULog 中的 2 个仍使用
+`EKF2_FALLBACK`（`sample.ulg`、`sample_appended.ulg` 没有 SITL
+GT topics），但它们的飞行*不*静止
+（`fire_fraction` ≈ 0.94 / 0.98），所以即使在循环 GT 下前置
+条件也会触发。
+
+**审计轨迹。** `matrix.json` 工件带有每 ULog 的
+`groundtruth_source` 字段（`"sitl_simulator"` 或
+`"ekf2_fallback"`）；每个 verdict bundle 上的
+`RealULogSmokeSummary` 携带相同信息。审稿人可以 `grep` JSON
+验证哪些单元使用独立 GT，哪些回退到代理自己的估计。将
+`ekf2_fallback` 行视为"已验证"是 §8.8.2 结果可能被误读的唯一
+方式；显式字段使该误读无法静默发生。
+
+**§8.8.2 尚未关闭什么。** 两个诚实的限制：
+
+- `sample.ulg` 和 `sample_appended.ulg` 没有 SITL GT topics。
+  它们全绿列依赖于飞行本身在 EKF2 fallback 下触发漂移前置
+  条件；如果未来维护者在 `sample.ulg` 的静止变体上重新运行
+  §8.8.2，这些列将回退到空真 HOLDS。
+- SITL GT 独立于 EKF2 但不独立于模拟器物理。未来 ADR-0037
+  贡献者关闭真实硬件飞行将从动作捕捉或 RTK GPS 获取 GT；
+  enum 已枚举那些槽，尽管只实现了 `SITL_SIMULATOR`。
+
+**可重现性。** 重新运行
+`python docs/paper/scripts/run_multi_ulog_corpus.py` —— 自动
+检测是默认。六个 smoke-A/B 测试
+（`tests/adapters/test_real_ulog_smoke_gt_source.py`）固定
+`fire_fraction` 定量提升、自动检测结果和 SITL-on-real-only-log
+错误情况。六个适配器测试
+（`tests/adapters/test_px4_ulog_groundtruth.py`）固定
+`detect_groundtruth_source`、解析的 GT 样本的时间顺序不变式、
+单位范数四元数不变式和捆绑语料库 GT 可用性 fixture。
 
 ### 8.9 跨副本和跨机器决定论
 
@@ -912,23 +984,27 @@ JSON 的 SHA-256。
   决策策略更改时审查并重新运行 TLC。
 - **统计 FPB 超出范围。** FPB-v1 是观察性的；带 Monte Carlo 界
   限的统计 FPB-v2 是未来 ADR 候选。
-- **静止 ULog 上的空真 HOLDS。** §8.8.1 诚实报告，在语料库的
-  第三个 ULog（`fire_fraction = 0`）上，六个 buggy 类别中的
-  四个在 nominal 和 buggy 之间产生 HOLDS，因为 BAUD-v1 的漂移
-  前置条件从未被记录段触发。验证器是正确的（"没有触发，没有
-  违反"），但作为判别测试该行不具信息量。ADR-0037 的"独立
-  GT 源"缓解通过从非自洽参考获取漂移来关闭此问题，推迟到
-  v0.2.5。
+- **静止 ULog 上的空真 HOLDS（v0.2.5 为 SITL 关闭，硬件仍开放）。**
+  §8.8.1 报告静止 ULog 上 EKF2 循环 GT 对 4/6 类别产生空真
+  HOLDS。§8.8.2 通过对任何携带 `vehicle_*_groundtruth` topic
+  的 ULog 自动检测独立 SITL GT track 来关闭该 gap —— 刷新的
+  语料库矩阵为 18/18 绿色。剩余诚实 gap：对于没有 SITL GT
+  topic（也没有外部参考）的真实硬件 ULog，管道仍回退到 EKF2，
+  存在同样的空真 HOLDS 风险。`RealULogSmokeSummary` 的
+  `groundtruth_source` 字段暴露了 fallback，使审稿人不会将其
+  误认为验证；动作捕捉 / RTK GPS GT 源在 enum 中枚举但未实现。
 
 ---
 
 ## 10. 未来工作
 
-- **ADR-0037（部分解决，v0.2.4）**：真实飞行数据集成。
-  v0.2.4 交付 PX4 ULog adapter 并在 3-ULog SITL 语料库上演练
-  （§8.8.1）；矩阵在两个非静止 ULog 上全绿，在静止 ULog 上
-  信息性部分。ROSBag / EuRoC MAV adapter 和非 PX4 栈仍待开放，
-  静止段的"独立 GT 源"缓解也是如此。
+- **ADR-0037（进一步解决，v0.2.5）**：真实飞行数据集成。
+  v0.2.4 交付 PX4 ULog adapter 和 3-ULog SITL 语料库
+  （§8.8.1）。v0.2.5（§8.8.2）交付 `GroundTruthSource` enum
+  + 自动检测器，关闭携带 SITL GT topic 的任何 ULog 的静止
+  ULog 空真 HOLDS gap —— 语料库矩阵现在是 18/18 绿色。
+  开放：动作捕捉和 RTK-GPS 在 enum 中枚举但未实现；
+  ROSBag / EuRoC MAV adapter 和非 PX4 栈仍待开放。
 - **ADR-0038（候选）**：恢复延迟界限 unbounded 版本和分区定理的
   TLAPS 证明。
 - **ADR-0039（候选）**：基于 Monte Carlo 对经验 fire rate 的统

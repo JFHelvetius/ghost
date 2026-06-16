@@ -55,10 +55,17 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from dataclasses import replace as _dc_replace
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Final
 
-from project_ghost.adapters.px4_ulog import parse_ulog_pose_samples
+from project_ghost.adapters.px4_ulog import (
+    GroundTruthSource,
+    ULogGroundTruthSample,
+    detect_groundtruth_source,
+    parse_ulog_groundtruth_samples,
+    parse_ulog_pose_samples,
+)
 from project_ghost.adapters.real_ulog_smoke import (
     RealULogSmokeSummary,
     _run_real_ulog_pipeline,
@@ -187,6 +194,8 @@ def _run_buggy_case(
     *,
     n_pose_samples_in_ulog: int,
     ulog_sha256: str,
+    gt_samples: list[ULogGroundTruthSample] | None = None,
+    groundtruth_source: GroundTruthSource = GroundTruthSource.EKF2_FALLBACK,
 ) -> RealULogDiscriminationCell:
     """Run one buggy category against the same real-ULog samples and
     return the discrimination cell.
@@ -245,12 +254,14 @@ def _run_buggy_case(
         decision_policy=decision_policy,
         actuation_policy=actuation_policy,
         fake_uncertain_raw=fake_uncertain_raw,
+        gt_samples=gt_samples,
     )
     summary = _verify_all_and_bundle(
         output_mcap_path,
         n_pose_samples_in_ulog=n_pose_samples_in_ulog,
         n_cycles=n_cycles,
         ulog_sha256=ulog_sha256,
+        groundtruth_source=groundtruth_source,
     )
 
     expected = _expected_violator_for(category)
@@ -267,8 +278,6 @@ def _run_buggy_case(
             downgrade_threshold=_FEEDBACK_DOWNGRADE_THRESHOLD,
             max_fire_fraction=_FPB_TIGHT_THRESHOLD,
         )
-        from dataclasses import replace as _dc_replace
-
         summary = _dc_replace(summary, fpb_holds=fpb_tight.holds)
 
     discriminates = not _holds_by_id(summary, expected)
@@ -285,8 +294,9 @@ def run_real_ulog_discrimination(
     out_dir: Path,
     *,
     max_cycles: int = _MAX_REAL_CYCLES,
+    groundtruth_source: GroundTruthSource | None = None,
 ) -> RealULogDiscriminationResults:
-    """Run the real-data discrimination experiment (paper §8.8).
+    """Run the real-data discrimination experiment (paper §8.8 / §8.8.2).
 
     Reads ``ulog_path`` once, subsamples to the Ghost cycle rate, and
     drives the closed-loop pipeline under (1) the reference policies
@@ -300,6 +310,16 @@ def run_real_ulog_discrimination(
     its expected property; in that case the verifier is shown to
     discriminate real telemetry against the same regressions caught
     on synthetic data.
+
+    ``groundtruth_source`` (v0.2.5, ADR-0037):
+
+    - ``None`` (default): auto-detect — upgrades to SITL GT when
+      the ULog carries ``vehicle_*_groundtruth`` topics. This is
+      the path paper §8.8.2 cites.
+    - ``GroundTruthSource.EKF2_FALLBACK``: force the legacy
+      circular GT (used by §8.8.2 to A/B the two sources).
+    - ``GroundTruthSource.SITL_SIMULATOR``: force SITL GT; raises
+      if the ULog has no GT topics.
     """
     samples = parse_ulog_pose_samples(ulog_path)
     if not samples:
@@ -307,6 +327,15 @@ def run_real_ulog_discrimination(
     sub_samples = _subsample_to_cycle_rate(samples, max_cycles)
     ulog_sha = hashlib.sha256(ulog_path.read_bytes()).hexdigest()
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    resolved_source = (
+        groundtruth_source
+        if groundtruth_source is not None
+        else detect_groundtruth_source(ulog_path)
+    )
+    gt_samples: list[ULogGroundTruthSample] | None = None
+    if resolved_source is GroundTruthSource.SITL_SIMULATOR:
+        gt_samples = parse_ulog_groundtruth_samples(ulog_path)
 
     # Nominal run — reference policies.
     nominal_mcap = out_dir / "real_ulog_nominal.mcap"
@@ -322,12 +351,14 @@ def run_real_ulog_discrimination(
         feedback_policy=feedback_ref,
         decision_policy=decision_ref,
         actuation_policy=actuation_ref,
+        gt_samples=gt_samples,
     )
     nominal = _verify_all_and_bundle(
         nominal_mcap,
         n_pose_samples_in_ulog=len(samples),
         n_cycles=n_cycles,
         ulog_sha256=ulog_sha,
+        groundtruth_source=resolved_source,
     )
 
     # Buggy runs — one per category.
@@ -340,6 +371,8 @@ def run_real_ulog_discrimination(
             cell_mcap,
             n_pose_samples_in_ulog=len(samples),
             ulog_sha256=ulog_sha,
+            gt_samples=gt_samples,
+            groundtruth_source=resolved_source,
         )
         cells.append(cell)
 

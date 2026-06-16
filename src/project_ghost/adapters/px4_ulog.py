@@ -46,6 +46,7 @@ from __future__ import annotations
 import bisect
 import math
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 try:
@@ -57,6 +58,41 @@ except ImportError:  # pragma: no cover
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+class GroundTruthSource(StrEnum):
+    """Where the closed-loop pipeline sources ground truth from
+    (ADR-0037, paper §8.8.2, v0.2.5).
+
+    The verifier compares the agent's stationary belief against a
+    ground-truth pose stream. Until v0.2.5 the GT stream was the same
+    ULog's ``vehicle_local_position`` (i.e. the EKF2 estimate), which
+    is the *agent's own fused state* — circular by construction. On
+    a stationary flight the EKF2 estimate barely moves and the verifier
+    reports vacuous HOLDS for every drift-precondition property
+    (paper §8.8.1 reported this honestly on
+    ``sample_logging_tagged.ulg``).
+
+    v0.2.5 closes the circularity for any ULog whose recorder emitted
+    ``vehicle_*_groundtruth`` topics (PX4 SITL with the GT logger
+    enabled). In that case the GT stream comes from the simulator's
+    true state, not from the agent's fusion, and the verifier sees
+    drift the EKF2 estimate hid.
+    """
+
+    EKF2_FALLBACK = "ekf2_fallback"
+    """The ULog has no independent GT track; the pipeline reuses the
+    ULog's ``vehicle_local_position`` as both estimate and GT. The
+    verifier verdict is operationally weak on stationary segments
+    (vacuous HOLDS — see paper §8.8.1). Verifier reports must mark
+    runs sourced this way as ``ekf2_fallback`` so downstream consumers
+    cannot mistake them for independent verification."""
+
+    SITL_SIMULATOR = "sitl_simulator"
+    """The ULog carries ``vehicle_local_position_groundtruth`` and
+    ``vehicle_attitude_groundtruth`` from the simulator. The GT stream
+    is independent of the agent's fusion and the verifier sees the
+    drift the EKF2 estimate hid."""
 
 
 class ULogParseError(Exception):
@@ -77,6 +113,8 @@ class ULogTopicNames:
 
     local_position: str = "vehicle_local_position"
     attitude: str = "vehicle_attitude"
+    local_position_groundtruth: str = "vehicle_local_position_groundtruth"
+    attitude_groundtruth: str = "vehicle_attitude_groundtruth"
 
 
 @dataclass(frozen=True)
@@ -242,6 +280,128 @@ def parse_ulog_pose_samples(
                     float(pos_dict["z"][i]),
                 ),
                 position_std_m=(eph, eph, epv),
+                quaternion_wxyz=quat,
+            )
+        )
+    return samples
+
+
+@dataclass(frozen=True)
+class ULogGroundTruthSample:
+    """One pose sample of *independent* ground truth.
+
+    Distinct from ``ULogPoseSample`` by intent and by the absence of
+    a ``position_std_m`` field: GT is a reference, not an estimate.
+    A verifier should never mistake a GT pose for an agent belief.
+    """
+
+    stamp_us: int
+    position_m: tuple[float, float, float]
+    quaternion_wxyz: tuple[float, float, float, float]
+
+
+def detect_groundtruth_source(ulog_path: Path) -> GroundTruthSource:
+    """Inspect a ULog and return the strongest independent GT source
+    it can provide.
+
+    A ULog qualifies for ``SITL_SIMULATOR`` iff it carries **both**
+    ``vehicle_local_position_groundtruth`` and
+    ``vehicle_attitude_groundtruth`` (the simulator emits these as a
+    pair when GT logging is enabled). Otherwise the function returns
+    ``EKF2_FALLBACK``; the caller is then responsible for marking any
+    derived verdict as circular.
+    """
+    _require_pyulog()
+    if not ulog_path.exists():
+        raise FileNotFoundError(f"ULog file not found: {ulog_path}")
+
+    ulog_obj = pyulog.ULog(str(ulog_path))
+    topics = {d.name for d in ulog_obj.data_list}
+    names = ULogTopicNames()
+    if (
+        names.local_position_groundtruth in topics
+        and names.attitude_groundtruth in topics
+    ):
+        return GroundTruthSource.SITL_SIMULATOR
+    return GroundTruthSource.EKF2_FALLBACK
+
+
+def parse_ulog_groundtruth_samples(
+    ulog_path: Path,
+    *,
+    topic_names: ULogTopicNames | None = None,
+) -> list[ULogGroundTruthSample]:
+    """Parse the independent GT track from a ULog (ADR-0037).
+
+    Raises ``ULogParseError`` if the ULog has no GT topics. Callers
+    that want a graceful fallback should consult
+    ``detect_groundtruth_source`` first; this function does **not**
+    silently fall back to ``vehicle_local_position`` because that
+    would re-introduce the circular GT that v0.2.5 exists to remove.
+
+    Time-alignment pairs each ``vehicle_local_position_groundtruth``
+    event with the nearest ``vehicle_attitude_groundtruth`` event
+    (binary search). The GT attitude topic is typically 200 Hz vs
+    the position topic at 50 Hz on PX4 SITL, so the nearest-neighbour
+    pairing is sub-cycle accurate for Ghost's 10 Hz cycle rate.
+    """
+    _require_pyulog()
+    if not ulog_path.exists():
+        raise FileNotFoundError(f"ULog file not found: {ulog_path}")
+
+    names = topic_names or ULogTopicNames()
+
+    ulog_obj = pyulog.ULog(str(ulog_path))
+    topics = {d.name for d in ulog_obj.data_list}
+    if names.local_position_groundtruth not in topics:
+        raise ULogParseError(
+            f"ULog has no {names.local_position_groundtruth!r} topic; "
+            "this ULog does not carry an independent GT track. Use "
+            "detect_groundtruth_source() before calling this function."
+        )
+    if names.attitude_groundtruth not in topics:
+        raise ULogParseError(
+            f"ULog has {names.local_position_groundtruth!r} but no "
+            f"{names.attitude_groundtruth!r}; the GT pose cannot be "
+            "assembled. PX4 SITL emits both as a pair — a ULog with "
+            "only one likely has a corrupted recording or a bespoke "
+            "logger configuration."
+        )
+
+    pos_data = _topic_by_name(ulog_obj, names.local_position_groundtruth)
+    att_data = _topic_by_name(ulog_obj, names.attitude_groundtruth)
+
+    pos_dict = pos_data.data  # type: ignore[attr-defined]
+    att_dict = att_data.data  # type: ignore[attr-defined]
+
+    for f in ("timestamp", "x", "y", "z"):
+        if f not in pos_dict:
+            raise ULogParseError(
+                f"{names.local_position_groundtruth} is missing required "
+                f"field {f!r}. Got: {sorted(pos_dict.keys())[:10]}..."
+            )
+    for f in ("timestamp", "q[0]", "q[1]", "q[2]", "q[3]"):
+        if f not in att_dict:
+            raise ULogParseError(
+                f"{names.attitude_groundtruth} is missing required field "
+                f"{f!r}. Got: {sorted(att_dict.keys())[:10]}..."
+            )
+
+    att_times = att_dict["timestamp"]
+    pos_times = pos_dict["timestamp"]
+
+    samples: list[ULogGroundTruthSample] = []
+    for i, t_pos in enumerate(pos_times):
+        idx_att = _nearest_index(att_times, int(t_pos))
+        quat = _quaternion_at(att_data, idx_att)
+        samples.append(
+            ULogGroundTruthSample(
+                stamp_us=int(t_pos),
+                position_m=(
+                    float(pos_dict["x"][i]),
+                    float(pos_dict["y"][i]),
+                    float(pos_dict["z"][i]),
+                ),
                 quaternion_wxyz=quat,
             )
         )

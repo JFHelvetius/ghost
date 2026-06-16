@@ -1081,12 +1081,117 @@ el corpus SITL, cierre completo en v0.2.5).
 sale con código no-cero si el invariante de ULogs activos
 regresa. Seis tests de integración en
 `tests/adapters/test_real_ulog_corpus.py` pinean la forma de la
-matriz, el invariante de ULogs activos, el sanity check
-estacionario "≤ 2/6 detecciones" y el schema del artefacto JSON.
+matriz, el invariante de ULogs activos, el invariante
+"auto-detect SITL GT" del ULog estacionario (§8.8.2) y el schema
+del artefacto JSON.
 
 La sustitución buggy es en la capa de policy; ningún run buggy
 voló nada. Generalizar a stacks **no-PX4** (ROSBag,
 ArduPilot, EuRoC) sigue siendo scope del roadmap ADR-0037.
+
+#### 8.8.2 GT independiente cierra el gap del ULog estacionario
+
+§8.8.1 reportó que en `sample_logging_tagged.ulg` el verificador
+devolvía HOLDS para 4/6 categorías buggy — no-discriminación
+informativa, porque la precondición de drift de BAUD-v1 nunca
+se ejercitaba en ese ULog. Esa fila es el gap residual que §8.8.2
+cierra en v0.2.5.
+
+**Por qué §8.8.1 era vacuo en ese ULog.** La pipeline closed-loop
+computaba `divergence = predict(belief) − ground_truth`, y el
+stream de GT se reconstruía del *mismo* topic
+`vehicle_local_position` del ULog — es decir, el propio estimado
+EKF2 del agente. En un segmento estacionario el estimado EKF2
+apenas se mueve (x-range reportado ≈ 2 mm) y la creencia
+estacionaria apenas diverge. El verificador reportaba HOLDS
+correctamente para cualquier propiedad cuya precondición
+requería drift observado, pero la señal GT era
+**auto-consistente con la fusión del agente por construcción** —
+el experimento no podía falsificar al agente.
+
+**Qué cambia §8.8.2.** `sample_logging_tagged.ulg` lleva
+`vehicle_local_position_groundtruth` + `vehicle_attitude_groundtruth`,
+emitidos directamente por el simulador SITL de PX4 e
+**independientes de EKF2**. La pose GT en ese ULog tiene
+x-range ≈ 33 mm — oscilación sub-cm alrededor del setpoint de
+hover que EKF2 ocultaba. v0.2.5 añade
+`project_ghost.adapters.px4_ulog.GroundTruthSource` y un
+auto-detector que cambia un ULog de `EKF2_FALLBACK` a
+`SITL_SIMULATOR` cuando los topics GT están presentes. El
+adapter de pose, el verificador y el esquema MCAP están
+inalterados; solo la fuente de GT flipea.
+
+**A/B en el mismo ULog estacionario, mismos componentes buggy,
+mismo verificador:**
+
+| Métrica | `EKF2_FALLBACK` (v0.2.4) | `SITL_SIMULATOR` (v0.2.5) |
+|---|---:|---:|
+| FPB `fire_fraction` | 0.0000 | 0.8585 |
+| Categorías que discriminan | 2 / 6 | **6 / 6** |
+| `all_discriminate` | False | **True** |
+
+Las 4 categorías que eran vacuamente HOLDS en §8.8.1
+(`calibrator_no_downgrade`, `decision_proceeds_anyway`,
+`actuation_non_safe_reason`, `fpb_threshold_exceeded`) flipean
+correctamente bajo el GT independiente. Las dos que ya
+funcionaban (`calibrator_invents_confidence`,
+`decision_never_proceeds`) siguen funcionando.
+
+**Matriz de corpus refrescada.** Con auto-detect habilitado:
+
+| Categoría de bug | `sample.ulg` | `sample_appended.ulg` | `sample_logging_tagged.ulg` |
+|---|:---:|:---:|:---:|
+| `calibrator_no_downgrade` | YES | YES | YES |
+| `calibrator_invents_confidence` | YES | YES | YES |
+| `decision_proceeds_anyway` | YES | YES | YES |
+| `decision_never_proceeds` | YES | YES | YES |
+| `actuation_non_safe_reason` | YES | YES | YES |
+| `fpb_threshold_exceeded` | YES | YES | YES |
+
+**18/18 celdas discriminan** (`all_discriminate=True`). 15/18
+están aisladas; las 3 no aisladas son todas
+`calibrator_invents_confidence`, la misma fila co-violación
+BAUD-v1 ∧ MD-v1 documentada en §8.8. Dos de los tres ULogs
+siguen con `EKF2_FALLBACK` (`sample.ulg`, `sample_appended.ulg`
+sin topics SITL GT); la matriz está verde en esos ULogs porque
+sus vuelos *no* son estacionarios (`fire_fraction` ≈ 0.94 /
+0.98), así que la precondición dispara incluso bajo GT
+circular.
+
+**Trazabilidad.** El artefacto `matrix.json` lleva un campo
+per-ULog `groundtruth_source` (`"sitl_simulator"` o
+`"ekf2_fallback"`); el `RealULogSmokeSummary` lo lleva en cada
+verdict bundle. Un reviewer puede `grep`-ear el JSON para
+verificar qué celdas usaron GT independiente y cuáles cayeron
+en el fallback EKF2. Tratar una fila `ekf2_fallback` como
+"verificada" es la única forma de malinterpretar §8.8.2; el
+campo explícito hace ese malentendido imposible de hacer
+silenciosamente.
+
+**Qué no cierra §8.8.2 todavía.** Dos limitaciones honestas:
+
+- `sample.ulg` y `sample_appended.ulg` no llevan topics SITL GT.
+  Sus columnas totalmente verdes dependen del vuelo mismo
+  ejercitando la precondición bajo fallback EKF2; si un futuro
+  mantenedor re-corre §8.8.2 sobre una variante estacionaria de
+  `sample.ulg`, esas columnas volverían a HOLDS vacuos.
+- SITL GT es independiente de EKF2 pero no de la física del
+  simulador. Un futuro contribuidor de ADR-0037 cerrando vuelos
+  de hardware real sourceará GT desde motion capture o RTK GPS;
+  el enum ya enumera esos slots aunque solo `SITL_SIMULATOR`
+  está implementado.
+
+**Reproducibilidad.** Re-correr
+`python docs/paper/scripts/run_multi_ulog_corpus.py` — auto-
+detect es el default. Seis tests smoke-A/B en
+`tests/adapters/test_real_ulog_smoke_gt_source.py` pinean el
+lift cuantitativo de `fire_fraction`, los resultados del
+auto-detect y el caso de error SITL-sobre-real-only-log. Seis
+tests de adapter en `tests/adapters/test_px4_ulog_groundtruth.py`
+pinean `detect_groundtruth_source`, el invariante orden-
+cronológico de las muestras GT parseadas, el invariante de
+norma-unidad de quaterniones y la fixture de disponibilidad GT
+en el corpus bundleado.
 
 ### 8.9 Determinismo cross-replicates y cross-machine
 
@@ -1122,29 +1227,34 @@ que las secciones §Scope per-propiedad de los ADRs.
 - **FPB estadístico fuera de scope.** FPB-v1 es observacional; un
   FPB-v2 estadístico con cotas Monte Carlo es candidato ADR
   futuro.
-- **HOLDS vacuos en ULogs estacionarios.** §8.8.1 reporta
-  honestamente que sobre el tercer ULog del corpus
-  (`fire_fraction = 0`), cuatro de las seis categorías buggy
-  producen HOLDS entre nominal y buggy porque la precondición
-  de drift de BAUD-v1 nunca se ejercita en el segmento grabado.
-  El verificador es correcto ("nada disparó, nada que violar")
-  pero la fila es no-informativa como test de discriminación.
-  La mitigación "fuente de GT independiente" de ADR-0037
-  cierra esto sourceando drift desde una referencia
-  no-self-consistente; diferida a v0.2.5.
+- **HOLDS vacuos en ULogs estacionarios (cerrado en v0.2.5 para
+  SITL, abierto para hardware).** §8.8.1 reportaba que en el
+  ULog estacionario del corpus el GT-circular EKF2 producía
+  HOLDS vacuos para 4/6 categorías. §8.8.2 cierra ese gap para
+  cualquier ULog que lleve topics `vehicle_*_groundtruth`
+  auto-detectando el track SITL GT independiente — la matriz
+  refrescada del corpus es 18/18 verde. El gap honesto que
+  queda: para ULogs de hardware real sin topics SITL GT (sin
+  `_groundtruth` ni referencia externa), la pipeline sigue
+  cayendo en fallback EKF2 con el mismo riesgo de HOLDS vacuos.
+  El campo `groundtruth_source` de `RealULogSmokeSummary`
+  expone el fallback para que un reviewer no lo confunda con
+  verificación; las fuentes GT motion-capture / RTK GPS quedan
+  enumeradas en el enum pero sin implementar.
 
 ---
 
 ## 10. Future work
 
-- **ADR-0037 (parcialmente abordado, v0.2.4)**: integración con
-  datos de flight reales. v0.2.4 entrega un adapter PX4 ULog y lo
-  ejercita sobre un corpus SITL de 3 ULogs (§8.8.1); la matriz
-  está totalmente verde en los dos ULogs no-estacionarios y
-  parcialmente informativa en el estacionario. Adapters ROSBag /
-  EuRoC MAV y un stack no-PX4 quedan abiertos, igual que la
-  mitigación "fuente de GT independiente" para segmentos
-  estacionarios.
+- **ADR-0037 (más abordado, v0.2.5)**: integración con datos de
+  flight reales. v0.2.4 entregó el adapter PX4 ULog y el corpus
+  SITL de 3 ULogs (§8.8.1). v0.2.5 (§8.8.2) entrega el enum
+  `GroundTruthSource` + auto-detector, cerrando el gap de HOLDS
+  vacuos del ULog estacionario para cualquier ULog que lleve
+  topics SITL GT — la matriz del corpus es ahora 18/18 verde.
+  Abierto: motion-capture y RTK-GPS están enumerados pero sin
+  implementar; adapters ROSBag / EuRoC MAV y un stack no-PX4
+  siguen abiertos.
 - **ADR-0038 (candidate)**: prueba TLAPS de la versión unbounded de
   la cota de latencia de recuperación y del teorema de partición.
 - **ADR-0039 (candidate)**: FPB-v2 estadístico con cota Monte Carlo

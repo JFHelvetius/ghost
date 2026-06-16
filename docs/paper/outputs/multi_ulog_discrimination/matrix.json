@@ -1,11 +1,11 @@
 {
-  "all_discriminate": false,
+  "all_discriminate": true,
   "all_isolated": false,
   "detection_matrix": {
     "actuation_non_safe_reason": {
       "sample.ulg": true,
       "sample_appended.ulg": true,
-      "sample_logging_tagged.ulg": false
+      "sample_logging_tagged.ulg": true
     },
     "calibrator_invents_confidence": {
       "sample.ulg": true,
@@ -15,7 +15,7 @@
     "calibrator_no_downgrade": {
       "sample.ulg": true,
       "sample_appended.ulg": true,
-      "sample_logging_tagged.ulg": false
+      "sample_logging_tagged.ulg": true
     },
     "decision_never_proceeds": {
       "sample.ulg": true,
@@ -25,28 +25,31 @@
     "decision_proceeds_anyway": {
       "sample.ulg": true,
       "sample_appended.ulg": true,
-      "sample_logging_tagged.ulg": false
+      "sample_logging_tagged.ulg": true
     },
     "fpb_threshold_exceeded": {
       "sample.ulg": true,
       "sample_appended.ulg": true,
-      "sample_logging_tagged.ulg": false
+      "sample_logging_tagged.ulg": true
     }
   },
   "diagnostics": {
     "sample.ulg": {
       "cycles_run": 71,
       "fpb_fire_fraction": 0.9437,
+      "groundtruth_source": "ekf2_fallback",
       "size_bytes": 921631
     },
     "sample_appended.ulg": {
       "cycles_run": 200,
       "fpb_fire_fraction": 0.98,
+      "groundtruth_source": "ekf2_fallback",
       "size_bytes": 4548191
     },
     "sample_logging_tagged.ulg": {
       "cycles_run": 106,
-      "fpb_fire_fraction": 0.0,
+      "fpb_fire_fraction": 0.8585,
+      "groundtruth_source": "sitl_simulator",
       "size_bytes": 1942808
     }
   },
@@ -55,17 +58,17 @@
     "actuation_non_safe_reason": {
       "sample.ulg": true,
       "sample_appended.ulg": true,
-      "sample_logging_tagged.ulg": false
+      "sample_logging_tagged.ulg": true
     },
     "calibrator_invents_confidence": {
       "sample.ulg": false,
       "sample_appended.ulg": false,
-      "sample_logging_tagged.ulg": true
+      "sample_logging_tagged.ulg": false
     },
     "calibrator_no_downgrade": {
       "sample.ulg": true,
       "sample_appended.ulg": true,
-      "sample_logging_tagged.ulg": false
+      "sample_logging_tagged.ulg": true
     },
     "decision_never_proceeds": {
       "sample.ulg": true,
@@ -75,12 +78,12 @@
     "decision_proceeds_anyway": {
       "sample.ulg": true,
       "sample_appended.ulg": true,
-      "sample_logging_tagged.ulg": false
+      "sample_logging_tagged.ulg": true
     },
     "fpb_threshold_exceeded": {
       "sample.ulg": true,
       "sample_appended.ulg": true,
-      "sample_logging_tagged.ulg": false
+      "sample_logging_tagged.ulg": true
     }
   },
   "schema_version": 1,

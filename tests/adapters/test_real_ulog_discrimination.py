@@ -93,24 +93,57 @@ def test_buggy_mcap_shas_differ_from_nominal(
     results = run_real_ulog_discrimination(real_ulog_path, tmp_path)
     nominal_sha = results.nominal.mcap_sha256
     for cell in results.buggy_cells:
-        assert cell.summary.mcap_sha256 != nominal_sha
+        if cell.category is RealULogBugCategory.FPB_THRESHOLD_EXCEEDED:
+            # FPB_THRESHOLD_EXCEEDED reuses the reference producer
+            # components; only the verifier parameter changes, so the
+            # MCAP is byte-identical to the nominal by design. The cell
+            # still discriminates (verifier verdict flips) but the SHA
+            # equality is the load-bearing invariant for that category.
+            assert cell.summary.mcap_sha256 == nominal_sha
+        else:
+            assert cell.summary.mcap_sha256 != nominal_sha
 
 
-def test_discrimination_isolates_violation_to_baud(
+def test_each_buggy_cell_flips_its_expected_violator(
     real_ulog_path: Path, tmp_path: Path
 ) -> None:
-    """Both currently-shipped buggy categories attack BAUD-v1
-    specifically; the other four properties must remain HOLD on each
-    buggy run. This is what 'isolation' means in the discrimination
-    matrix.
+    """Each of the six buggy categories must flip *its own* expected
+    property (paper §8.8 6x6 verdict table) on the bundled real ULog.
+
+    The mapping comes from ``cell.expected_violator``: the verifier is
+    expected to report HOLDS for every other property of that row,
+    with the documented exception of CALIBRATOR_INVENTS_CONFIDENCE,
+    which legitimately co-violates BAUD-v1 and MD-v1 together (§8.8
+    co-violation row).
     """
     results = run_real_ulog_discrimination(real_ulog_path, tmp_path)
+    holds_by_id = {
+        "BAUD-v1": lambda s: s.baud_holds,
+        "ERUR-v1": lambda s: s.erur_holds,
+        "MD-v1": lambda s: s.md_holds,
+        "RLB-v1": lambda s: s.rlb_holds,
+        "FPB-v1": lambda s: s.fpb_holds,
+    }
     for cell in results.buggy_cells:
-        assert cell.summary.baud_holds is False
-        assert cell.summary.erur_holds is True
-        assert cell.summary.md_holds is True
-        assert cell.summary.rlb_holds is True
-        assert cell.summary.fpb_holds is True
+        # The expected violator must flip.
+        assert holds_by_id[cell.expected_violator](cell.summary) is False, (
+            f"{cell.category.value}: expected {cell.expected_violator} "
+            "to flip to VIOLATED, but it still HOLDS."
+        )
+        # All other properties must HOLD, except the documented
+        # CALIBRATOR_INVENTS_CONFIDENCE co-violation with BAUD-v1.
+        for prop_id, getter in holds_by_id.items():
+            if prop_id == cell.expected_violator:
+                continue
+            if (
+                cell.category is RealULogBugCategory.CALIBRATOR_INVENTS_CONFIDENCE
+                and prop_id == "BAUD-v1"
+            ):
+                continue
+            assert getter(cell.summary) is True, (
+                f"{cell.category.value}: {prop_id} unexpectedly flipped; "
+                f"only {cell.expected_violator} should have."
+            )
 
 
 def test_discrimination_is_deterministic(real_ulog_path: Path, tmp_path: Path) -> None:

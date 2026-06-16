@@ -1265,20 +1265,83 @@ two (\texttt{calibrator\_invents\_confidence},
 signal to fire and correctly flip on all three ULogs. The
 verifier is therefore doing what it claims: it flags exactly
 those producer bugs whose precondition the ULog actually
-exercises. The "independent GT source" mitigation is deferred
-to ADR-0037 / v0.2.5.
+exercises. The "independent GT source" mitigation is the topic
+of \S\ref{sec:independent-gt} (v0.2.5).
 
 Run \texttt{python docs/paper/scripts/run\_multi\_ulog\_corpus.py}
 to regenerate the matrix; six integration tests in
 \texttt{tests/adapters/test\_real\_ulog\_corpus.py} pin the
 matrix shape, the active-ULog invariant, the stationary-ULog
-"$\le$ 2/6 detections" sanity check, and the JSON artefact
-schema.
+SITL-GT auto-detect invariant (\S\ref{sec:independent-gt}),
+and the JSON artefact schema.
 
 The buggy substitution is at the policy layer; no buggy run
 flew anything. Generalising across \textbf{non-PX4} flight
 stacks (ROSBag, ArduPilot, EuRoC) remains scope for the wider
 ADR-0037 roadmap.
+
+\subsubsection*{Independent GT closes the stationary-ULog gap (v0.2.5)}
+\label{sec:independent-gt}
+
+The stationary-ULog row reported above is the residual gap
+v0.2.5 closes. The §8.8.1 pipeline reconstructed GT from the
+same ULog's \texttt{vehicle\_local\_position} topic --- the
+agent's own EKF2 estimate. On a stationary segment that estimate
+barely moves ($\sim$2~mm x-range) and any drift-preconditioned
+property HOLDS vacuously. The ULog
+\texttt{sample\_logging\_tagged.ulg}, however, carries
+\texttt{vehicle\_local\_position\_groundtruth} and
+\texttt{vehicle\_attitude\_groundtruth} emitted directly by the
+PX4 SITL simulator and \emph{independent of EKF2}. The GT pose
+on that ULog has $\sim$33~mm x-range --- sub-cm hover oscillation
+EKF2 hid.
+
+v0.2.5 adds \texttt{project\_ghost.adapters.px4\_ulog.}
+\texttt{GroundTruthSource} (\texttt{EKF2\_FALLBACK},
+\texttt{SITL\_SIMULATOR}) and an auto-detector that upgrades a
+ULog to SITL whenever both GT topics are present. The pose
+adapter, MCAP schema, and verifier are unchanged --- only the
+GT source flips.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{l r r}
+\toprule
+\textbf{Metric} & \texttt{EKF2\_FALLBACK} (v0.2.4) & \texttt{SITL\_SIMULATOR} (v0.2.5) \\
+\midrule
+FPB \texttt{fire\_fraction}     & 0.0000 & 0.8585 \\
+Categories that discriminate    & 2 / 6  & \textbf{6 / 6} \\
+\texttt{all\_discriminate}      & False  & \textbf{True}  \\
+\bottomrule
+\end{tabular}
+\caption{A/B on \texttt{sample\_logging\_tagged.ulg}, same buggy
+components and same verifier. Swapping the GT source from the
+agent's own EKF2 estimate to the SITL simulator's true pose
+lifts the precondition-fire rate from 0 to 0.86 and closes 4 of
+the 6 vacuously-HOLDS rows of \S\ref{sec:multi-ulog-corpus}.}
+\label{tab:independent-gt-ab}
+\end{table}
+
+The refreshed 3-ULog corpus matrix (with auto-detect on by
+default) is fully green: 18/18 cells discriminate. 15/18 isolate
+--- the 3 non-isolated cells are all
+\texttt{calibrator\_invents\_confidence}, the same BAUD-v1 $\wedge$
+MD-v1 co-violation from \S\ref{sec:realflight-discrim}. Two of
+the three ULogs still use \texttt{EKF2\_FALLBACK}
+(\texttt{sample.ulg}, \texttt{sample\_appended.ulg}); their
+columns are green because those flights are not stationary
+($\mathit{fire\_fraction}$ $\approx$ 0.94 / 0.98) and the
+precondition fires under circular GT anyway. The
+\texttt{matrix.json} artefact records the
+\texttt{groundtruth\_source} per ULog so a reviewer can verify
+which rows used independent GT vs the circular fallback.
+
+\textbf{What \S\ref{sec:independent-gt} does not yet close.}
+Real-hardware ULogs without SITL GT topics still rely on EKF2
+fallback with the same vacuous-HOLDS risk on stationary
+segments; motion-capture and RTK-GPS sources are enumerated in
+the \texttt{GroundTruthSource} enum but unimplemented. ROSBag,
+ArduPilot, and EuRoC adapters remain open under ADR-0037.
 
 \subsection{Determinism across replicates and machines}
 Within a single machine, replicate runs produce byte-identical
@@ -1315,16 +1378,19 @@ Any disagreement fails the build.
   \item \textbf{Statistical FPB out of scope.} FPB-v1 is
         observational; a statistical FPB-v2 with Monte Carlo
         bounds is a candidate future ADR.
-  \item \textbf{Vacuous holds on stationary ULogs.}
-        \S\ref{sec:multi-ulog-corpus} reports honestly that on
-        the corpus's stationary ULog ($\mathit{fire\_fraction} =
-        0$), four of the six buggy categories produce HOLDS
-        across nominal and buggy because BAUD-v1's drift
-        precondition is never exercised. The verifier is correct
-        ("nothing fired, nothing to violate") but the row is
-        uninformative as a discrimination test. The "independent
-        GT source" mitigation under ADR-0037 closes this; we
-        defer it to v0.2.5.
+  \item \textbf{Vacuous holds on stationary ULogs (closed in
+        v0.2.5 for SITL, open for hardware).}
+        \S\ref{sec:multi-ulog-corpus} reported the vacuous-HOLDS
+        rows under EKF2-circular GT.
+        \S\ref{sec:independent-gt} closes that gap for any ULog
+        with SITL GT topics by auto-detecting the independent
+        track --- the refreshed corpus matrix is 18/18 green.
+        The remaining honest gap: real-hardware ULogs without
+        SITL GT still rely on EKF2 fallback. The
+        \texttt{groundtruth\_source} field surfaces the fallback
+        so a reviewer cannot mistake it for verification;
+        motion-capture / RTK-GPS sources are enumerated but
+        unimplemented.
 \end{itemize}
 
 % =======================================================================

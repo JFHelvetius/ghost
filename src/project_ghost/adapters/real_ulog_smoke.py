@@ -45,12 +45,17 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from dataclasses import replace as _dc_replace
 from typing import TYPE_CHECKING, Any, Final
 
 import numpy as np
 
 from project_ghost.adapters.px4_ulog import (
+    GroundTruthSource,
+    ULogGroundTruthSample,
     ULogPoseSample,
+    detect_groundtruth_source,
+    parse_ulog_groundtruth_samples,
     parse_ulog_pose_samples,
 )
 from project_ghost.core.actuation import (
@@ -77,6 +82,7 @@ from project_ghost.core.prediction import (
 )
 from project_ghost.core.uncertainty.self_assessment import (
     AssessmentThresholds,
+    SelfAssessmentLevel,
     assess_belief,
 )
 from project_ghost.properties import (
@@ -122,7 +128,14 @@ _MIN_CYCLES_FOR_PIPELINE: Final[int] = 2  # need >= 2 cycles to compute divergen
 
 @dataclass(frozen=True)
 class RealULogSmokeSummary:
-    """Verdict bundle for a real-ULog end-to-end run."""
+    """Verdict bundle for a real-ULog end-to-end run.
+
+    ``groundtruth_source`` (v0.2.5, ADR-0037): records whether the
+    run sourced GT from an independent SITL track or from the same
+    EKF2 estimate the agent fused (circular). Reviewers and CI must
+    inspect this field; a HOLDS verdict under ``EKF2_FALLBACK`` on a
+    stationary segment is operationally weak (see paper §8.8.1).
+    """
 
     n_pose_samples_in_ulog: int
     n_cycles_run: int
@@ -136,6 +149,8 @@ class RealULogSmokeSummary:
     rlb_holds: bool
     fpb_holds: bool
     fpb_fire_fraction: float
+
+    groundtruth_source: GroundTruthSource = GroundTruthSource.EKF2_FALLBACK
 
 
 def _make_thresholds() -> AssessmentThresholds:
@@ -154,15 +169,18 @@ def _publish_state(sink: TelemetrySink, state: VehicleState) -> None:
 
 
 def _samples_to_ground_truth_fn(
-    samples: list[ULogPoseSample],
+    samples: list[ULogPoseSample] | list[ULogGroundTruthSample],
 ) -> Callable[[int], Pose]:
     """Build a ground-truth function over Ghost sim-time stamps from
-    the real ULog samples.
+    the supplied ULog samples.
 
     The mapping interpolates linearly in position between the two
     nearest ULog samples; orientation is set to the nearest sample's
     quaternion (no slerp — that would be over-engineering for a
-    vacuous-verdict demonstration).
+    vacuous-verdict demonstration). The function is agnostic to
+    whether the samples are EKF2 estimates (legacy, circular) or
+    independent SITL GT (v0.2.5, ADR-0037); both share the same
+    ``stamp_us`` / ``position_m`` / ``quaternion_wxyz`` shape.
     """
     if not samples:
         raise ValueError("no ULog samples")
@@ -234,6 +252,7 @@ def _run_real_ulog_pipeline(
     decision_policy: Any,
     actuation_policy: Any,
     fake_uncertain_raw: bool = False,
+    gt_samples: list[ULogGroundTruthSample] | None = None,
 ) -> int:
     """Run the Ghost closed-loop pipeline over real ULog pose samples
     with caller-supplied policies. Materialises the MCAP at
@@ -244,6 +263,12 @@ def _run_real_ulog_pipeline(
     The MCAP byte layout is identical when the same policies are
     passed; that is what makes the discrimination experiment a
     controlled A/B.
+
+    When ``gt_samples`` is provided (v0.2.5, ADR-0037), the
+    divergence comparison sources its GT from those samples instead
+    of the agent's own EKF2 estimate. This is what makes BAUD-v1's
+    drift precondition fire on stationary segments where the EKF2
+    estimate hid sub-cm oscillation in the true pose.
     """
     n_cycles = len(sub_samples)
     if n_cycles < _MIN_CYCLES_FOR_PIPELINE:
@@ -253,7 +278,9 @@ def _run_real_ulog_pipeline(
             "pipeline."
         )
 
-    gt_fn = _samples_to_ground_truth_fn(sub_samples)
+    gt_fn = _samples_to_ground_truth_fn(
+        gt_samples if gt_samples is not None else sub_samples,
+    )
     thresholds = _make_thresholds()
 
     # Oracle fusion seeded from the first real sample. This is a
@@ -310,11 +337,6 @@ def _run_real_ulog_pipeline(
                 # belief covariance), so we forcibly override the level
                 # for this category. The override is private to the
                 # buggy run; the nominal MCAP is unaffected.
-                from dataclasses import replace as _dc_replace
-
-                from project_ghost.core.uncertainty.self_assessment import (
-                    SelfAssessmentLevel,
-                )
                 raw = _dc_replace(raw, overall_level=SelfAssessmentLevel.UNCERTAIN)
             sa_adp.publish(raw)
 
@@ -348,6 +370,7 @@ def _verify_all_and_bundle(
     n_pose_samples_in_ulog: int,
     n_cycles: int,
     ulog_sha256: str,
+    groundtruth_source: GroundTruthSource = GroundTruthSource.EKF2_FALLBACK,
 ) -> RealULogSmokeSummary:
     """Run the five property verifiers against ``output_mcap_path``
     and assemble the verdict bundle.
@@ -385,6 +408,7 @@ def _verify_all_and_bundle(
         rlb_holds=rlb.holds,
         fpb_holds=fpb.holds,
         fpb_fire_fraction=fpb.fire_fraction,
+        groundtruth_source=groundtruth_source,
     )
 
 
@@ -393,6 +417,7 @@ def run_real_ulog_smoke(
     output_mcap_path: Path,
     *,
     max_cycles: int = _MAX_REAL_CYCLES,
+    groundtruth_source: GroundTruthSource | None = None,
 ) -> RealULogSmokeSummary:
     """End-to-end: real ULog → Ghost MCAP → property verdicts (reference policies).
 
@@ -406,11 +431,33 @@ def run_real_ulog_smoke(
     number of ULog samples (one per cycle, after subsampling to
     Ghost's 10 Hz rate). The MCAP SHA-256 is deterministic given the
     same ULog input.
+
+    ``groundtruth_source`` (v0.2.5, ADR-0037):
+
+    - ``None`` (default): auto-detect via
+      :func:`detect_groundtruth_source`. PX4 SITL logs with the GT
+      logger enabled are upgraded to ``SITL_SIMULATOR``; everything
+      else falls back to ``EKF2_FALLBACK`` with a recorded marker
+      in the summary.
+    - ``GroundTruthSource.EKF2_FALLBACK``: force the legacy
+      circular path even if SITL GT is available (used by paper
+      §8.8.2 to A/B the two GT sources on the same ULog).
+    - ``GroundTruthSource.SITL_SIMULATOR``: force SITL GT; raises
+      ``ULogParseError`` if the ULog has no GT topics.
     """
     samples = parse_ulog_pose_samples(ulog_path)
     if not samples:
         raise ValueError(f"ULog produced 0 pose samples: {ulog_path}")
     sub_samples = _subsample_to_cycle_rate(samples, max_cycles)
+
+    resolved_source = (
+        groundtruth_source
+        if groundtruth_source is not None
+        else detect_groundtruth_source(ulog_path)
+    )
+    gt_samples: list[ULogGroundTruthSample] | None = None
+    if resolved_source is GroundTruthSource.SITL_SIMULATOR:
+        gt_samples = parse_ulog_groundtruth_samples(ulog_path)
 
     feedback_policy = MahalanobisDowngradePolicy(
         min_outcomes=_FEEDBACK_MIN_OUTCOMES,
@@ -425,6 +472,7 @@ def run_real_ulog_smoke(
         feedback_policy=feedback_policy,
         decision_policy=decision_policy,
         actuation_policy=actuation_policy,
+        gt_samples=gt_samples,
     )
 
     ulog_sha = hashlib.sha256(ulog_path.read_bytes()).hexdigest()
@@ -433,6 +481,7 @@ def run_real_ulog_smoke(
         n_pose_samples_in_ulog=len(samples),
         n_cycles=n_cycles,
         ulog_sha256=ulog_sha,
+        groundtruth_source=resolved_source,
     )
 
 

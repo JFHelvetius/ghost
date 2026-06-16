@@ -92,63 +92,55 @@ def test_matrices_have_expected_shape(
         assert set(row.keys()) == {p.name for p in corpus_paths}
 
 
-def test_active_ulogs_discriminate_all_six_categories(
+def test_every_ulog_discriminates_every_category(
     corpus_paths: list[Path],
     corpus_results: tuple[MultiULogCorpusResults, Path],
 ) -> None:
-    """ULogs with ``fire_fraction > 0.9`` discriminate every category.
+    """With v0.2.5 (SITL GT auto-detect), every cell discriminates.
 
-    These are the cells the paper §8.8.1 claim rests on. If this
-    regresses, the §8.8.1 detection sub-claim is invalid and the
-    paper must be updated before merging.
+    Paper §8.8.2 reports the corpus matrix as fully green
+    (``all_discriminate=True``) once independent GT is sourced where
+    available. If this regresses, either the SITL GT path broke or
+    the EKF2 fallback regressed on a previously-active ULog — both
+    are paper-load-bearing failures.
     """
     results, _ = corpus_results
 
-    active = [
-        p.name for p in corpus_paths
-        if results.per_ulog[p.name].nominal.fpb_fire_fraction > 0.9
-    ]
-    assert active, "no active (fire_fraction > 0.9) ULog in corpus"
-
-    for cat, row in results.matrix.items():
-        for ulog_name in active:
-            assert row[ulog_name] is True, (
-                f"{cat} regressed on active ULog {ulog_name} "
-                f"(fire_fraction > 0.9 but discriminates=False)"
-            )
+    assert results.all_discriminate is True, (
+        "corpus matrix regressed below 18/18 cells. "
+        "Inspect matrix.json and identify which (category, ULog) cell "
+        "is now reporting HOLDS for both nominal and buggy."
+    )
 
 
-def test_stationary_ulog_holds_vacuously(
+def test_stationary_ulog_uses_sitl_gt(
     corpus_paths: list[Path],
     corpus_results: tuple[MultiULogCorpusResults, Path],
 ) -> None:
-    """ULogs with ``fire_fraction ≈ 0`` MUST report mostly HOLDS.
+    """``sample_logging_tagged.ulg`` MUST be upgraded to SITL GT.
 
-    Otherwise the verifier is flipping properties on a log where
-    no precondition has fired — that would be a false positive
-    and §8.8.1's honesty about "informative non-discrimination"
-    would be retroactively false. We allow up to 2/6 categories
-    to legitimately fire (calibrator_invents_confidence and
-    decision_never_proceeds can fire on stationary logs because
-    they do not require drift to be observed).
+    The whole point of v0.2.5 / paper §8.8.2 is closing the
+    "vacuous holds on stationary ULogs" gap. If the auto-detect
+    silently falls back to EKF2 on this ULog, the §8.8.2 claim is
+    retroactively false. The ULog carries
+    ``vehicle_local_position_groundtruth`` + ``vehicle_attitude_groundtruth``
+    (this is the fixture invariant the test pins).
     """
     results, _ = corpus_results
 
-    stationary = [
-        p.name for p in corpus_paths
-        if results.per_ulog[p.name].nominal.fpb_fire_fraction < 0.01
-    ]
-    if not stationary:
-        pytest.skip("no stationary ULog (fire_fraction < 0.01) in corpus")
-
-    for ulog_name in stationary:
-        detected = sum(
-            1 for row in results.matrix.values() if row.get(ulog_name) is True
-        )
-        assert detected <= 2, (
-            f"{ulog_name} fired {detected}/6 categories despite "
-            f"fire_fraction < 0.01 — likely a false-positive regression"
-        )
+    name = "sample_logging_tagged.ulg"
+    if name not in results.per_ulog:
+        pytest.skip(f"corpus does not include {name}")
+    summary = results.per_ulog[name].nominal
+    assert summary.groundtruth_source.value == "sitl_simulator", (
+        f"{name} should auto-detect SITL GT (PX4 SITL log with "
+        f"groundtruth topics). Got: {summary.groundtruth_source.value}"
+    )
+    # And the precondition must now actually fire (fire_fraction > 0).
+    assert summary.fpb_fire_fraction > 0.1, (
+        f"{name} with SITL GT should exercise BAUD-v1's drift "
+        f"precondition; got fire_fraction = {summary.fpb_fire_fraction}"
+    )
 
 
 def test_emit_json_writes_self_describing_artefact(
@@ -169,6 +161,11 @@ def test_emit_json_writes_self_describing_artefact(
     for diag in payload["diagnostics"].values():
         assert "fpb_fire_fraction" in diag
         assert "cycles_run" in diag
+        assert "groundtruth_source" in diag
+        assert diag["groundtruth_source"] in (
+            "ekf2_fallback",
+            "sitl_simulator",
+        )
     assert "detection_matrix" in payload
     assert "isolation_matrix" in payload
     assert isinstance(payload["all_discriminate"], bool)
