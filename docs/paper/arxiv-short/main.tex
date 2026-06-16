@@ -264,8 +264,13 @@ acted upon under uncertainty.} The five properties are:
   \item \textbf{RLB-v1.} \emph{Uncertainty cannot last
         indefinitely.} Recovery is bounded by
         $L \le \mathrm{peak} + W - 1$ (\S\ref{sec:mechanical}).
-  \item \textbf{FPB-v1.} \emph{Distrust must be measurable and
-        auditable.} Empirical fire rate exposed and pinned.
+  \item \textbf{FPB (v1 + v2, ADR-0035 / ADR-0039).}
+        \emph{Distrust must be measurable and auditable.} v1
+        exposes the empirical fire rate as a CI regression gate;
+        v2 (v0.2.5) reports a one-sided confidence upper bound
+        on the \emph{true} firing probability under Hoeffding
+        (stdlib) or Clopper-Pearson (SciPy) --- small samples
+        correctly fail tight bounds.
 \end{itemize}
 
 Each is verified by a pure function over the content-addressed

@@ -561,20 +561,49 @@ This is a *structural* bound, formalised in §6.4 as **the recovery latency boun
 proved tight by the drift-then-recovery smoke (`L = 38 = 7 + 32 − 1`,
 exactly).
 
-### 3.5 FPB-v1 — False Positive Bound observer (ADR-0035)
+### 3.5 FPB — False Positive Bound observer (ADR-0035, ADR-0039)
 
 > *The agent's distrust must be measurable and auditable, not
 > implicit.*
 
-**Output.** The empirical BAUD fire rate over the run
-(`fire_count / cycles_with_KNOWN_raw_belief`), exposed as a structured
-metric.
+Two contracts coexist:
 
-FPB-v1 is observational rather than declarative: it does not assert a
-universal upper bound on false positives under arbitrary noise models
-(that would require a statistical FPB-v2 with Monte Carlo
-infrastructure currently out of scope). It provides the **regression
-gate**: a single scalar that CI can pin per release.
+**FPB-v1 (ADR-0035, observational).** Output: the empirical BAUD
+fire rate over the run
+(`fire_count / cycles_with_KNOWN_raw_belief`), exposed as a
+structured metric. The verdict is
+`fire_fraction <= max_fire_fraction` — a point-estimate regression
+gate that CI can pin per release. v1 makes no claim about sample
+size or about the *underlying* firing probability.
+
+**FPB-v2 (ADR-0039, statistical; ships in v0.2.5).** Output: a
+one-sided confidence upper bound on the *true* firing probability
+``p`` given the observed sample ``(cycles_fires, cycles_total)``
+at a caller-chosen ``confidence_level`` (default 0.95). The verdict
+is `confidence_upper_bound <= max_fire_probability`. Small samples
+correctly fail to certify tight bounds (the CI is wide); large
+samples earn the right to tight regression gates (the CI is
+narrow). Two estimators ship behind a closed `ConfidenceMethod`
+enum:
+
+- ``HOEFFDING`` (default, stdlib-only): closed-form,
+  distribution-free
+  `ub = p_hat + sqrt(ln(1/(1-level)) / (2n))`.
+- ``CLOPPER_PEARSON`` (opt-in, requires SciPy): exact one-sided
+  binomial bound via inverse Beta. Tighter than Hoeffding when
+  the iid Bernoulli assumption holds.
+
+Both estimators satisfy six Hypothesis-checked invariants pinned
+in `tests/properties/test_fpb_v2_property.py`:
+sound (`p_hat ≤ ub ≤ 1`), Hoeffding dominates Clopper-Pearson,
+monotone in `p_hat`, decreasing in `n` at fixed `p_hat`, gap to
+`p_hat` shrinks below 0.05 at `n = 10 000`, and the
+zero-sample case correctly returns the vacuous bound `1.0`.
+
+The two contracts answer different questions and both ship.
+v1 is a CI smoke (§8.2 pins the reference run's empirical rate);
+v2 is the statistical safety case that closes the §9 caveat
+about "no statistical bound".
 
 ---
 
@@ -1596,9 +1625,15 @@ per-property §Scope sections of the ADRs.
   the Python policy and the TLA+ definition could silently weaken the
   claim. Mitigation: review and re-run TLC on every change to the
   reference calibrator or decision policy.
-- **Statistical FPB out of scope.** FPB-v1 is observational; a
-  statistical FPB-v2 with Monte Carlo bounds is a candidate future
-  ADR.
+- **Statistical FPB shipped, narrow-scope.** FPB-v2 (ADR-0039,
+  v0.2.5) closes the previously-deferred statistical bound with
+  closed-form Hoeffding and Clopper-Pearson estimators (§3.5).
+  What remains open: FPB-v2 still does not validate the iid
+  Bernoulli assumption Clopper-Pearson invokes (the verifier
+  trusts the caller's model choice), does not adjust for
+  multiple-testing across parameter sweeps, and only reports a
+  one-sided upper bound. Wilson-score and two-sided variants
+  are deferred amendments.
 - **Vacuous holds on stationary ULogs (closed in v0.2.5 for SITL,
   open for hardware).** §8.8.1 reported that on the stationary
   corpus ULog the EKF2-circular GT yielded vacuous HOLDS for
@@ -1634,9 +1669,14 @@ per-property §Scope sections of the ADRs.
   [`docs/proofs/Rlb_unbounded.tla`](docs/proofs/Rlb_unbounded.tla);
   discharge plan at
   [`docs/proofs/TLAPS_roadmap.md`](docs/proofs/TLAPS_roadmap.md).
-- **ADR-0039 (candidate)**: statistical FPB-v2. Monte-Carlo bound on
-  the empirical fire rate under noise models, generalising the
-  current observational FPB-v1.
+- **ADR-0039 (accepted, v0.2.5)**: statistical FPB-v2. Ships
+  closed-form Hoeffding (default, stdlib-only) and exact
+  Clopper-Pearson (opt-in, SciPy) one-sided confidence upper
+  bounds on the true firing probability. Closes the previously
+  deferred "statistical bound" gap (§3.5, §9). Six Hypothesis
+  property tests pin the qualitative shape any future estimator
+  (e.g. Wilson) must satisfy. Verifier surface:
+  `project_ghost.properties.verify_fpb_v2`.
 - **ADR-0040 (accepted, v0.2.4)**: ERUR-v2 stated abstractly over
   `policy.drift_precondition(history)`, generalising the property
   parameterisation across calibration policies (§8.4). Shipped in

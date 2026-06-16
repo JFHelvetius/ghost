@@ -560,10 +560,21 @@ metadata, and the MCAP's SHA-256.
         \emph{The agent's uncertainty cannot last indefinitely.}
         Recovery is bounded by $L \le \mathrm{peak} + W - 1$
         (\S\ref{sec:rlb-bound}).
-  \item \textbf{FPB-v1 (ADR-0035): False Positive Bound observer.}
+  \item \textbf{FPB (ADR-0035, ADR-0039): False Positive Bound.}
         \emph{The agent's distrust must be measurable and
-        auditable.} Empirical BAUD fire rate over the run,
-        exposed as a structured metric for regression gating.
+        auditable.} Two contracts coexist:
+        \textbf{FPB-v1} (observational, ADR-0035) reports the
+        empirical BAUD fire rate over the run for CI regression
+        gating; verdict
+        $\mathit{fire\_fraction} \le \mathit{max\_fire\_fraction}$.
+        \textbf{FPB-v2} (statistical, ADR-0039, v0.2.5) reports
+        a one-sided confidence upper bound on the \emph{true}
+        firing probability given the observed sample; verdict
+        $\mathit{confidence\_upper\_bound} \le \mathit{max\_fire\_probability}$
+        under a chosen \texttt{ConfidenceMethod} (Hoeffding,
+        stdlib-only; or Clopper-Pearson, opt-in SciPy).
+        Small samples correctly fail tight bounds; large
+        samples earn tight regression gates.
 \end{itemize}
 
 % =======================================================================
@@ -647,9 +658,10 @@ the verifier's structural well-formedness:
 ($\mathrm{cycles\_fires} \le \mathrm{cycles\_total}$),
 \texttt{INV\_FPB\_FIRE\_IMPLIES\_TOTAL}, and
 \texttt{INV\_FPB\_OBSERVATIONAL\_DEFAULT} (the bound trivially holds
-under the default $\mathrm{max\_fire\_fraction} = 1.0$). FPB is
-purely observational; a statistical FPB-v2 with Monte Carlo bounds
-is future work.
+under the default $\mathrm{max\_fire\_fraction} = 1.0$). FPB-v1 is
+the observational contract; the statistical FPB-v2 (ADR-0039,
+v0.2.5) ships separately with closed-form Hoeffding and exact
+Clopper-Pearson upper bounds (see \S\ref{sec:properties}).
 
 Together the three specs constitute \textbf{5/5 properties with at
 least a structural TLC invariant in CI}.
@@ -1375,9 +1387,15 @@ Any disagreement fails the build.
         inspection.} A future divergence could silently weaken the
         claim. Mitigation: review and re-run TLC on every change
         to the reference policies.
-  \item \textbf{Statistical FPB out of scope.} FPB-v1 is
-        observational; a statistical FPB-v2 with Monte Carlo
-        bounds is a candidate future ADR.
+  \item \textbf{Statistical FPB shipped, scope narrow.}
+        FPB-v2 (ADR-0039, v0.2.5) ships closed-form Hoeffding
+        and exact Clopper-Pearson one-sided upper bounds
+        (\S\ref{sec:properties}). The remaining honest gap:
+        FPB-v2 does not validate the iid Bernoulli assumption
+        Clopper-Pearson invokes, does not adjust for
+        multiple-testing across parameter sweeps, and reports
+        only a one-sided bound. Wilson-score and two-sided
+        variants are deferred amendments.
   \item \textbf{Vacuous holds on stationary ULogs (closed in
         v0.2.5 for SITL, open for hardware).}
         \S\ref{sec:multi-ulog-corpus} reported the vacuous-HOLDS

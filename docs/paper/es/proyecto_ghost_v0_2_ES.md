@@ -489,14 +489,47 @@ calibrador nunca *inventa* confianza. ADR-0033.
 `L ≤ peak + W − 1` para sliding-window count-of-K-in-W filters. Es
 la cota de latencia de recuperación (§6.3). ADR-0034.
 
-### 3.5 FPB-v1 — False Positive Bound observer
+### 3.5 FPB — False Positive Bound observer (ADR-0035, ADR-0039)
 
 > *La desconfianza del agente debe ser medible y auditable, no
 > implícita.*
 
-Empirical BAUD fire rate sobre el run, exposed como métrica
-estructurada para regression gating. Observacional por defecto
-(`max_fire_fraction = 1.0`). ADR-0035.
+Dos contratos coexisten:
+
+**FPB-v1 (ADR-0035, observacional).** Empirical BAUD fire rate
+sobre el run, expuesto como métrica estructurada. Verdict:
+`fire_fraction <= max_fire_fraction` — point estimate, regression
+gate para CI. No hace claim sobre sample size ni sobre la firing
+probability *subyacente*.
+
+**FPB-v2 (ADR-0039, estadístico; ships en v0.2.5).** Cota
+superior unilateral de confianza sobre la firing probability
+verdadera ``p`` dado el sample observado
+``(cycles_fires, cycles_total)`` a un ``confidence_level``
+configurable (default 0.95). Verdict:
+`confidence_upper_bound <= max_fire_probability`. Samples pequeños
+correctamente fallan al certificar cotas apretadas (el CI es
+ancho); samples grandes se ganan el derecho a regression gates
+apretados (el CI es estrecho). Dos estimadores ship behind un
+enum `ConfidenceMethod` cerrado:
+
+- ``HOEFFDING`` (default, stdlib-only): closed-form
+  distribution-free
+  `ub = p_hat + sqrt(ln(1/(1-level)) / (2n))`.
+- ``CLOPPER_PEARSON`` (opt-in, requiere SciPy): exact one-sided
+  binomial via inverse Beta. Más apretado que Hoeffding cuando
+  vale la asunción iid Bernoulli.
+
+Seis invariantes Hypothesis pineadas en
+`tests/properties/test_fpb_v2_property.py`: sound bound
+(`p_hat ≤ ub ≤ 1`), Hoeffding domina Clopper-Pearson, monotonía
+en `p_hat`, decrecimiento en `n` a `p_hat` fijo, gap a `p_hat` <
+0.05 a `n = 10 000`, y zero-sample devuelve cota vacua `1.0`.
+
+Los dos contratos contestan preguntas distintas y ambos ship.
+v1 es CI smoke (§8.2 pinea el rate empírico del reference run);
+v2 es el statistical safety case que cierra el caveat de §9
+sobre "no statistical bound".
 
 ---
 
@@ -1224,9 +1257,15 @@ que las secciones §Scope per-propiedad de los ADRs.
   entre el código Python y la definición TLA+ podría silenciosamente
   debilitar el claim. Mitigación: revisar y re-correr TLC en cada
   cambio al calibrador de referencia o policy de decisión.
-- **FPB estadístico fuera de scope.** FPB-v1 es observacional; un
-  FPB-v2 estadístico con cotas Monte Carlo es candidato ADR
-  futuro.
+- **FPB estadístico ya entregado, scope acotado.** FPB-v2
+  (ADR-0039, v0.2.5) cierra la cota estadística previamente
+  diferida con estimadores closed-form Hoeffding y Clopper-
+  Pearson (§3.5). Lo que queda abierto: FPB-v2 no valida la
+  asunción iid Bernoulli que Clopper-Pearson invoca (el verifier
+  confía en la elección de modelo del caller), no ajusta por
+  multiple-testing sobre sweeps de parámetros, y solo reporta
+  cota unilateral superior. Variantes Wilson-score y
+  bidireccionales quedan diferidas.
 - **HOLDS vacuos en ULogs estacionarios (cerrado en v0.2.5 para
   SITL, abierto para hardware).** §8.8.1 reportaba que en el
   ULog estacionario del corpus el GT-circular EKF2 producía
@@ -1257,8 +1296,14 @@ que las secciones §Scope per-propiedad de los ADRs.
   siguen abiertos.
 - **ADR-0038 (candidate)**: prueba TLAPS de la versión unbounded de
   la cota de latencia de recuperación y del teorema de partición.
-- **ADR-0039 (candidate)**: FPB-v2 estadístico con cota Monte Carlo
-  sobre el fire rate empírico.
+- **ADR-0039 (accepted, v0.2.5)**: FPB-v2 estadístico. Ships
+  Hoeffding closed-form (default, stdlib-only) y Clopper-Pearson
+  exact (opt-in, SciPy) cotas superiores unilaterales sobre la
+  firing probability verdadera. Cierra el gap "statistical bound"
+  previamente diferido (§3.5, §9). Seis tests Hypothesis pinean
+  la shape cualitativa que cualquier futuro estimador (e.g.
+  Wilson) debe satisfacer. Surface:
+  `project_ghost.properties.verify_fpb_v2`.
 - **ADR-0040 (aceptado, v0.2.4)**: ERUR-v2 enunciado
   abstractamente sobre `policy.drift_precondition(history)`,
   generalizando la parametrización. Distribuido en v0.2.4 como

@@ -379,12 +379,39 @@ ERUR 由任何自身漂移准则缺失且 belief 为 KNOWN 的策略所满足，
 对 sliding-window count-of-K-in-W filters 的 `L ≤ peak + W − 1`。
 这是 恢复延迟界限（§6.3）。ADR-0034。
 
-### 3.5 FPB-v1 — False Positive Bound observer
+### 3.5 FPB — False Positive Bound observer (ADR-0035, ADR-0039)
 
 > *代理的不信任必须可测量、可审计，而非隐式的。*
 
-运行期间的经验 BAUD fire rate，作为结构化指标暴露用于回归门控。
-默认情况下是观察性的（`max_fire_fraction = 1.0`）。ADR-0035。
+两个契约共存：
+
+**FPB-v1 (ADR-0035，观察性)。** 运行期间的经验 BAUD fire rate，
+作为结构化指标暴露用于回归门控。判定：
+`fire_fraction <= max_fire_fraction` —— 点估计，CI 回归门。v1 不
+就样本大小或*底层* firing 概率作出任何断言。
+
+**FPB-v2 (ADR-0039，统计；v0.2.5 交付)。** 给定观察样本
+``(cycles_fires, cycles_total)``，在调用者选择的
+``confidence_level``（默认 0.95）下，对真实 firing 概率 ``p``
+的单侧置信上界。判定：
+`confidence_upper_bound <= max_fire_probability`。小样本正确地
+无法认证紧的界限（CI 宽）；大样本赢得严格回归门的权利（CI 窄）。
+两个估计器在一个封闭的 `ConfidenceMethod` enum 后面交付：
+
+- ``HOEFFDING``（默认，仅 stdlib）：闭式、分布无关的
+  `ub = p_hat + sqrt(ln(1/(1-level)) / (2n))`。
+- ``CLOPPER_PEARSON``（opt-in，需要 SciPy）：通过逆 Beta 的精确
+  单侧二项界限。当 iid Bernoulli 假设成立时比 Hoeffding 更紧。
+
+`tests/properties/test_fpb_v2_property.py` 中固定了六个 Hypothesis
+不变式：sound 界限（`p_hat ≤ ub ≤ 1`）、Hoeffding 支配
+Clopper-Pearson、`p_hat` 中单调、`p_hat` 固定时 `n` 中递减、
+`n = 10 000` 时与 `p_hat` 的 gap 小于 0.05、零样本正确返回空真
+界限 `1.0`。
+
+两个契约回答不同的问题，两者都交付。v1 是 CI smoke（§8.2 固定
+参考运行的经验 rate）；v2 是关闭 §9 "no statistical bound" 警告
+的统计安全用例。
 
 ---
 
@@ -982,8 +1009,12 @@ JSON 的 SHA-256。
 - **Python↔TLA+ bridge 由检查完成。** Python 代码与 TLA+ 定义
   之间的未来差异可能默默地削弱声明。缓解：在每次参考校准器或
   决策策略更改时审查并重新运行 TLC。
-- **统计 FPB 超出范围。** FPB-v1 是观察性的；带 Monte Carlo 界
-  限的统计 FPB-v2 是未来 ADR 候选。
+- **统计 FPB 已交付，scope 受限。** FPB-v2（ADR-0039，v0.2.5）
+  使用闭式 Hoeffding 和 Clopper-Pearson 估计器关闭了之前推迟的
+  统计界限（§3.5）。剩余开放：FPB-v2 不验证 Clopper-Pearson 调用
+  的 iid Bernoulli 假设（验证器信任调用者的模型选择），不对参数
+  扫描的多重检验进行调整，仅报告单侧上界。Wilson-score 和双侧
+  变体保留为延期修订。
 - **静止 ULog 上的空真 HOLDS（v0.2.5 为 SITL 关闭，硬件仍开放）。**
   §8.8.1 报告静止 ULog 上 EKF2 循环 GT 对 4/6 类别产生空真
   HOLDS。§8.8.2 通过对任何携带 `vehicle_*_groundtruth` topic
@@ -1007,8 +1038,12 @@ JSON 的 SHA-256。
   ROSBag / EuRoC MAV adapter 和非 PX4 栈仍待开放。
 - **ADR-0038（候选）**：恢复延迟界限 unbounded 版本和分区定理的
   TLAPS 证明。
-- **ADR-0039（候选）**：基于 Monte Carlo 对经验 fire rate 的统
-  计 FPB-v2 界限。
+- **ADR-0039（已接受，v0.2.5）**：统计 FPB-v2。交付闭式
+  Hoeffding（默认，仅 stdlib）和精确 Clopper-Pearson（opt-in，
+  SciPy）对真实 firing 概率的单侧置信上界。关闭了之前推迟的
+  "statistical bound" gap（§3.5、§9）。六个 Hypothesis 测试
+  固定了任何未来估计器（如 Wilson）必须满足的定性形状。
+  Verifier 表面：`project_ghost.properties.verify_fpb_v2`。
 - **ADR-0040（已接受，v0.2.4）**：基于
   `policy.drift_precondition(history)` 抽象陈述的 ERUR-v2。
   在 v0.2.4 中作为
