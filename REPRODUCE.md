@@ -108,7 +108,7 @@ $VENV/bin/python -m pytest tests/adapters/test_real_ulog_smoke_gt_source.py -q
 
 Asserts the A/B comparison of `EKF2_FALLBACK` vs `SITL_SIMULATOR`
 on `sample_logging_tagged.ulg`: the SITL GT lifts the FPB fire
-fraction from 0.00 to 0.86, closing the v0.2.4 vacuous-HOLDS
+fraction from 0.00 to 0.86, closing the EKF2-fallback vacuous-HOLDS
 gap.
 
 ---

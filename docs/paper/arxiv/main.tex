@@ -942,7 +942,7 @@ every push.
 
 A reader who wishes to cite a Project Ghost safety claim can write:
 \begin{quote}\small
-Project Ghost v0.2.3 satisfies BAUD-v1 on the bundled reference
+Project Ghost v0.2.5 satisfies BAUD-v1 on the bundled reference
 smoke MCAP \texttt{SHA-256:<hash>}, as verified by
 \texttt{ghost verify-properties --mcap closed\_loop\_smoke.mcap}
 from \texttt{pip install project-ghost==0.2.3}, and additionally
@@ -959,7 +959,7 @@ This is contribution C4 in action.
 \label{sec:evaluation}
 
 \subsection{Tests, CI, and mechanical verification}
-At v0.2.3, the test suite contains 1711 tests passing (ruff +
+At v0.2.5, the test suite contains 1785 tests passing (ruff +
 mypy strict + deptry clean), of which approximately 50 are
 dedicated property tests. The CI matrix runs on
 \texttt{ubuntu-latest} and \texttt{windows-latest} with Python
@@ -1186,7 +1186,7 @@ for reproducibility; its output lives in
 
 Instead, Table~\ref{tab:rtamt-bench} states the \emph{capabilities}
 the two tools offer over the same MCAP, evaluated by their
-published feature sets (RTAMT 0.3.5 from PyPI; Ghost v0.2.3). The
+published feature sets (RTAMT 0.3.5 from PyPI; Ghost v0.2.5). The
 matrix reflects our reading of each project's documentation and
 source as of mid-2026; a more recent RTAMT release may close some
 rows, and we welcome correction from the RTAMT maintainers. This
@@ -1198,7 +1198,7 @@ arms race about which STL encoding ``really'' represents BAUD-v1.
 \footnotesize
 \begin{tabular}{lcc}
 \toprule
-\textbf{Capability} & \textbf{Ghost v0.2.3} & \textbf{RTAMT 0.3.5} \\
+\textbf{Capability} & \textbf{Ghost v0.2.5} & \textbf{RTAMT 0.3.5} \\
 \midrule
 Native property language                              & Python predicate over MCAP schema & STL \\
 Reads MCAP directly                                   & Yes (\texttt{MCAPReplayReader})   & No (user extracts signals) \\
@@ -1233,11 +1233,11 @@ the reader a sense of order of magnitude.
 \itshape
 \textbf{The verifier was executed unchanged on real flight
 telemetry.} This is the single sentence whose absence the prior
-versions of this paper had to apologise for. v0.2.3 lets us write
+versions of this paper had to apologise for. v0.2.5 lets us write
 it.
 \end{quote}
 
-\textbf{What this section ships in v0.2.3.} A real PX4 ULog from
+\textbf{What this section ships in v0.2.5.} A real PX4 ULog from
 the PX4/pyulog test fixtures
 (\texttt{test/sample\_log\_small.ulg}, ${\sim}921$\,KB, PX4 v1.10-era
 SITL flight, BSD-3 via PX4), bundled at
@@ -1319,7 +1319,7 @@ MCAP schema, the verifier and the ULog input are held identical
 to the nominal run; only one named component differs per buggy
 case.
 
-\textbf{Verdict delta on the bundled real PX4 ULog.} v0.2.4
+\textbf{Verdict delta on the bundled real PX4 ULog.} v0.2.5
 expands the experiment from two buggy categories to all six
 categories of the violation matrix (\S8.2). Each row substitutes
 exactly one named component imported verbatim from the synthetic
@@ -1374,7 +1374,7 @@ flight's drift pattern exercises.
 \subsubsection*{Generalisation to a 3-ULog corpus}
 \label{sec:multi-ulog-corpus}
 
-The result above rests on \emph{one} PX4 SITL ULog. v0.2.4
+The result above rests on \emph{one} PX4 SITL ULog. v0.2.5
 addresses the "single dataset" reviewer attack by expanding the
 experiment to a \textbf{corpus of three structurally distinct
 PX4 ULogs} drawn from PX4's public test fixtures (BSD-3 licensed,
@@ -1483,7 +1483,7 @@ GT source flips.
 \centering\small
 \begin{tabular}{l r r}
 \toprule
-\textbf{Metric} & \texttt{EKF2\_FALLBACK} (v0.2.4) & \texttt{SITL\_SIMULATOR} (v0.2.5) \\
+\textbf{Metric} & \texttt{EKF2\_FALLBACK} & \texttt{SITL\_SIMULATOR} \\
 \midrule
 FPB \texttt{fire\_fraction}     & 0.0000 & 0.8585 \\
 Categories that discriminate    & 2 / 6  & \textbf{6 / 6} \\
@@ -1584,7 +1584,7 @@ eliminate.
   \item \textbf{Sim, not hardware.} MCAPs come from a simulated
         overconfidence trap, not real flight logs. Real-world
         claims require a HAL backend and a hardware campaign.
-        v0.2.4 ships the PX4 ULog adapter and exercises it on a
+        v0.2.5 ships the PX4 ULog adapter and exercises it on a
         3-ULog SITL corpus (\S\ref{sec:multi-ulog-corpus});
         ROSBag / EuRoC adapters and a non-PX4 stack remain open
         under ADR-0037.
