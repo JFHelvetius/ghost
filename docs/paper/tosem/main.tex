@@ -1,23 +1,14 @@
-% Project Ghost — arXiv submission (v0.2.3, 2026-06-10)
-% Author: Javier Menéndez Mateos <jfhelvetius@gmail.com>
-% Compiles with pdflatex + bibtex (or biber if you switch \bibliographystyle).
+% Project Ghost --- TOSEM submission (v0.2.5, round 31)
+% Author: J.M. Mateos <jfhelvetius@gmail.com>
 %
-%   pdflatex main
-%   bibtex main
-%   pdflatex main
-%   pdflatex main
-%
-% This source is also the basis for RV 2026 / FMAS 2026 workshop
-% submissions; swap \documentclass to the venue's required template
-% (e.g. lncs.cls for Springer LNCS workshops).
+% This file is the acmart-class TOSEM submission variant of the same
+% paper that ships at docs/paper/arxiv/main.tex (arXiv class: article).
+% The content is identical; only the document class, title block, and
+% reference style differ.
 
-\documentclass[11pt,a4paper]{article}
+\documentclass[acmsmall,nonacm=true,review=false]{acmart}
 
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[english]{babel}
-\usepackage{microtype}
-\usepackage{amsmath, amssymb, amsthm}
+\usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{array}
@@ -26,10 +17,8 @@
 \usepackage{enumitem}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta,shapes.geometric,backgrounds,fit}
-\usepackage[a4paper,margin=1in]{geometry}
-\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=blue!50!black,urlcolor=blue!60!black]{hyperref}
 
-% --- Listings (Python / shell / JSON) -----------------------------------
+% --- Listings -----------------------------------------------------------
 \definecolor{codebg}{rgb}{0.97,0.97,0.97}
 \lstset{
   basicstyle=\ttfamily\small,
@@ -44,31 +33,52 @@
   xrightmargin=0.5em,
 }
 
-% --- Theorem environments -----------------------------------------------
+% --- Theorem environments ----------------------------------------------
+\theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
 \newtheorem{corollary}[theorem]{Corollary}
 
-% --- Title block --------------------------------------------------------
-\title{Epistemic Contracts for Autonomous Systems:\\
-       A Verifiable Pattern for Safety Claims Under Uncertainty}
-\author{Javier Menéndez Mateos\\
-        \texttt{jfhelvetius@gmail.com}\\
-        \small Independent}
-\date{v0.2.3 --- \today}
+% --- ACM metadata ------------------------------------------------------
+\acmJournal{TOSEM}
+\acmVolume{0}
+\acmNumber{0}
+\acmArticle{0}
+\acmYear{2026}
+\acmMonth{1}
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10011007.10011074.10011099.10011102</concept_id>
+<concept_desc>Software and its engineering~Software verification and validation</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10010147.10010178.10010224</concept_id>
+<concept_desc>Computing methodologies~Robotic autonomy</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+\ccsdesc[500]{Software and its engineering~Software verification and validation}
+\ccsdesc[300]{Computing methodologies~Robotic autonomy}
+
+\keywords{epistemic safety contracts, runtime verification,
+uncertainty in autonomy, executable safety citations,
+content-addressed telemetry, TLA+/TLC, Lean 4, MCAP}
+
+% --- Title and author --------------------------------------------------
+\title{Epistemic Safety Contracts as a Property Class for Autonomous Agents:
+       A Formalised Framework with Mechanical Proofs and a Real-Telemetry Discrimination Experiment}
+
+\author{J.M. Mateos}
+\email{jfhelvetius@gmail.com}
+\affiliation{%
+  \institution{Independent}
+  \country{Mexico}
+}
 
 \begin{document}
-\maketitle
-
-\begin{center}
-\itshape\small
-``An autonomous agent should have verifiable obligations about
-how it relates to its own uncertainty.''\\[0.3em]
-``A safety claim should be issued together with everything a third
-party needs to reject it.''\\[0.3em]
-\upshape\textmd{--- the two sentences this paper exists to defend.}
-\end{center}
-
-\vspace{1em}
 
 \begin{abstract}
 \noindent\textbf{Background.} Existing runtime verifiers
@@ -126,6 +136,8 @@ backward-compatible, and produces mechanical evidence that
 withstands third-party audit. The full artifact is re-runnable
 from a fresh clone (see [AUDIT.md, REPRODUCE.md, INSTALL.md]).
 \end{abstract}
+
+\maketitle
 
 \medskip
 \noindent\textbf{Keywords:} epistemic safety contracts, runtime

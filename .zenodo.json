@@ -1,0 +1,54 @@
+{
+  "metadata": {
+    "title": "Project Ghost v0.2.5 -- Epistemic Safety Contracts as a Property Class for Autonomous Agents (Replication Package)",
+    "version": "0.2.5",
+    "description": "Replication package for the paper 'Epistemic Safety Contracts as a Property Class for Autonomous Agents'. Includes the seven verifier implementations (BAUD-v1, ERUR-v1/v2, MD-v1, RLB-v1, FPB-v1/v2), the mechanical proofs in Lean 4 (partition theorem with no `sorry`; RLB-v1 unbounded reduced to a single load-bearing lemma) and TLA+/TLC (parametric sweep at W in {4, 8, 16}), the Python<->TLA+ bridge conformance test (ADR-0043), the 3-ULog discrimination experiment outputs (matrix.json) on real PX4 SITL flight telemetry, and the three top-level reproducibility documents (INSTALL.md, REPRODUCE.md, AUDIT.md). The full pipeline is re-runnable from a fresh clone in ~10 minutes on a modern laptop; see INSTALL.md for toolchain pins (Python 3.11+, Java 17, Lean 4 4.31.0 stable, tla2tools.jar v1.8.0).",
+    "upload_type": "software",
+    "publication_type": "article",
+    "creators": [
+      {
+        "name": "Mateos, J.M.",
+        "affiliation": "Independent",
+        "orcid": ""
+      }
+    ],
+    "keywords": [
+      "epistemic safety contracts",
+      "runtime verification",
+      "uncertainty in autonomy",
+      "executable safety citations",
+      "TLA+",
+      "TLC",
+      "Lean 4",
+      "mechanical theorem proving",
+      "content-addressed telemetry",
+      "MCAP",
+      "PX4",
+      "robotics",
+      "safety-critical"
+    ],
+    "license": "Apache-2.0",
+    "access_right": "open",
+    "language": "eng",
+    "related_identifiers": [
+      {
+        "identifier": "https://github.com/JFHelvetius/ghost",
+        "relation": "isSupplementTo",
+        "resource_type": "software"
+      },
+      {
+        "identifier": "https://pypi.org/project/project-ghost/",
+        "relation": "isPartOf",
+        "resource_type": "software"
+      }
+    ],
+    "communities": [
+      {"identifier": "runtime-verification"},
+      {"identifier": "formal-methods"}
+    ],
+    "subjects": [
+      {"term": "Software verification and validation", "identifier": "10011007.10011074.10011099.10011102", "scheme": "ACM-CCS"},
+      {"term": "Robotic autonomy", "identifier": "10010147.10010178.10010224", "scheme": "ACM-CCS"}
+    ]
+  }
+}
