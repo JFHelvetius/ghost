@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -1290,6 +1291,14 @@ hr { border-color: #e2e8f0 !important; }
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def _sha256_prefix(data: bytes, n: int = 12) -> str:
+    """Short hex prefix of the SHA-256 of ``data`` (default 12 chars).
+
+    Used by the inspect tab's stat block to surface the uploaded
+    MCAP's content-address without printing the full 64-char hash."""
+    return hashlib.sha256(data).hexdigest()[:n]
+
+
 def _base_layout(**kw: Any) -> dict[str, Any]:
     base: dict[str, Any] = {
         "paper_bgcolor": _SURFACE,
@@ -2297,11 +2306,25 @@ def _inspect_tab() -> None:
         type=["mcap"],
         help=t("upload_help"),
         label_visibility="collapsed",
+        key="inspect_uploader",
     )
-    if uploaded is None:
+
+    # Cache the upload contents in session_state so that a re-render
+    # triggered by the language picker (or any st.rerun) does not lose
+    # the loaded MCAP. The UploadedFile object survives across reruns,
+    # but `uploaded.read()` returns empty bytes after the first call;
+    # we therefore key by .file_id and snapshot the bytes once.
+    if uploaded is not None:
+        cached_id = st.session_state.get("inspect_mcap_id")
+        if cached_id != uploaded.file_id:
+            st.session_state["inspect_mcap_id"] = uploaded.file_id
+            st.session_state["inspect_mcap_name"] = uploaded.name
+            st.session_state["inspect_mcap_bytes"] = uploaded.read()
+
+    file_bytes = st.session_state.get("inspect_mcap_bytes")
+    if file_bytes is None:
         return
 
-    file_bytes = uploaded.read()
     with st.spinner(t("decoding_spinner")):
         messages = _decode_mcap(file_bytes)
 
@@ -2313,6 +2336,38 @@ def _inspect_tab() -> None:
     st.markdown(
         f'<p style="color:#475569;font-size:0.9rem;margin:0.8rem 0 0.4rem">'
         f"{t('loaded_msg', n_channels=len(messages), n_msgs=total)}</p>",
+        unsafe_allow_html=True,
+    )
+
+    # Stat block: surface the per-channel cycle counts of the uploaded
+    # MCAP so the user can see "how many cycles does this file have?"
+    # without having to expand each channel section.
+    n_fusion = len(messages.get(CHANNEL_FUSION_RESULTS, []))
+    n_decisions = len(messages.get(CHANNEL_DECISIONS, []))
+    n_outcomes = len(messages.get(CHANNEL_PREDICTION_OUTCOMES, []))
+    mcap_sha_prefix = _sha256_prefix(file_bytes)
+    st.markdown(
+        f"""
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="sc-lab">{t("stat_cycles")}</div>
+    <div class="sc-val">{n_fusion}</div>
+  </div>
+  <div class="stat-card">
+    <div class="sc-lab">{t("stat_decisions")}</div>
+    <div class="sc-val">{n_decisions}</div>
+  </div>
+  <div class="stat-card">
+    <div class="sc-lab">{t("stat_outcomes")}</div>
+    <div class="sc-val">{n_outcomes}</div>
+  </div>
+  <div class="stat-card">
+    <div class="sc-lab">SHA-256</div>
+    <div class="sc-val small" style="font-family:ui-monospace,Consolas,monospace;font-size:0.85rem">
+      {mcap_sha_prefix}…
+    </div>
+  </div>
+</div>""",
         unsafe_allow_html=True,
     )
 
