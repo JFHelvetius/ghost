@@ -14,7 +14,9 @@ run VIOLATED (false positive), this test will catch it.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -110,12 +112,12 @@ def test_each_buggy_cell_flips_its_expected_violator(real_ulog_path: Path, tmp_p
     co-violation row).
     """
     results = run_real_ulog_discrimination(real_ulog_path, tmp_path)
-    holds_by_id = {
-        "BAUD-v1": lambda s: s.baud_holds,
-        "ERUR-v1": lambda s: s.erur_holds,
-        "MD-v1": lambda s: s.md_holds,
-        "RLB-v1": lambda s: s.rlb_holds,
-        "FPB-v1": lambda s: s.fpb_holds,
+    holds_by_id: dict[str, Callable[[Any], bool]] = {
+        "BAUD-v1": lambda s: bool(s.baud_holds),
+        "ERUR-v1": lambda s: bool(s.erur_holds),
+        "MD-v1": lambda s: bool(s.md_holds),
+        "RLB-v1": lambda s: bool(s.rlb_holds),
+        "FPB-v1": lambda s: bool(s.fpb_holds),
     }
     for cell in results.buggy_cells:
         # The expected violator must flip.

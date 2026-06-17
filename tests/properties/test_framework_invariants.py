@@ -92,7 +92,7 @@ def test_each_verifier_accepts_mcap_path(version: str) -> None:
     user-facing entry point so a refactor that renames or
     reorders the parameter fails the test."""
     c = get_contract(version)
-    sig = inspect.signature(c.verifier)
+    sig = inspect.signature(c.verifier)  # type: ignore[arg-type]
     params = list(sig.parameters.values())
     assert params, f"{version}: verifier has no parameters at all"
     assert params[0].name == "mcap_path", (

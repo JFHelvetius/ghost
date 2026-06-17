@@ -115,7 +115,7 @@ def test_gt_disagrees_with_ekf2_on_stationary_log(stationary_ulog: Path) -> None
 
     def xrange(samples: list) -> float:  # type: ignore[type-arg]
         xs = [s.position_m[0] for s in samples]
-        return max(xs) - min(xs)
+        return float(max(xs) - min(xs))
 
     gt_range = xrange(gt)
     ekf2_range = xrange(ekf2)
