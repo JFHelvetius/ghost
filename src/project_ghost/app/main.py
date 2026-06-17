@@ -2301,8 +2301,14 @@ def _inspect_tab() -> None:
         unsafe_allow_html=True,
     )
 
+    # IMPORTANT: the file_uploader uses a STABLE label that does not change
+    # with the UI language. In some Streamlit versions, changing a widget's
+    # label between reruns invalidates the widget's internal state and the
+    # uploaded file is silently lost. We dodge that by hardcoding a neutral
+    # ASCII label and hiding it via label_visibility="collapsed"; the human
+    # text comes from the `upload-hint` block above (which DOES translate).
     uploaded = st.file_uploader(
-        t("upload_label"),
+        "MCAP file",
         type=["mcap"],
         help=t("upload_help"),
         label_visibility="collapsed",
@@ -2311,19 +2317,37 @@ def _inspect_tab() -> None:
 
     # Cache the upload contents in session_state so that a re-render
     # triggered by the language picker (or any st.rerun) does not lose
-    # the loaded MCAP. The UploadedFile object survives across reruns,
-    # but `uploaded.read()` returns empty bytes after the first call;
-    # we therefore key by .file_id and snapshot the bytes once.
+    # the loaded MCAP. Snapshot bytes once per file_id; subsequent reruns
+    # re-use the cached payload.
     if uploaded is not None:
         cached_id = st.session_state.get("inspect_mcap_id")
         if cached_id != uploaded.file_id:
+            # Use getvalue() rather than read(): it returns the bytes
+            # without consuming the buffer, so subsequent reruns can
+            # still query .name / .size on the same UploadedFile.
+            try:
+                data = uploaded.getvalue()
+            except AttributeError:
+                # Fallback for very old Streamlit versions (< 1.10).
+                data = uploaded.read()
             st.session_state["inspect_mcap_id"] = uploaded.file_id
             st.session_state["inspect_mcap_name"] = uploaded.name
-            st.session_state["inspect_mcap_bytes"] = uploaded.read()
+            st.session_state["inspect_mcap_bytes"] = data
 
     file_bytes = st.session_state.get("inspect_mcap_bytes")
-    if file_bytes is None:
+    if file_bytes is None or len(file_bytes) == 0:
         return
+
+    # Re-affirm to the user which file is loaded after a rerun. This is
+    # informational only -- helps the user notice that a language switch
+    # has preserved their loaded MCAP rather than silently swallowed it.
+    cached_name = st.session_state.get("inspect_mcap_name", "<unnamed>")
+    st.markdown(
+        f'<p style="color:#94a3b8;font-size:0.78rem;margin:0.5rem 0 0;'
+        f'font-family:ui-monospace,Consolas,monospace">'
+        f'📎 {cached_name} · {len(file_bytes) / 1024:.1f} KB</p>',
+        unsafe_allow_html=True,
+    )
 
     with st.spinner(t("decoding_spinner")):
         messages = _decode_mcap(file_bytes)
