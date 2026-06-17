@@ -14,9 +14,8 @@ run VIOLATED (false positive), this test will catch it.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -25,6 +24,9 @@ from project_ghost.adapters.real_ulog_discrimination import (
     RealULogDiscriminationResults,
     run_real_ulog_discrimination,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 _ULOG_RELATIVE = ("docs", "paper", "data", "sample.ulg")
 
