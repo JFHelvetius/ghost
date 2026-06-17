@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "project-ghost"
-version = "0.2.2"
+version = "0.2.5"
 description = "Autonomy under uncertainty: closed-loop reference pipeline + 5 formal safety properties verifiable byte-exact from any MCAP + TLA+ mechanically-verified BAUD/ERUR/MD/partition over the abstract state space."
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -56,6 +56,14 @@ adapters = [
     # Optional because most users of `ghost verify-properties` do not need
     # to ingest ULog files; the base install ships only MCAP support.
     "pyulog>=1.2,<2.0",
+]
+stats = [
+    # SciPy is required only for the Clopper-Pearson exact binomial
+    # confidence bound in FPB-v2 (paper §3.7). The default Hoeffding
+    # estimator path is stdlib-only, so SciPy stays optional. The
+    # error message in fpb_v2.py points users at this extra by name:
+    # `pip install 'project-ghost[stats]'`.
+    "scipy>=1.10",
 ]
 dev = [
     "ruff>=0.6.0",
@@ -234,11 +242,19 @@ known_first_party = ["project_ghost"]
 # removed when its module is implemented and actually imports the package.
 # See docs/roadmaps/phase1.md for the task mapping.
 [tool.deptry.per_rule_ignores]
+DEP001 = [
+    # scipy: lazy-imported in src/project_ghost/properties/fpb_v2.py inside
+    # a try/except that points users at the `stats` extra. Declared as an
+    # optional dependency in [project.optional-dependencies].stats; deptry
+    # does not auto-resolve extras, so list it here.
+    "scipy",
+]
 DEP002 = [
     # numpy: usado por core.uncertainty (U1.a) — ya no exento
     # mcap: removido tras T4 — ahora se importa lazy desde telemetry.mcap_sink
     "pybullet",              # T6: simulation.pybullet backend
     "rerun-sdk",             # extra `telemetry`; sin integracion en repo (Rerun rechazado en T4)
+    "scipy",                 # extra `stats`; lazy-imported only by FPB-v2 Clopper-Pearson
     "ruff",                  # dev tool; never imported from src
     "mypy",                  # dev tool; never imported from src
     "pytest",                # used by tests/ (not scanned by deptry src)

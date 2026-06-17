@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-06-17
+
+Paper-grade release backing the v0.2.5 manuscript submission
+(arXiv preprint + ACM TOSEM regular paper). Aggregates rounds
+23–34 of the pre-publication audit: framework formalisation,
+property-class additions (ERUR-v2, FPB-v2), the Python↔TLA+
+mechanical bridge, the trilingual dashboard, and a bibliography
+fully independently verified by the author.
+
+### Added
+
+- **Epistemic Safety Contract framework** (ADR-0045,
+  [`src/project_ghost/properties/contract.py`](src/project_ghost/properties/contract.py),
+  [`src/project_ghost/properties/framework.py`](src/project_ghost/properties/framework.py)):
+  a Python `Protocol` (`EpistemicSafetyContract`) + registry of
+  the seven shipped contracts. Adding the eighth property requires
+  one `register_contract(...)` call; the framework guarantees the
+  recipe is consistent (non-empty scope, dangling-dependency check,
+  Protocol conformance, idempotent re-registration).
+- **ERUR-v2** (ADR-0040, parameterised drift-precondition variant)
+  and **FPB-v2** (ADR-0039, statistical fire-fraction bound with
+  Hoeffding + Clopper-Pearson estimators).
+- **Python↔TLA+ mechanical bridge** (ADR-0043 + ADR-0046,
+  [`tests/properties/test_python_tla_bridge.py`](tests/properties/test_python_tla_bridge.py),
+  [`tests/properties/test_python_tla_bridge_full.py`](tests/properties/test_python_tla_bridge_full.py)):
+  Hypothesis-checked conformance for 5 of 7 contracts. Closes the
+  previously-open "Python ↔ TLA+ bridge by inspection" caveat.
+- **Lean 4 partition theorem** discharged, no `sorry`. RLB-v1
+  unbounded reduced to a single load-bearing lemma 4 (`sorry`
+  documented).
+- **Real-telemetry §8.8 discrimination experiment** over three
+  structurally distinct PX4 SITL ULogs with independent simulator
+  ground-truth (ADR-0037). Discrimination matrix is 18/18 green;
+  15/18 cells isolate violations to the expected property.
+- **Trilingual dashboard** (EN/ES/中文, 120-key parity) with stable
+  tab identity across language switches and content-addressed
+  inspect surface.
+
+### Fixed
+
+- Bibliography (round 32–34): removed 1 fabricated entry, 1
+  unsubstantiated entry, and 5 entries that could not be
+  exhaustively verified before submission. All remaining entries
+  independently verified by the author against their primary
+  source. `0 bibtex warnings`, `0 undefined references`,
+  `0 orphan citations`.
+- `pyproject.toml` and `src/project_ghost/__init__.py` bumped to
+  `0.2.5` to match the paper.
+- Dashboard tab identity (`st.tabs`): stable ASCII labels prevent
+  the active tab from resetting on language switch.
+
 ## [0.2.2] - 2026-06-12
 
 Excellence pass: six follow-up workstreams (D/F/A/B/E/C) that
