@@ -1,25 +1,36 @@
 % =======================================================================
-% Round-33 bibliography audit summary.
+% Round-34 bibliography (publication-ready).
 %
-% Removed (could not be substantiated):
+% Round-32/33 audit removed (could not be substantiated by author):
 %   - macedo2024verifiable    (fabricated entry, never existed)
-%   - chakraborty2024conformal (Google Scholar result was unrelated paper)
+%   - chakraborty2024conformal (Scholar result was an unrelated paper)
 %
-% Renamed + corrected (after URL inspection by author):
+% Round-33 renamed + corrected (after URL inspection by author):
 %   - jansen2020shielding -> alshiekh2018safe (correct paper is
 %     Alshiekh et al., AAAI-18, not Jansen / CONCUR)
 %   - jansen2024shielding -> carr2023safe (correct paper is
 %     Carr/Jansen/Junges/Topcu, AAAI-23, not 2024 TECS)
-%   - mitll2023cbf -> black2024cbfkit (CBFkit by Black et al. IEEE 2024,
-%     not the MIT LL toolbox URL that the previous entry pointed at)
 %
-% Still flagged with TODO (verify exact authors/pages from URL before
-% submission; entries themselves are plausibly correct):
-%   - ferrando2020rosmonitoring (Springer LNCS, TAROS 2020)
-%   - flordal2022timedsupervisory (IEEE TAC, year likely 2023)
-%   - rizaldi2020survey (ACM CSUR)
-%   - abate2020formal (Acta Informatica vol 57, 2020)
-%   - black2024cbfkit (confirm IROS vs ICRA conference)
+% Round-34 removed (entries could not be exhaustively verified against
+% the published version of record before submission; per the author's
+% "delete-when-in-doubt" rule, the corresponding paragraphs in main.tex
+% were rewritten to mention the line of work without attributing it to
+% a specific paper that this bibliography would have to defend):
+%   - ferrando2020rosmonitoring (TAROS 2020; the ROS-middleware-monitor
+%     comparison now cites only ROSRV, which is fully verified)
+%   - flordal2022timedsupervisory (IEEE TAC; supervisory-control bullet
+%     now describes the line of work without attributing a paper)
+%   - rizaldi2020survey (ACM CSUR; the "surveys" bullet now states the
+%     observation about gaps in the formal-verification-for-autonomy
+%     literature without citing a specific survey)
+%   - abate2020formal (Acta Informatica; the constructive-synthesis
+%     paragraph now mentions only Kress-Gazit and Wongpiromsarn, both
+%     fully verified, and drops the Abate sentence)
+%   - mitll2023cbf / black2024cbfkit (CBF bullet now describes the line
+%     of work without citing a specific toolbox)
+%
+% Every entry that remains below has been independently verified by the
+% author against its primary source (DOI / journal page / proceedings).
 % =======================================================================
 
 @book{bartocci2018lectures,
@@ -52,30 +63,6 @@
 % bullet in main.tex sec 1.2 was deleted accordingly. If a real
 % conformal-prediction-for-robot-safety paper is identified later, it
 % can be re-added here.
-
-% TODO: confirm exact author list (currently "and others") from
-%   https://link.springer.com/chapter/10.1007/978-3-030-63486-5_40
-%   before submission.
-@inproceedings{ferrando2020rosmonitoring,
-  author    = {Ferrando, Angelo and others},
-  title     = {{ROSMonitoring}: A Runtime Verification Framework for {ROS}},
-  booktitle = {Towards Autonomous Robotic Systems (TAROS)},
-  series    = {Lecture Notes in Computer Science},
-  publisher = {Springer},
-  year      = {2020},
-  doi       = {10.1007/978-3-030-63486-5\_40}
-}
-
-% TODO: the IEEE Xplore doc 10123108 is the source. Confirm exact
-%   author list, year (likely 2023, not 2022), volume, pages from:
-%   https://ieeexplore.ieee.org/abstract/document/10123108
-%   before submission.
-@article{flordal2022timedsupervisory,
-  author  = {Flordal, Henning and others},
-  title   = {Supervisory Control of Timed Automata via Forcible Events},
-  journal = {IEEE Transactions on Automatic Control},
-  year    = {2023}
-}
 
 @misc{foxglove2022mcap,
   author       = {{Foxglove Studio}},
@@ -130,17 +117,6 @@
   year      = {2002}
 }
 
-% TODO: confirm exact IEEE conference (likely IROS or ICRA 2024) from
-%   https://ieeexplore.ieee.org/abstract/document/10801431
-%   and upgrade @misc to @inproceedings with booktitle, pages, doi.
-@misc{black2024cbfkit,
-  author       = {Black, Mitchell and Fainekos, Georgios and Hoxha, Bardh and Okamoto, Hideki and Prokhorov, Danil},
-  title        = {{CBFkit}: A Control Barrier Function Toolbox for Robotics Applications},
-  howpublished = {\url{https://ieeexplore.ieee.org/document/10801431}},
-  publisher    = {IEEE},
-  year         = {2024}
-}
-
 @inproceedings{nikovic2020rtamt,
   author    = {Nikovi{\'c}, Dejan and Yamaguchi, Tomoya and Donz{\'e}, Alexandre and Akazaki, Takumi and Hoxha, Bardh},
   title     = {{RTAMT}: Online Robustness Monitors from {STL}},
@@ -153,17 +129,6 @@
   title   = {{RTAMT}: Online Robustness Monitors from {STL}},
   journal = {International Journal on Software Tools for Technology Transfer (STTT)},
   year    = {2023}
-}
-
-% TODO: confirm exact title, author list, volume, and pages from
-%   https://dl.acm.org/doi/abs/10.1145/3342355
-%   before submission.
-@article{rizaldi2020survey,
-  author  = {Rizaldi, Aliaksei and others},
-  title   = {Formal Specification and Verification of Autonomous Robotic Systems: A Survey},
-  journal = {ACM Computing Surveys},
-  year    = {2020},
-  doi     = {10.1145/3342355}
 }
 
 @book{tartakovsky2014sequential,
@@ -245,19 +210,6 @@
   year      = {2007},
   pages     = {3116--3121},
   doi       = {10.1109/ROBOT.2007.363949}
-}
-
-% Acta Informatica is a journal, not a conference -- change @inproceedings
-% to @article. URL: https://link.springer.com/article/10.1007/s00236-019-00359-1
-% TODO: verify pages from the published version before submission.
-@article{abate2020formal,
-  author    = {Abate, Alessandro and Bessa, Iury and Cattaruzza, Dario and Cordeiro, Lucas and David, Cristina and Kesseli, Pascal and Kroening, Daniel and Polgreen, Elizabeth},
-  title     = {Automated Formal Synthesis of Provably Safe Digital Controllers for Continuous Plants},
-  journal   = {Acta Informatica},
-  volume    = {57},
-  doi       = {10.1007/s00236-019-00359-1},
-  year      = {2020},
-  pages     = {223--244}
 }
 
 @article{wongpiromsarn2012receding,

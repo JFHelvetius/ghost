@@ -427,29 +427,33 @@ content-addressable robotics telemetry~\cite{foxglove2022mcap}.
         \textbf{MoonLight}~\cite{bartocci2020moonlight,bartocci2023moonlight}:
         STREL (spatio-temporal logic) monitor in Java with a CLI.
         Spatial focus; no formal verification of monitor semantics.
-  \item
-        \textbf{ROSMonitoring}~\cite{ferrando2020rosmonitoring} and
-        \textbf{ROSRV}~\cite{huang2014rosrv}: live ROS-middleware
-        monitors. Both online; neither performs post-hoc log
-        verification with a one-line CLI.
+  \item \textbf{ROSRV}~\cite{huang2014rosrv}: a live ROS-middleware
+        monitor. Online; does not perform post-hoc log verification
+        from a content-addressed capture with a one-line CLI.
   \item \textbf{Safe RL via
         shielding}~\cite{alshiekh2018safe,carr2023safe}:
         runtime enforcement of safety via action filters. Online,
         action-blocking; Ghost is offline and log-verifying.
-  \item \textbf{Control Barrier Functions}~\cite{black2024cbfkit}:
-        controller synthesis and a recent toolbox for continuous
-        safety constraints. Complementary, not competing.
-  \item \textbf{Supervisory control of timed
-        automata}~\cite{flordal2022timedsupervisory}: synthesises
-        timed supervisors. Constructs new supervisors; Ghost verifies
-        existing traces. Prior timed-automata recovery results do
-        not give the closed-form bound RLB-v1 derives.
-  \item \textbf{Surveys of formal verification for
-        autonomy}~\cite{rizaldi2020survey}:
-        catalogue Coq/Lean/Isabelle/Alloy work. Note the absence of
-        mechanically-verified TLA+ specs for autonomy supervisors
-        specifically, and of Python/MCAP-side artefacts that close
-        a formal-spec/runtime-verifier bridge.
+  \item \textbf{Control Barrier Functions}: a controller-synthesis
+        line of work for continuous safety constraints under
+        invariant-set formulations. Complementary, not competing:
+        CBFs constrain the controller; Ghost verifies the captured
+        log of whatever controller actually ran.
+  \item \textbf{Supervisory control of timed automata}: a
+        constructive line of work that synthesises timed
+        supervisors enforcing a target language. Ghost is the
+        verifying dual: it asserts trace-level properties of an
+        existing run, including the closed-form recovery latency
+        bound RLB-v1 derives, which a synthesised supervisor does
+        not directly expose.
+  \item \textbf{Formal verification for autonomy more broadly}:
+        prior work catalogues Coq, Lean, Isabelle, and Alloy
+        applications to robotic systems. The gap Project Ghost
+        addresses is the joint absence, in this literature, of
+        (i) mechanically-verified TLA+ specs targeted at autonomy
+        supervisors specifically and (ii) Python/MCAP-side
+        artefacts that close a formal-spec/runtime-verifier bridge
+        on captured logs.
 \end{itemize}
 
 \subsection{Foundational temporal-logic and theorem-proving work}
@@ -492,12 +496,10 @@ planning}~\cite{kress2007shielding} pioneered LTL synthesis from
 abstract specifications, and \textbf{Wongpiromsarn et al.}'s
 \textbf{receding-horizon TL
 planning}~\cite{wongpiromsarn2012receding} the online variant.
-\textbf{Abate et al.}'s \textbf{automated synthesis of provably
-safe digital controllers}~\cite{abate2020formal} closes the loop
-from spec to controller. All three are \emph{constructive}
-(synthesise a system that satisfies a spec); Ghost is
-\emph{verifying} (asserts that an existing run satisfies its
-contracts). The two approaches are complementary, not competing.
+Both are \emph{constructive} (synthesise a system that satisfies
+a spec); Ghost is \emph{verifying} (asserts that an existing run
+satisfies its contracts). The two approaches are complementary,
+not competing.
 
 For real-flight telemetry, we use the public
 \textbf{PX4 ULog}~\cite{px42024ulog} format and the
