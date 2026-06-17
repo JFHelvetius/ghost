@@ -71,45 +71,60 @@ party needs to reject it.''\\[0.3em]
 \vspace{1em}
 
 \begin{abstract}
-\textbf{Thesis: autonomous agents should have verifiable contracts
-on their own epistemic posture --- how they degrade confidence,
-recover, remain bounded, and translate belief into action under
-uncertainty.} Most existing runtime verifiers ask predicates of
-the world (velocity, distance, temperature); we propose asking
-predicates of the agent's posture toward its own uncertainty. We
-call these \textbf{epistemic safety contracts}. We describe
-\textbf{Project Ghost}, an open-source platform that (i) defines
-five epistemic contracts for a reference autonomy supervisor
-(BAUD/ERUR/MD/RLB/FPB), (ii) verifies each via a pure function
-over a content-addressed MCAP log, (iii) mechanically checks the
-underlying invariants via TLA+/TLC, and (iv) packages each
-contract together with a recorded run and the verifier into a
-single \textbf{executable safety citation}:
-\texttt{pip install project-ghost==0.2.3} followed by
-\texttt{ghost verify-properties --mcap <log>} lets a third party
-reproduce the verdict --- or contradict it.
+\noindent\textbf{Background.} Existing runtime verifiers
+predominantly monitor predicates over the external world
+(velocity, distance, temperature). What they do not monitor
+are predicates over the \emph{agent's own posture under
+uncertainty} --- how it degrades confidence, recovers when
+evidence is restored, remains bounded in latency, and
+translates belief into action.
 
-The reference contracts cover a minimal theory of behaviour under
-uncertainty: if you suspect you are wrong, act conservatively
-(BAUD); when evidence is restored, return to acting (ERUR); never
-claim more confidence than evidence supports (MD); uncertainty
-cannot last indefinitely (RLB); distrust must be measurable and
-auditable (FPB). Three TLA+ specifications jointly check 11
-invariants in CI, including the partition theorem
-$\mathrm{BAUD} \oplus \mathrm{ERUR}$ and the recovery latency
-bound $L \le \mathrm{peak} + W - 1$.
+\noindent\textbf{Aims.} We propose \textbf{epistemic safety
+contracts} as a property class distinct from STL-style
+predicates over signals and POMDP-style belief monitoring,
+formalise the class, and exhibit a working implementation,
+mechanical proofs, and a real-telemetry experiment.
 
-Empirical evaluation on a violation matrix of six injected bug
-categories, three structurally distinct calibration policies,
-three shape-realistic drift profiles, a head-to-head benchmark
-against RTAMT, and a discrimination experiment on real PX4 v1.10
-flight telemetry --- where two independently buggy components,
-swapped into the same physical flight, each flip BAUD-v1 from
-HOLDS to VIOLATED while the four other properties remain HOLD ---
-establishes that the verifier is policy-agnostic, deterministic
-across Linux and Windows CI runners, and informative on
-real-world telemetry. The full artifact is re-runnable from
-\texttt{pip install project-ghost==0.2.3}.
+\noindent\textbf{Method.} We describe \textbf{Project Ghost},
+an open-source platform that (i) defines \textbf{seven}
+epistemic contracts for a reference autonomy supervisor
+(BAUD-v1, ERUR-v1, ERUR-v2, MD-v1, RLB-v1, FPB-v1, FPB-v2),
+formalised as a Python \texttt{Protocol} and registry
+(ADR-0045); (ii) verifies each via a pure function over a
+content-addressed MCAP log; (iii) mechanically checks the
+underlying invariants via TLA+/TLC at bounded $W$, a
+parametric TLC sweep over $W \in \{4, 8, 16\}$, and Lean 4
+proofs (partition theorem fully discharged, no \texttt{sorry};
+RLB-v1 unbounded mechanically reduced to a single
+load-bearing lemma); and (iv) closes the previously-open
+``Python $\leftrightarrow$ TLA+ bridge by inspection'' caveat
+with a Hypothesis-checked conformance test (ADR-0043). Each
+contract ships as an \textbf{executable safety citation}:
+\texttt{pip install project-ghost} followed by
+\texttt{ghost verify-properties --mcap <log>} lets a third
+party reproduce the verdict --- or contradict it.
+
+\noindent\textbf{Results.} Empirical evaluation on a violation
+matrix of six injected bug categories, three structurally
+distinct calibration policies, three shape-realistic drift
+profiles, a head-to-head benchmark against RTAMT, and a
+\textbf{three-ULog discrimination experiment} on real PX4 SITL
+flight telemetry establishes that the verifier is
+policy-agnostic, deterministic across Linux and Windows CI
+runners, and informative on real-world telemetry. With
+independent simulator GT auto-detected (ADR-0037, v0.2.5), the
+$3 \times 6 = 18$ discrimination matrix is $18/18$ green;
+$15/18$ cells isolate the violation to the expected property
+(the single non-isolated row is a documented true co-violation
+between BAUD-v1 and MD-v1).
+
+\noindent\textbf{Conclusions.} Epistemic safety contracts
+constitute a tractable property class for autonomous agents.
+The framework supports incremental contract addition (one
+\texttt{register\_contract(...)} call), keeps verifiers
+backward-compatible, and produces mechanical evidence that
+withstands third-party audit. The full artifact is re-runnable
+from a fresh clone (see [AUDIT.md, REPRODUCE.md, INSTALL.md]).
 \end{abstract}
 
 \medskip
@@ -1464,7 +1479,55 @@ differences), and the aggregator step \texttt{diff}s the two files.
 Any disagreement fails the build.
 
 % =======================================================================
-\section{Limitations and threats to validity}
+\section{Threats to validity}
+
+\subsection{Construct validity}
+
+Our key construct is the property class \emph{epistemic safety
+contract} (\S\ref{sec:properties}). The threat is that the
+class is so broadly defined that any property could be called
+``epistemic''. We mitigate by (a) the formal Protocol
+definition (\S\ref{sec:framework}) which enforces a triple
+\texttt{(property\_version, scope, verifier)} with non-empty
+claims and does-not-claim tuples, and (b) the seven shipped
+contracts which exemplify the class concretely. A reviewer can
+attempt to register a vacuous contract and observe that the
+framework's invariants reject it.
+
+\subsection{Internal validity}
+
+The Python verifier and the TLA+ specification could disagree.
+Until v0.2.5 this was acknowledged ``by inspection''; ADR-0043
+closes it for RLB-v1 with a mechanical Hypothesis conformance
+test (\S\ref{sec:rlb-unbounded}). The remaining six contracts'
+bridges are open under ADR-0046; their absence is the
+remaining internal-validity threat we explicitly disclose.
+
+\subsection{External validity}
+
+The discrimination experiment uses three PX4 SITL ULogs from
+the upstream pyulog test fixtures. We chose not to filter the
+stationary ULog (\S\ref{sec:multi-ulog-corpus}); the SITL GT
+auto-detection (\S\ref{sec:independent-gt}) closes it
+mechanically. The external-validity threat is generalisation to
+non-PX4 flight stacks and to real hardware. ADR-0037
+documents the open extension to ROSBag / EuRoC and to motion
+capture / RTK GPS GT sources.
+
+\subsection{Conclusion validity}
+
+The mechanical proofs (Lean 4, TLA+/TLC) ground every
+quantitative claim. Lemma 4 of unbounded RLB-v1 ships as a
+documented \texttt{sorry} in Lean 4 (ADR-0042); we explicitly
+do not claim a SMT-checked TLAPS proof, only a
+mechanically-reduced statement. The hand proof of Lemma 4 is
+available for human audit
+(\texttt{docs/proofs/Rlb\_unbounded\_handproof.md}); the
+remaining conclusion-validity threat is a manual-proof error
+in Lemma 4, which the Lean 4 follow-up (ADR-0044) would
+eliminate.
+
+\section{Known gaps and limitations}
 
 \begin{itemize}
   \item \textbf{Sim, not hardware.} MCAPs come from a simulated
