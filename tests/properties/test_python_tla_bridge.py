@@ -1,3 +1,8 @@
+# ruff: noqa: N803, RUF059
+# Argument names W, N, K match the TLA+ constants and the paper's
+# mathematical notation; lowercase aliases would obscure the
+# correspondence. Unpacked tuple variables marked _* are kept for
+# diagnostic clarity (peak, dirty_run) even when only one is asserted.
 """Conformance bridge: Python verifier semantics vs TLA+ Rlb.tla semantics.
 
 Closes paper section 9's "Python <-> TLA+ bridge by inspection" caveat
@@ -132,9 +137,8 @@ def _tla_semantics_invariant_holds(
             # Recovery transition: this is the cycle where INV_RLB
             # binds. Check the bound on the dirty_run *as-was* before
             # we zero it.
-            if dirty_run > 0:
-                if dirty_run > peak_in_run + W - 1:
-                    return (False, dirty_run, peak_in_run)
+            if dirty_run > 0 and dirty_run > peak_in_run + W - 1:
+                return (False, dirty_run, peak_in_run)
             dirty_run = 0
             peak_in_run = 0
             in_recovery = False

@@ -327,8 +327,10 @@ def _clopper_pearson_upper_bound(
         return 1.0
     if cycles_fires >= cycles_total:
         return 1.0
+    # scipy is an optional extra; the lazy import gates the dependency
+    # so the default Hoeffding path stays stdlib-only.
     try:
-        from scipy.stats import beta  # type: ignore[import-untyped]  # noqa: PLC0415 -- lazy gates scipy as optional dep
+        from scipy.stats import beta  # type: ignore[import-untyped]  # noqa: PLC0415
     except ImportError as exc:  # pragma: no cover
         raise ImportError(
             "ConfidenceMethod.CLOPPER_PEARSON requires SciPy, which is "
