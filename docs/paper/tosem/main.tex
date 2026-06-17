@@ -433,16 +433,12 @@ content-addressable robotics telemetry~\cite{foxglove2022mcap}.
         monitors. Both online; neither performs post-hoc log
         verification with a one-line CLI.
   \item \textbf{Safe RL via
-        shielding}~\cite{jansen2020shielding,jansen2024shielding}:
+        shielding}~\cite{alshiekh2018safe,carr2023safe}:
         runtime enforcement of safety via action filters. Online,
         action-blocking; Ghost is offline and log-verifying.
-  \item \textbf{Control Barrier Functions}~\cite{mitll2023cbf}:
-        controller synthesis for continuous safety constraints.
-        Complementary, not competing.
-  \item \textbf{Conformal prediction for robot
-        safety}~\cite{chakraborty2024conformal}: forward-looking
-        distribution-free uncertainty bounds for gating actions.
-        Predictive; Ghost is retrospective.
+  \item \textbf{Control Barrier Functions}~\cite{black2024cbfkit}:
+        controller synthesis and a recent toolbox for continuous
+        safety constraints. Complementary, not competing.
   \item \textbf{Supervisory control of timed
         automata}~\cite{flordal2022timedsupervisory}: synthesises
         timed supervisors. Constructs new supervisors; Ghost verifies
@@ -552,9 +548,9 @@ question being asked is not the same.
 
 The autonomy-safety landscape is dominated by industrial efforts at
 scales Ghost does not approach: Waymo's safety case framework
-\cite{webb2020waymo} documents the arguments behind millions of
-miles of public-road driving and cites internal logs the public
-cannot replay; PX4's \texttt{commander} state machine enforces
+documents the arguments behind millions of miles of public-road
+driving and cites internal logs the public cannot replay; PX4's
+\texttt{commander} state machine enforces
 flight-mode preconditions live on the vehicle, with ULogs (as
 ingested in \S\ref{sec:realflight}) as their persistent record;
 NASA's NFM tradition produces formally verified

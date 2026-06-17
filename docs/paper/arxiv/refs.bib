@@ -1,26 +1,30 @@
 % =======================================================================
-% PRE-SUBMISSION VERIFICATION REQUIRED for the following 8 references.
-% Authored as "Author and others" without full coauthor lists; some
-% details (year, venue, exact title) may be approximate. Look each up
-% on Google Scholar; replace with the canonical citation, or remove if
-% it cannot be found:
+% Round-33 bibliography audit summary.
 %
-%   - chakraborty2024conformal
-%   - ferrando2020rosmonitoring
-%   - flordal2022timedsupervisory
-%   - jansen2020shielding
-%   - jansen2024shielding
-%   - mitll2023cbf
-%   - rizaldi2020survey
-%   - abate2020formal
+% Removed (could not be substantiated):
+%   - macedo2024verifiable    (fabricated entry, never existed)
+%   - chakraborty2024conformal (Google Scholar result was unrelated paper)
 %
-% Removed in the round-32 audit (was a fabricated entry):
-%   - macedo2024verifiable
+% Renamed + corrected (after URL inspection by author):
+%   - jansen2020shielding -> alshiekh2018safe (correct paper is
+%     Alshiekh et al., AAAI-18, not Jansen / CONCUR)
+%   - jansen2024shielding -> carr2023safe (correct paper is
+%     Carr/Jansen/Junges/Topcu, AAAI-23, not 2024 TECS)
+%   - mitll2023cbf -> black2024cbfkit (CBFkit by Black et al. IEEE 2024,
+%     not the MIT LL toolbox URL that the previous entry pointed at)
+%
+% Still flagged with TODO (verify exact authors/pages from URL before
+% submission; entries themselves are plausibly correct):
+%   - ferrando2020rosmonitoring (Springer LNCS, TAROS 2020)
+%   - flordal2022timedsupervisory (IEEE TAC, year likely 2023)
+%   - rizaldi2020survey (ACM CSUR)
+%   - abate2020formal (Acta Informatica vol 57, 2020)
+%   - black2024cbfkit (confirm IROS vs ICRA conference)
 % =======================================================================
 
-@incollection{bartocci2018lectures,
-  title     = {Lectures on Runtime Verification},
+@book{bartocci2018lectures,
   editor    = {Bartocci, Ezio and Falcone, Yli{\`e}s},
+  title     = {Lectures on Runtime Verification},
   series    = {Lecture Notes in Computer Science},
   volume    = {10457},
   year      = {2018},
@@ -41,25 +45,36 @@
   year    = {2023}
 }
 
-@article{chakraborty2024conformal,
-  author  = {Chakraborty, Kunal and others},
-  title   = {Conformal Prediction for Robot Safety: Calibrated Action-Gating under Distribution Shift},
-  journal = {IEEE Transactions on Automatic Control},
-  year    = {2024}
-}
+% Removed in the round-33 audit: the previous entry chakraborty2024conformal
+% (Conformal Prediction for Robot Safety) could not be substantiated --
+% the TechRxiv result returned by Google Scholar was actually about a
+% different topic (Internet of Agents). The "Conformal prediction"
+% bullet in main.tex sec 1.2 was deleted accordingly. If a real
+% conformal-prediction-for-robot-safety paper is identified later, it
+% can be re-added here.
 
+% TODO: confirm exact author list (currently "and others") from
+%   https://link.springer.com/chapter/10.1007/978-3-030-63486-5_40
+%   before submission.
 @inproceedings{ferrando2020rosmonitoring,
   author    = {Ferrando, Angelo and others},
   title     = {{ROSMonitoring}: A Runtime Verification Framework for {ROS}},
   booktitle = {Towards Autonomous Robotic Systems (TAROS)},
-  year      = {2020}
+  series    = {Lecture Notes in Computer Science},
+  publisher = {Springer},
+  year      = {2020},
+  doi       = {10.1007/978-3-030-63486-5\_40}
 }
 
+% TODO: the IEEE Xplore doc 10123108 is the source. Confirm exact
+%   author list, year (likely 2023, not 2022), volume, pages from:
+%   https://ieeexplore.ieee.org/abstract/document/10123108
+%   before submission.
 @article{flordal2022timedsupervisory,
   author  = {Flordal, Henning and others},
   title   = {Supervisory Control of Timed Automata via Forcible Events},
   journal = {IEEE Transactions on Automatic Control},
-  year    = {2022}
+  year    = {2023}
 }
 
 @misc{foxglove2022mcap,
@@ -83,18 +98,22 @@
   year      = {2006}
 }
 
-@inproceedings{jansen2020shielding,
-  author    = {Jansen, Nils and others},
+@inproceedings{alshiekh2018safe,
+  author    = {Alshiekh, Mohammed and Bloem, Roderick and Ehlers, R{\"u}diger and K{\"o}nighofer, Bettina and Niekum, Scott and Topcu, Ufuk},
   title     = {Safe Reinforcement Learning via Shielding},
-  booktitle = {Concurrency Theory (CONCUR)},
-  year      = {2020}
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume    = {32},
+  year      = {2018},
+  doi       = {10.1609/aaai.v32i1.11797}
 }
 
-@article{jansen2024shielding,
-  author  = {Jansen, Nils and others},
-  title   = {Safe Reinforcement Learning via Shielding (Extended)},
-  journal = {ACM Transactions on Embedded Computing Systems},
-  year    = {2024}
+@inproceedings{carr2023safe,
+  author    = {Carr, Steven and Jansen, Nils and Junges, Sebastian and Topcu, Ufuk},
+  title     = {Safe Reinforcement Learning via Shielding under Partial Observability},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume    = {37},
+  year      = {2023},
+  doi       = {10.1609/aaai.v37i12.26723}
 }
 
 @inproceedings{kendall2017uncertainties,
@@ -111,11 +130,15 @@
   year      = {2002}
 }
 
-@misc{mitll2023cbf,
-  author       = {{MIT Lincoln Laboratory}},
-  title        = {Control Barrier Function Toolbox},
-  howpublished = {\url{https://www.ll.mit.edu/partner-us/available-technologies/control-barrier-function-toolbox}},
-  year         = {2023}
+% TODO: confirm exact IEEE conference (likely IROS or ICRA 2024) from
+%   https://ieeexplore.ieee.org/abstract/document/10801431
+%   and upgrade @misc to @inproceedings with booktitle, pages, doi.
+@misc{black2024cbfkit,
+  author       = {Black, Mitchell and Fainekos, Georgios and Hoxha, Bardh and Okamoto, Hideki and Prokhorov, Danil},
+  title        = {{CBFkit}: A Control Barrier Function Toolbox for Robotics Applications},
+  howpublished = {\url{https://ieeexplore.ieee.org/document/10801431}},
+  publisher    = {IEEE},
+  year         = {2024}
 }
 
 @inproceedings{nikovic2020rtamt,
@@ -132,11 +155,15 @@
   year    = {2023}
 }
 
+% TODO: confirm exact title, author list, volume, and pages from
+%   https://dl.acm.org/doi/abs/10.1145/3342355
+%   before submission.
 @article{rizaldi2020survey,
   author  = {Rizaldi, Aliaksei and others},
   title   = {Formal Specification and Verification of Autonomous Robotic Systems: A Survey},
   journal = {ACM Computing Surveys},
-  year    = {2020}
+  year    = {2020},
+  doi     = {10.1145/3342355}
 }
 
 @book{tartakovsky2014sequential,
@@ -220,32 +247,34 @@
   doi       = {10.1109/ROBOT.2007.363949}
 }
 
-@inproceedings{abate2020formal,
+% Acta Informatica is a journal, not a conference -- change @inproceedings
+% to @article. URL: https://link.springer.com/article/10.1007/s00236-019-00359-1
+% TODO: verify pages from the published version before submission.
+@article{abate2020formal,
   author    = {Abate, Alessandro and Bessa, Iury and Cattaruzza, Dario and Cordeiro, Lucas and David, Cristina and Kesseli, Pascal and Kroening, Daniel and Polgreen, Elizabeth},
   title     = {Automated Formal Synthesis of Provably Safe Digital Controllers for Continuous Plants},
-  booktitle = {Acta Informatica},
+  journal   = {Acta Informatica},
   volume    = {57},
+  doi       = {10.1007/s00236-019-00359-1},
   year      = {2020},
   pages     = {223--244}
 }
 
-@inproceedings{wongpiromsarn2012receding,
-  author    = {Wongpiromsarn, Tichakorn and Topcu, Ufuk and Murray, Richard M.},
-  title     = {Receding Horizon Temporal Logic Planning},
-  booktitle = {IEEE Transactions on Automatic Control},
-  volume    = {57},
-  number    = {11},
-  year      = {2012},
-  pages     = {2817--2830}
+@article{wongpiromsarn2012receding,
+  author  = {Wongpiromsarn, Tichakorn and Topcu, Ufuk and Murray, Richard M.},
+  title   = {Receding Horizon Temporal Logic Planning},
+  journal = {IEEE Transactions on Automatic Control},
+  volume  = {57},
+  year    = {2012},
+  pages   = {2817--2830}
 }
 
-@inproceedings{koymans1990specifying,
-  author    = {Koymans, Ron},
-  title     = {Specifying Real-Time Properties with Metric Temporal Logic},
-  booktitle = {Real-Time Systems},
-  volume    = {2},
-  number    = {4},
-  year      = {1990},
+@article{koymans1990specifying,
+  author  = {Koymans, Ron},
+  title   = {Specifying Real-Time Properties with Metric Temporal Logic},
+  journal = {Real-Time Systems},
+  volume  = {2},
+  year    = {1990},
   pages     = {255--299}
 }
 
