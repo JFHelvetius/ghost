@@ -1301,15 +1301,19 @@ def _base_layout(**kw: Any) -> dict[str, Any]:
 
 
 def _axis_style(**kw: Any) -> dict[str, Any]:
-    return dict(
-        color=_INK_MUTED,
-        gridcolor=_GRID,
-        zerolinecolor=_BORDER,
-        linecolor=_BORDER,
-        tickfont={"size": 11, "color": _INK_MUTED},
-        title_font={"size": 11, "color": _INK_SOFT},
+    # NOTE: use dict-literal `{...}` (not `dict(**kw)`) so callers can
+    # override the defaults (tickfont, title_font, etc.). With `dict()`,
+    # passing tickfont in **kw raises TypeError: multiple values for
+    # keyword argument 'tickfont'.
+    return {
+        "color": _INK_MUTED,
+        "gridcolor": _GRID,
+        "zerolinecolor": _BORDER,
+        "linecolor": _BORDER,
+        "tickfont": {"size": 11, "color": _INK_MUTED},
+        "title_font": {"size": 11, "color": _INK_SOFT},
         **kw,
-    )
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
