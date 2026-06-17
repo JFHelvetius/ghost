@@ -500,15 +500,31 @@ scope, or maturity vis-à-vis the works above; we do claim that the
 primitive itself is missing from the open tooling we surveyed.
 
 % =======================================================================
-\section{The property set}
+\section{The property class}
 \label{sec:properties}
 
 \textbf{Unlike traditional runtime verification, which primarily
 monitors predicates over the external world (velocity, distance,
 temperature), Ghost verifies contracts over the agent's epistemic
 posture: how confidence may be degraded, recovered, bounded, and
-acted upon under uncertainty.} The five properties form a minimal
-theory of behaviour under uncertainty for an autonomous agent.
+acted upon under uncertainty.}
+
+\subsection{The framework (ADR-0045, v0.2.5)}
+\label{sec:framework}
+
+The property class is formalised in v0.2.5 as a Python
+\texttt{Protocol} (\texttt{EpistemicSafetyContract}) plus a
+registry of all shipped contracts at
+\texttt{project\_ghost.properties.framework}. Every contract
+carries \texttt{property\_version: str},
+\texttt{scope: ScopeStatement} (with non-empty \texttt{claims},
+\texttt{does\_not\_claim}, and \texttt{dependencies} tuples
+enforced at construction), and \texttt{verifier} (the pure
+function in \texttt{properties.<name>}). The registry pins
+\textbf{seven shipped contracts} as of v0.2.5; adding the eighth
+is one \texttt{register\_contract(...)} call away. Eight
+framework-level invariants are mechanically enforced in
+\texttt{tests/properties/test\_framework\_invariants.py}.
 
 \begin{table}[h]
 \centering\small
@@ -516,15 +532,20 @@ theory of behaviour under uncertainty for an autonomous agent.
 \toprule
 \textbf{ID} & \textbf{Formal predicate} & \textbf{Epistemic reading} \\
 \midrule
-\textbf{BAUD-v1} & Drift detected $\Rightarrow$ no PROCEED + conservative action & \emph{If you suspect you are wrong, act conservatively.} \\
-\textbf{ERUR-v1} & Drift absent $\wedge$ belief KNOWN $\Rightarrow$ PROCEED & \emph{When evidence is restored, return to acting.} \\
-\textbf{MD-v1}   & $\mathrm{adjusted} \preceq \mathrm{raw}$ (no inflation) & \emph{Never claim more confidence than evidence supports.} \\
-\textbf{RLB-v1}  & $L \le \mathrm{peak} + W - 1$ (recovery is bounded) & \emph{Uncertainty cannot last indefinitely.} \\
-\textbf{FPB-v1}  & Empirical fire rate is exposed and pinned & \emph{Distrust must be measurable and auditable.} \\
+\textbf{BAUD-v1} (ADR-0031) & Drift detected $\Rightarrow$ no PROCEED + conservative action & \emph{If you suspect you are wrong, act conservatively.} \\
+\textbf{ERUR-v1} (ADR-0032) & Drift absent $\wedge$ belief KNOWN $\Rightarrow$ PROCEED & \emph{When evidence is restored, return to acting.} \\
+\textbf{ERUR-v2} (ADR-0040) & Same postcondition over arbitrary \texttt{DriftPreconditionProvider} & \emph{The framework abstraction of ERUR-v1.} \\
+\textbf{MD-v1} (ADR-0033)   & $\mathrm{adjusted} \preceq \mathrm{raw}$ (no inflation) & \emph{Never claim more confidence than evidence supports.} \\
+\textbf{RLB-v1} (ADR-0034)  & $L \le \mathrm{peak} + W - 1$ (recovery is bounded) & \emph{Uncertainty cannot last indefinitely.} \\
+\textbf{FPB-v1} (ADR-0035)  & Empirical fire rate is exposed and pinned & \emph{Distrust must be measurable and auditable.} \\
+\textbf{FPB-v2} (ADR-0039)  & One-sided confidence upper bound on the true fire rate & \emph{Statistical authority earned from sample size.} \\
 \bottomrule
 \end{tabularx}
-\caption{The five properties as epistemic contracts on the agent's
-relation to its own uncertainty.}
+\caption{The seven shipped Epistemic Safety Contracts, registered
+in \texttt{project\_ghost.properties.framework}. The framework is
+\emph{additive}: it lifts the shared recipe to a single Protocol,
+does not replace any verifier's user-facing surface, and does not
+subsume per-property ADRs.}
 \label{tab:epistemic}
 \end{table}
 
@@ -1519,6 +1540,15 @@ Any disagreement fails the build.
         package; Lemma 4 is the only \texttt{sorry} remaining).
         May benefit from mathlib's \texttt{List.IsPrefix}
         machinery.
+  \item \textbf{ADR-0045 (accepted, v0.2.5):} Epistemic Safety
+        Contract framework (\S\ref{sec:framework}). Formalises
+        the property class as a Python Protocol + registry of
+        seven shipped contracts; 8 framework-level invariants
+        pinned in \texttt{test\_framework\_invariants.py}.
+  \item \textbf{ADR-0046 candidate:} extend the Python$\leftrightarrow$TLA+
+        bridge conformance template (ADR-0043) from RLB-v1 to
+        the other six shipped contracts (framework registry
+        enumerates them; template is reusable per property).
   \item Optional TLAPS-mechanical discharge of unbounded RLB-v1
         for contributors who prefer the TLA+ ecosystem
         (\S\ref{sec:rlb-unbounded} ships the outline; Lean 4

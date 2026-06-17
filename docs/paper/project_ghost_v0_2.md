@@ -443,29 +443,63 @@ primitive itself is missing from the open tooling we surveyed.
 
 ---
 
-## 3. The property set
+## 3. The property class
 
 **Unlike traditional runtime verification, which primarily
 monitors predicates over the external world (velocity, distance,
 temperature), Ghost verifies contracts over the agent's epistemic
 posture: how confidence may be degraded, recovered, bounded, and
-acted upon under uncertainty.** The five properties form a
-minimal theory of behaviour under uncertainty for an autonomous
-agent:
+acted upon under uncertainty.**
+
+### 3.0 The framework (ADR-0045, v0.2.5)
+
+The property class is formalised in v0.2.5 as a Python
+``Protocol``,
+[`EpistemicSafetyContract`](https://github.com/JFHelvetius/ghost/blob/main/src/project_ghost/properties/contract.py),
+together with a registry of all shipped contracts at
+[`project_ghost.properties.framework`](https://github.com/JFHelvetius/ghost/blob/main/src/project_ghost/properties/framework.py).
+Every contract carries:
+
+- ``property_version: str`` — round-trips with the verifier
+  report's ``property_version`` field, so a verdict bundle can
+  be matched to the contract that issued it.
+- ``scope: ScopeStatement`` — lifted from the ADR's Scope
+  section to data: ``claims`` (what the property formally
+  asserts), ``does_not_claim`` (the honest caveats), and
+  ``dependencies`` (other contracts this one references).
+  Non-empty `claims` and `does_not_claim` are framework-level
+  invariants enforced at construction.
+- ``verifier: Callable[..., VerificationReport]`` — the pure
+  function in ``properties.<name>`` that consumes an MCAP and
+  emits a typed report with ``mcap_sha256``,
+  ``property_version`` and ``holds: bool``.
+
+The framework's registry pins seven contracts as of v0.2.5:
+**BAUD-v1, ERUR-v1, ERUR-v2, MD-v1, RLB-v1, FPB-v1, FPB-v2**.
+Adding the eighth is one ``register_contract(...)`` call away;
+eight framework-level invariants
+(`tests/properties/test_framework_invariants.py`) guarantee the
+recipe is consistent. The list below is the same registry,
+rendered for human reading:
 
 | ID | Formal predicate | Epistemic reading |
 |---|---|---|
-| **BAUD-v1** | Drift detected → no PROCEED + conservative action | *If you suspect you are wrong, act conservatively.* |
-| **ERUR-v1** | Drift absent ∧ belief KNOWN → PROCEED | *When evidence is restored, return to acting.* |
-| **MD-v1** | `adjusted ≼ raw` (no inflation) | *Never claim more confidence than evidence supports.* |
-| **RLB-v1** | `L ≤ peak + W − 1` (recovery is bounded) | *Uncertainty cannot last indefinitely.* |
-| **FPB-v1** | Empirical fire rate is exposed and pinned | *Distrust must be measurable and auditable.* |
+| **BAUD-v1** (ADR-0031) | Drift detected → no PROCEED + conservative action | *If you suspect you are wrong, act conservatively.* |
+| **ERUR-v1** (ADR-0032) | Drift absent ∧ belief KNOWN → PROCEED | *When evidence is restored, return to acting.* |
+| **ERUR-v2** (ADR-0040) | Same postcondition over arbitrary `DriftPreconditionProvider` | *The framework abstraction of ERUR-v1.* |
+| **MD-v1** (ADR-0033) | `adjusted ≼ raw` (no inflation) | *Never claim more confidence than evidence supports.* |
+| **RLB-v1** (ADR-0034) | `L ≤ peak + W − 1` (recovery is bounded) | *Uncertainty cannot last indefinitely.* |
+| **FPB-v1** (ADR-0035) | Empirical fire rate is exposed and pinned | *Distrust must be measurable and auditable.* |
+| **FPB-v2** (ADR-0039) | One-sided confidence upper bound on the true fire rate | *Statistical authority earned from sample size.* |
 
 Each property is stated in a binding ADR (immutable once
 accepted) and verified by a pure function in
 `src/project_ghost/properties/`. Each verifier returns a typed
 report with `holds: bool`, structured per-cycle metadata, and the
-MCAP's SHA-256.
+MCAP's SHA-256. The framework is **additive**: it lifts the
+shared recipe to a single Protocol, does not replace any
+verifier's user-facing surface, and does not subsume the
+per-property ADRs.
 
 ### 3.1 BAUD-v1 — Bounded Action Under Drift (ADR-0031)
 
@@ -1776,6 +1810,18 @@ per-property §Scope sections of the ADRs.
   the proof needs an auxiliary "DIRTYs precede CLEANs in the
   window" invariant + a case split on `k` matching the hand
   proof. May benefit from mathlib's `List.IsPrefix` machinery.
+- **ADR-0045 (accepted, v0.2.5)**: Epistemic Safety Contract
+  framework. Formalises the property class (paper §3) as a
+  Python ``Protocol`` plus a registry of the seven shipped
+  contracts. Eight framework-level invariants pinned in
+  `tests/properties/test_framework_invariants.py`. Adding the
+  eighth contract is one ``register_contract(...)`` call away.
+  Public surface:
+  [`project_ghost.properties.framework.shipped_contracts`](https://github.com/JFHelvetius/ghost/blob/main/src/project_ghost/properties/framework.py).
+- **ADR-0046 (candidate)**: extend the Python ↔ TLA+ bridge
+  conformance template (ADR-0043) from RLB-v1 to the other six
+  shipped contracts. The framework registry already enumerates
+  them; the template is reusable per property.
 - **HAL backend campaign.** A first hardware backend (Pixhawk +
   Linux companion computer) would lift the reproducibility surface
   from simulation to flight logs.

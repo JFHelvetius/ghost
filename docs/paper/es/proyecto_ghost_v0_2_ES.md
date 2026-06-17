@@ -402,27 +402,40 @@ scope o madurez frente a los trabajos arriba.
 
 ---
 
-## 3. El conjunto de propiedades
+## 3. La clase de propiedades
 
 **A diferencia de la runtime verification tradicional, que
-principalmente monitoriza predicados sobre el mundo externo
-(velocidad, distancia, temperatura), Ghost verifica contratos
-sobre la postura epistémica del agente: cómo la confianza puede
-degradarse, recuperarse, acotarse y traducirse en acción bajo
-incertidumbre.** Las cinco propiedades forman una teoría mínima
-del comportamiento bajo incertidumbre para un agente autónomo:
+principalmente monitoriza predicados sobre el mundo externo,
+Ghost verifica contratos sobre la postura epistémica del agente.**
+
+### 3.0 El framework (ADR-0045, v0.2.5)
+
+La clase de propiedades está formalizada como un Python
+``Protocol`` (`EpistemicSafetyContract`) más un registry de los
+siete contratos shipped, en
+`project_ghost.properties.framework`. Cada contrato lleva
+`property_version: str`, `scope: ScopeStatement` (con `claims`,
+`does_not_claim` y `dependencies` non-empty enforced en
+construction), y `verifier: Callable[..., VerificationReport]`.
+Añadir el octavo contrato es un solo
+``register_contract(...)``; 8 invariantes framework-level
+verificadas en `tests/properties/test_framework_invariants.py`.
 
 | ID | Predicado formal | Lectura epistémica |
 |---|---|---|
-| **BAUD-v1** | Drift detectado → no PROCEED + acción conservadora | *Si sospechas que estás equivocado, actúa conservadoramente.* |
-| **ERUR-v1** | Drift ausente ∧ belief KNOWN → PROCEED | *Cuando la evidencia se restablece, vuelve a actuar.* |
-| **MD-v1** | `adjusted ≼ raw` (sin inflación) | *Nunca afirmes saber más de lo que la evidencia respalda.* |
-| **RLB-v1** | `L ≤ peak + W − 1` (recuperación acotada) | *La incertidumbre no puede durar indefinidamente.* |
-| **FPB-v1** | Tasa empírica expuesta y pineada | *La desconfianza debe ser medible y auditable.* |
+| **BAUD-v1** (ADR-0031) | Drift detectado → no PROCEED + acción conservadora | *Si sospechas que estás equivocado, actúa conservadoramente.* |
+| **ERUR-v1** (ADR-0032) | Drift ausente ∧ belief KNOWN → PROCEED | *Cuando la evidencia se restablece, vuelve a actuar.* |
+| **ERUR-v2** (ADR-0040) | Mismo postcondition sobre `DriftPreconditionProvider` arbitrary | *La abstracción framework-level de ERUR-v1.* |
+| **MD-v1** (ADR-0033) | `adjusted ≼ raw` (sin inflación) | *Nunca afirmes saber más de lo que la evidencia respalda.* |
+| **RLB-v1** (ADR-0034) | `L ≤ peak + W − 1` (recuperación acotada) | *La incertidumbre no puede durar indefinidamente.* |
+| **FPB-v1** (ADR-0035) | Tasa empírica expuesta y pineada | *La desconfianza debe ser medible y auditable.* |
+| **FPB-v2** (ADR-0039) | Cota unilateral de confianza sobre la fire rate verdadera | *Autoridad estadística ganada del tamaño de muestra.* |
 
 Cada propiedad está enunciada en un ADR vinculante (inmutable
 una vez aceptado) y verificada por una función pura en
-`src/project_ghost/properties/`.
+`src/project_ghost/properties/`. El framework es **aditivo**:
+levanta la receta compartida a un Protocol único, NO reemplaza
+el surface de ningún verifier, NO subsume los ADRs per-property.
 
 ### 3.1 BAUD-v1 — Bounded Action Under Drift
 
@@ -1331,6 +1344,16 @@ que las secciones §Scope per-propiedad de los ADRs.
   (`cleanAfterDirty_count`) en Lean 4, cerrando el último
   `sorry` de RLB-v1 unbounded. Strategy ya scaffolded; puede
   beneficiarse de mathlib `List.IsPrefix`.
+- **ADR-0045 (aceptado, v0.2.5)**: framework Epistemic Safety
+  Contract. Formaliza la clase de propiedades (§3) como un
+  Python ``Protocol`` más un registry de los siete contratos
+  shipped. 8 invariantes framework-level pineadas en
+  `tests/properties/test_framework_invariants.py`. Surface:
+  `project_ghost.properties.framework.shipped_contracts`.
+- **ADR-0046 (candidate)**: extender el bridge conformance
+  template (ADR-0043) de RLB-v1 a los otros seis contratos.
+  El framework registry ya los enumera; el template es
+  reutilizable per-propiedad.
 - **ADR-0039 (accepted, v0.2.5)**: FPB-v2 estadístico. Ships
   Hoeffding closed-form (default, stdlib-only) y Clopper-Pearson
   exact (opt-in, SciPy) cotas superiores unilaterales sobre la

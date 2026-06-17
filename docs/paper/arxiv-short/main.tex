@@ -232,14 +232,19 @@ statement. The cited artefact is, in this precise sense, the
 falsification mechanism.
 
 % =======================================================================
-\section{The property set: epistemic contracts}
+\section{The property class: epistemic contracts}
 \label{sec:properties}
 
 \textbf{Unlike traditional runtime verification, which monitors
 predicates over the external world (velocity, distance,
 temperature), Ghost verifies contracts over the agent's epistemic
 posture: how confidence may be degraded, recovered, bounded, and
-acted upon under uncertainty.} The five properties are:
+acted upon under uncertainty.} v0.2.5 formalises the class as a
+Python \texttt{Protocol} (\texttt{EpistemicSafetyContract},
+ADR-0045) plus a registry of the \textbf{seven shipped
+contracts} (BAUD-v1, ERUR-v1, ERUR-v2, MD-v1, RLB-v1, FPB-v1,
+FPB-v2); 8 framework-level invariants mechanically enforced. The
+five anchor contracts are:
 
 \begin{itemize}[noitemsep,topsep=2pt]
   \item \textbf{BAUD-v1.} \emph{If you suspect you are wrong, act

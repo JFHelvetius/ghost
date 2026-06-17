@@ -309,23 +309,37 @@ pattern 不是工业 safety case 的替代品；它是这些 case 可以引用
 
 ---
 
-## 3. 属性集
+## 3. 属性类
 
-**与传统的运行时验证（主要监控关于外部世界的谓词：速度、距
-离、温度）不同，Ghost 验证关于代理认识论姿态的契约：信心如何
-在不确定性下被降级、恢复、约束并转化为行动。** 五个属性构成
-了一个自主代理在不确定性下行为的最小理论：
+**与传统的运行时验证（主要监控外部世界的谓词）不同，Ghost
+验证关于代理认识论姿态的契约。**
+
+### 3.0 框架 (ADR-0045，v0.2.5)
+
+属性类被形式化为 Python ``Protocol``
+(`EpistemicSafetyContract`) 加上一个 shipped 契约的 registry，
+位于 `project_ghost.properties.framework`。每个契约携带
+`property_version: str`、`scope: ScopeStatement`（带有
+构造时强制的非空 `claims`、`does_not_claim` 和 `dependencies`）
+和 `verifier: Callable[..., VerificationReport]`。添加第八个
+契约只需要一次 ``register_contract(...)``；8 个 framework
+级别的不变量在 `tests/properties/test_framework_invariants.py`
+中固定。
 
 | ID | 形式谓词 | 认识论解读 |
 |---|---|---|
-| **BAUD-v1** | 检测到漂移 → 不 PROCEED + 保守动作 | *如果你怀疑自己错了，要保守地行动。* |
-| **ERUR-v1** | 漂移缺失 ∧ belief KNOWN → PROCEED | *当证据恢复时，回到行动。* |
-| **MD-v1** | `adjusted ≼ raw`（无膨胀） | *永不声称比证据支持的更多信心。* |
-| **RLB-v1** | `L ≤ peak + W − 1`（恢复有界） | *不确定性不能无限持续。* |
-| **FPB-v1** | 经验触发率被暴露和固定 | *不信任必须可测量、可审计。* |
+| **BAUD-v1** (ADR-0031) | 检测到漂移 → 不 PROCEED + 保守动作 | *如果你怀疑自己错了，要保守地行动。* |
+| **ERUR-v1** (ADR-0032) | 漂移缺失 ∧ belief KNOWN → PROCEED | *当证据恢复时，回到行动。* |
+| **ERUR-v2** (ADR-0040) | 在任意 `DriftPreconditionProvider` 上的相同 postcondition | *ERUR-v1 的框架级抽象。* |
+| **MD-v1** (ADR-0033) | `adjusted ≼ raw`（无膨胀） | *永不声称比证据支持的更多信心。* |
+| **RLB-v1** (ADR-0034) | `L ≤ peak + W − 1`（恢复有界） | *不确定性不能无限持续。* |
+| **FPB-v1** (ADR-0035) | 经验触发率被暴露和固定 | *不信任必须可测量、可审计。* |
+| **FPB-v2** (ADR-0039) | 真实触发率的单侧置信上界 | *从样本大小赢得的统计权威。* |
 
 每个属性都在有约束力的 ADR 中声明（一旦接受即不可变），并由
-`src/project_ghost/properties/` 中的纯函数验证。
+`src/project_ghost/properties/` 中的纯函数验证。框架是
+**加性的**：将共享配方提升为单一 Protocol，**不**替换任何
+verifier 的用户面表面，**不**包含每属性 ADR。
 
 ### 3.1 BAUD-v1 — Bounded Action Under Drift
 
@@ -1068,6 +1082,14 @@ JSON 的 SHA-256。
   (`cleanAfterDirty_count`)，关闭 RLB-v1 unbounded 的最后一个
   `sorry`。Strategy 已 scaffolded；可能受益于 mathlib
   `List.IsPrefix`。
+- **ADR-0045（已接受，v0.2.5）**：Epistemic Safety Contract
+  框架。将属性类（§3）形式化为 Python ``Protocol`` 加上 7 个
+  shipped 契约的 registry。8 个 framework 级别的不变量在
+  `tests/properties/test_framework_invariants.py` 中固定。
+  Surface：`project_ghost.properties.framework.shipped_contracts`。
+- **ADR-0046（候选）**：将 Python ↔ TLA+ bridge 合规模板
+  (ADR-0043) 从 RLB-v1 扩展到其他六个 shipped 契约。框架
+  registry 已经枚举了它们；模板是每属性可重用的。
 - **ADR-0039（已接受，v0.2.5）**：统计 FPB-v2。交付闭式
   Hoeffding（默认，仅 stdlib）和精确 Clopper-Pearson（opt-in，
   SciPy）对真实 firing 概率的单侧置信上界。关闭了之前推迟的
