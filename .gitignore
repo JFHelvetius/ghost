@@ -68,6 +68,10 @@ runs/
 *.mcap
 *.mcap.index
 *.bag
+# Bundled demo MCAP from real PX4 SITL flight (sample.ulg adapter output).
+# Distributed so users can verify their dashboard against a real-flight
+# verdict without re-running the adapter locally.
+!docs/paper/data/sample_ulog_demo.mcap
 .rerun/
 configs/local/
 profiling/
