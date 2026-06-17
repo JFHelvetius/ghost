@@ -230,6 +230,21 @@ theorem dirtyAcc_count (W n : Nat) (hPos : 0 < W) :
 -- with the actual proof and `#print axioms` will then show only
 -- propext and Quot.sound.
 
+-- Structural lemma: cleanAfterDirty has the shape
+-- (replicate r dirty) ++ (replicate s clean) where r = number of remaining
+-- dirty entries and s = number of clean entries. The full proof of this
+-- structural fact is what discharges Lemma 4 below; we provide the shape
+-- lemma here as an auxiliary, with a slightly different statement that
+-- avoids existential quantification.
+--
+-- The key observation: at the end of CleanAfterDirty(N, k), the window
+-- contains the LAST W cycles (or fewer if not saturated). When the
+-- accumulating phase wrote N DIRTYs followed by clean phase k CLEANs:
+-- - If k < W - N: window has all N DIRTYs (still growing); count = N.
+-- - If W - N <= k <= W: window has saturated; the leftmost (k - (W-N))
+--   DIRTYs have been popped; count = N - (k - (W-N)).
+-- - If k > W: all DIRTYs popped; count = 0.
+
 -- Length of cleanAfterDirty: grows until saturated.
 theorem cleanAfterDirty_length (N W k : Nat) (hPos : 0 < W) (_hNW : N ≤ W) :
     (cleanAfterDirty N W k).length = min (N + k) W := by

@@ -1350,10 +1350,24 @@ que las secciones §Scope per-propiedad de los ADRs.
   shipped. 8 invariantes framework-level pineadas en
   `tests/properties/test_framework_invariants.py`. Surface:
   `project_ghost.properties.framework.shipped_contracts`.
-- **ADR-0046 (candidate)**: extender el bridge conformance
-  template (ADR-0043) de RLB-v1 a los otros seis contratos.
-  El framework registry ya los enumera; el template es
-  reutilizable per-propiedad.
+- **ADR-0046 (aceptado, v0.2.5)**: extender el bridge
+  conformance template (ADR-0043) de RLB-v1 a los cuatro
+  contratos fundacionales (BAUD-v1, ERUR-v1, MD-v1, FPB-v1).
+  Siete nuevos tests Hypothesis en
+  `tests/properties/test_python_tla_bridge_full.py` más un
+  sanity check framework-level. ERUR-v2 (policy-paramétrico) y
+  FPB-v2 (math closed-form ya pineada en
+  `test_fpb_v2_property.py`) están documentados out of scope
+  con razones.
+- **ADR-0044 (avanzado, v0.2.5 round 32)**: discharge de
+  Lemma 4 (`cleanAfterDirty_count`) en Lean 4. Round 32 añade
+  cuatro nuevos lemmas auxiliares mecánicamente verificados
+  con axiom set `{propext, Quot.sound}`; la fórmula principal
+  del count queda con `sorry` porque su discharge requiere
+  razonamiento sobre prefijos estructurales que vive en
+  mathlib (no en core Lean). Tres paths de cierre documentados
+  en ADR-0044: (A) añadir mathlib, (B) encoding length+count
+  sin mathlib, (C) TLAPS. Round futuro elige uno.
 - **ADR-0039 (accepted, v0.2.5)**: FPB-v2 estadístico. Ships
   Hoeffding closed-form (default, stdlib-only) y Clopper-Pearson
   exact (opt-in, SciPy) cotas superiores unilaterales sobre la

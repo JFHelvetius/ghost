@@ -1709,19 +1709,20 @@ per-property §Scope sections of the ADRs.
   `cleanAfterDirty_count` (Lemma 4) that ships as a documented
   `sorry`. The full Lean 4 discharge of Lemma 4 is the natural
   ADR-0044 follow-up.
-- **Python ↔ TLA+ bridge — closed mechanically (ADR-0043).** The
-  previous "by inspection" caveat is closed in v0.2.5 by a
-  Hypothesis-checked conformance test
-  (`tests/properties/test_python_tla_bridge.py`): two
-  re-implementations (one of the verifier core, one of the TLA+
-  state machine, written independently from their respective
-  sources) must agree on the `INV_RLB` verdict for every trace
-  Hypothesis can synthesise within the bounds. ~600 random
-  traces plus 4 pinned paper examples per run; the test runs in
-  under a second on every push. A future divergence between the
-  verifier and the TLA+ spec fails the test before it ships. The
-  template extends to BAUD / ERUR / MD / FPB as follow-up
-  per-property ADRs.
+- **Python ↔ TLA+ bridge — closed mechanically for 5/7
+  contracts (ADR-0043 + ADR-0046).** The previous "by
+  inspection" caveat is closed in v0.2.5 by Hypothesis-checked
+  conformance tests covering RLB-v1
+  (`tests/properties/test_python_tla_bridge.py`, ADR-0043) plus
+  the four foundational contracts BAUD-v1, ERUR-v1, MD-v1,
+  FPB-v1 (`tests/properties/test_python_tla_bridge_full.py`,
+  ADR-0046). Each property has two re-implementations (verifier
+  core + TLA+ state machine, written independently from their
+  respective sources); Hypothesis-generated traces (~1700 total
+  per run) assert agreement. Tests run in under 2 seconds on
+  every push. ERUR-v2 (policy-parametric) and FPB-v2
+  (closed-form math) are documented out of scope with reasons
+  (ADR-0046 §Scope).
 - **Statistical FPB shipped, narrow-scope.** FPB-v2 (ADR-0039,
   v0.2.5) closes the previously-deferred statistical bound with
   closed-form Hoeffding and Clopper-Pearson estimators (§3.5).
@@ -1818,10 +1819,25 @@ per-property §Scope sections of the ADRs.
   eighth contract is one ``register_contract(...)`` call away.
   Public surface:
   [`project_ghost.properties.framework.shipped_contracts`](https://github.com/JFHelvetius/ghost/blob/main/src/project_ghost/properties/framework.py).
-- **ADR-0046 (candidate)**: extend the Python ↔ TLA+ bridge
-  conformance template (ADR-0043) from RLB-v1 to the other six
-  shipped contracts. The framework registry already enumerates
-  them; the template is reusable per property.
+- **ADR-0046 (accepted, v0.2.5)**: extend the Python ↔ TLA+
+  bridge conformance template (ADR-0043) from RLB-v1 to the
+  four foundational contracts (BAUD-v1, ERUR-v1, MD-v1,
+  FPB-v1). Seven new Hypothesis property tests at
+  `tests/properties/test_python_tla_bridge_full.py` plus a
+  framework-level sanity check that no future contract is added
+  without a bridge. ERUR-v2 (policy-parametric) and FPB-v2
+  (closed-form math already pinned in
+  `test_fpb_v2_property.py`) are documented as out of scope
+  with reasons.
+- **ADR-0044 (advanced, v0.2.5 round 32)**: Lemma 4
+  (`cleanAfterDirty_count`) discharge in Lean 4. Round 32 adds
+  four new auxiliary lemmas mechanically verified with axiom
+  set `{propext, Quot.sound}`; the main count formula remains
+  as a documented `sorry` because its discharge requires
+  structural prefix reasoning that lives in mathlib (not in
+  core Lean). Three closure paths documented in ADR-0044:
+  (A) add mathlib, (B) length+count encoding without mathlib,
+  (C) TLAPS instead. Future round chooses one.
 - **HAL backend campaign.** A first hardware backend (Pixhawk +
   Linux companion computer) would lift the reproducibility surface
   from simulation to flight logs.

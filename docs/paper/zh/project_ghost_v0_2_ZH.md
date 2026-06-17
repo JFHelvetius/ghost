@@ -1087,9 +1087,20 @@ JSON 的 SHA-256。
   shipped 契约的 registry。8 个 framework 级别的不变量在
   `tests/properties/test_framework_invariants.py` 中固定。
   Surface：`project_ghost.properties.framework.shipped_contracts`。
-- **ADR-0046（候选）**：将 Python ↔ TLA+ bridge 合规模板
-  (ADR-0043) 从 RLB-v1 扩展到其他六个 shipped 契约。框架
-  registry 已经枚举了它们；模板是每属性可重用的。
+- **ADR-0046（已接受，v0.2.5）**：将 Python ↔ TLA+ bridge
+  合规模板 (ADR-0043) 从 RLB-v1 扩展到四个基础契约
+  (BAUD-v1、ERUR-v1、MD-v1、FPB-v1)。`tests/properties/`
+  `test_python_tla_bridge_full.py` 中有七个新的 Hypothesis
+  测试加上 framework 级别的合理性检查。ERUR-v2（policy 参数化）
+  和 FPB-v2（封闭形式数学已在 `test_fpb_v2_property.py` 中
+  固定）记录为 out of scope 并附原因。
+- **ADR-0044（推进，v0.2.5 round 32）**：在 Lean 4 中 discharge
+  Lemma 4 (`cleanAfterDirty_count`)。Round 32 添加四个新的辅助
+  引理，axiom set 是 `{propext, Quot.sound}`；主 count 公式仍
+  作为 `sorry`，因为其 discharge 需要结构前缀推理，这在 mathlib
+  中（不在 core Lean 中）。在 ADR-0044 中记录了三条关闭路径：
+  (A) 添加 mathlib，(B) 不用 mathlib 的 length+count 编码，
+  (C) 改用 TLAPS。未来 round 选择一条。
 - **ADR-0039（已接受，v0.2.5）**：统计 FPB-v2。交付闭式
   Hoeffding（默认，仅 stdlib）和精确 Clopper-Pearson（opt-in，
   SciPy）对真实 firing 概率的单侧置信上界。关闭了之前推迟的

@@ -115,7 +115,7 @@ _LANG: dict[str, dict[str, str]] = {
         # About expander
         "about_label": "About this work — what is the contribution?",
         "about_body": """
-Project Ghost makes **five concrete, citable contributions** on top of
+Project Ghost makes **seven concrete, citable contributions** on top of
 the existing literature on uncertainty in robotics. The underlying
 ingredients (Bayesian filters, calibration, FDI, runtime supervisors)
 are well-established; the contributions are in how they are
@@ -131,27 +131,42 @@ are well-established; the contributions are in how they are
   BAUD-v1 + ERUR-v1 partition the space of per-cycle conditional
   behaviour. Stated in TLA+ as `INV_PARTITION`, **mechanically
   verified by TLC** over the full reachable state space of the
-  abstract model (ADR-0036). Promoted from "observed on one trace"
-  to "proved on the model".
+  abstract model (ADR-0036) and **fully discharged in Lean 4 with
+  no `sorry`** (ADR-0042).
 - **PV-3 — Structural recovery latency bound.**
   `L ≤ peak + W − 1` for sliding-window calibration histories with
   `MahalanobisDowngradePolicy(M, K)`. Drift-then-recovery smoke
   fires at the bound exactly (38 = 7 + 32 − 1), proving the bound
-  is tight (RLB-v1).
-- **PV-4 — Safe-reason set encoding pattern.**
-  `S_BAUD-v1 = {"attitude_hold_hold", "kill_zero_throttle"}` — a
-  closed taxonomy of strings classifying which non-PROCEED actuator
-  commands count as conservative, replacing fragile `command is None`
-  checks with an extensible, externally-auditable allowlist (BAUD-v1).
+  is tight (RLB-v1, ADR-0034). v0.2.5 mechanises it via a
+  parametric TLC sweep at `W ∈ {4, 8, 16}` and a Lean 4 proof of
+  9 lemmas + Theorem 1 statement (only 1 `sorry` left,
+  ADR-0038/ADR-0042).
+- **PV-4 — The EpistemicSafetyContract framework.**
+  The property class is formalised in v0.2.5 as a Python `Protocol`
+  plus a registry of the seven shipped contracts (BAUD-v1, ERUR-v1/v2,
+  MD-v1, RLB-v1, FPB-v1/v2). Adding the eighth contract is one
+  `register_contract(...)` call away; eight framework-level
+  invariants are pinned in tests (ADR-0045).
 - **PV-5 — End-to-end safety citation pattern.**
   Content-addressed MCAP + ADR + pure-function verifier + Hypothesis
   property test + CI gate + tagged release + OIDC-signed PyPI wheel
   — assembled as one coherent reproducibility unit. The headline
-  claim is operationally re-runnable from `pip install project-ghost==0.2.0`.
+  claim is operationally re-runnable from `pip install project-ghost==0.2.5`.
+- **PV-6 — Real-telemetry discrimination experiment.**
+  The 3-ULog × 6-category matrix on PX4 SITL flight logs yields
+  **18/18 detection** with independent SITL GT auto-detection
+  (ADR-0037); 15/18 cells isolate the violation to the expected
+  property (§8.8.2).
+- **PV-7 — Mechanically-checked Python ↔ TLA+ bridge (ADR-0043).**
+  The previous "by inspection" caveat is closed in v0.2.5 by a
+  Hypothesis-checked conformance test asserting the verifier core
+  and the TLA+ state machine agree on `INV_RLB` for every
+  Hypothesis-synthesised trace.
 
 For each, the binding ADR is the formal statement, the verifier is
 the executable test, the inline witness in `SmokeSummary.*_report`
-is the self-evidence, and CI is the continuous guarantee.
+and `matrix.json` is the self-evidence, and CI is the continuous
+guarantee.
 
 Theoretically novel? No — this is an engineering and citation
 contribution, not a new theorem. **Operationally novel? Yes** —
@@ -193,13 +208,17 @@ MCAP without trusting the producer.
         "tab_paper": "Read the paper",
         # Paper tab
         "paper_eyebrow": "Technical paper",
-        "paper_h1": "A Verifiable Safety-Property Surface for Autonomy Under Uncertainty",
+        "paper_h1": (
+            "Epistemic Safety Contracts as a Property Class for "
+            "Autonomous Agents: A Formalised Framework with Mechanical "
+            "Proofs and a Real-Telemetry Discrimination Experiment"
+        ),
         "paper_lang_label": "Paper language",
         "paper_intro": (
             "The full technical paper — abstract, contributions, proof of "
             "the recovery latency bound, evaluation, and references — available in three "
             "languages. The English version is canonical for arXiv and "
-            "FMAS 2026 submission; the Spanish and Chinese versions are "
+            "TOSEM submission; the Spanish and Chinese versions are "
             "internal translations for collaborators."
         ),
         "paper_view_github": "View on GitHub",
@@ -239,10 +258,11 @@ MCAP without trusting the producer.
         "sec_decisions": "Decisions",
         "sec_calibration": "Calibration over time",
         "sec_provenance": "Provenance",
-        "sec_properties": "Safety properties (ADR-0031..0035)",
+        "sec_properties": "Safety properties (v0.2.5: 7 shipped contracts)",
         "properties_caption": (
-            "Five formal properties verified inline against the captured "
-            "MCAP. Each veredicto is byte-exact reproducible; the same "
+            "Seven formal properties verified inline against the captured "
+            "MCAP, registered in the EpistemicSafetyContract framework "
+            "(ADR-0045). Each verdict is byte-exact reproducible; the same "
             "<code>ghost verify-properties --mcap &lt;path&gt;</code> "
             "command from the shell produces identical output."
         ),
@@ -430,7 +450,7 @@ MCAP without trusting the producer.
         ),
         "about_label": "Sobre este trabajo — ¿cuál es la contribución?",
         "about_body": """
-Project Ghost aporta **cinco contribuciones concretas y citables**
+Project Ghost aporta **siete contribuciones concretas y citables**
 sobre la literatura existente de incertidumbre en robótica. Los
 ingredientes de base (filtros bayesianos, calibración, FDI,
 supervisores en tiempo de ejecución) están bien establecidos; las
@@ -448,26 +468,39 @@ y se verifican mecánicamente**.
   BAUD-v1 + ERUR-v1 particionan el espacio de comportamiento
   condicional por ciclo. Enunciado en TLA+ como `INV_PARTITION`,
   **verificado mecánicamente por TLC** sobre el espacio de estados
-  alcanzable completo del modelo abstracto (ADR-0036). Promovido de
-  "observado en una traza" a "demostrado sobre el modelo".
+  alcanzable completo del modelo abstracto (ADR-0036) y
+  **totalmente discharged en Lean 4 sin `sorry`** (ADR-0042).
 - **PV-3 — Cota estructural de latencia de recuperación.**
   `L ≤ peak + W − 1` para historiales de calibración con ventana
   deslizante usando `MahalanobisDowngradePolicy(M, K)`. El smoke
   drift-then-recovery dispara exactamente en la cota
-  (38 = 7 + 32 − 1), demostrando que la cota es ajustada (RLB-v1).
-- **PV-4 — Patrón de codificación por safe-reason set.**
-  `S_BAUD-v1 = {"attitude_hold_hold", "kill_zero_throttle"}` — una
-  taxonomía cerrada de strings que clasifica qué comandos de
-  actuador no-PROCEED cuentan como conservadores, reemplazando
-  chequeos frágiles tipo `command is None` por una allowlist
-  extensible y auditable externamente (BAUD-v1).
+  (38 = 7 + 32 − 1), demostrando que la cota es ajustada (RLB-v1,
+  ADR-0034). v0.2.5 lo mecaniza vía un TLC sweep paramétrico a
+  `W ∈ {4, 8, 16}` y una prueba Lean 4 de 9 lemmas + Theorem 1
+  statement (solo queda 1 `sorry`, ADR-0038/ADR-0042).
+- **PV-4 — El framework EpistemicSafetyContract.**
+  La clase de propiedades formalizada en v0.2.5 como Python
+  `Protocol` más un registry de los siete contratos shipped
+  (BAUD-v1, ERUR-v1/v2, MD-v1, RLB-v1, FPB-v1/v2). Añadir el
+  octavo contrato es un solo `register_contract(...)`;
+  8 invariantes framework-level pineadas en tests (ADR-0045).
 - **PV-5 — Patrón de citación end-to-end para safety.**
   MCAP content-addressed + ADR + verificador función pura + test
   de propiedades Hypothesis + gate de CI + release etiquetado +
   wheel firmado por OIDC en PyPI — ensamblados como una sola
   unidad coherente de reproducibilidad. La afirmación principal es
   re-ejecutable operacionalmente desde
-  `pip install project-ghost==0.2.0`.
+  `pip install project-ghost==0.2.5`.
+- **PV-6 — Experimento de discriminación sobre telemetría real.**
+  La matriz 3-ULog × 6 categorías sobre flight logs PX4 SITL da
+  **18/18 detección** con auto-detección de SITL GT independiente
+  (ADR-0037); 15/18 celdas aíslan la violación a la propiedad
+  esperada (§8.8.2).
+- **PV-7 — Bridge mecánico Python ↔ TLA+ (ADR-0043).**
+  El caveat anterior "por inspección" queda cerrado en v0.2.5
+  mediante un conformance test Hypothesis-checked que asserta
+  que el verifier core y la TLA+ state machine coinciden en
+  `INV_RLB` para cada trace sintetizado.
 
 Para cada una: el ADR vinculante es el enunciado formal, el
 verificador es el test ejecutable, el testigo inline en
@@ -514,15 +547,16 @@ propios runs contra el MCAP capturado sin confiar en el productor.
         # Paper tab
         "paper_eyebrow": "Paper técnico",
         "paper_h1": (
-            "Una superficie de propiedades de seguridad verificable "
-            "para autonomía bajo incertidumbre"
+            "Epistemic Safety Contracts como clase de propiedades para "
+            "agentes autónomos: marco formalizado con pruebas mecánicas "
+            "y experimento de discriminación sobre telemetría real"
         ),
         "paper_lang_label": "Idioma del paper",
         "paper_intro": (
             "El paper técnico completo — abstract, contribuciones, prueba "
             "de la cota de latencia de recuperación, evaluación y referencias — disponible en tres "
             "idiomas. La versión inglesa es la canónica para arXiv y para "
-            "la submission a FMAS 2026; las versiones española y china son "
+            "la submission a TOSEM; las versiones española y china son "
             "traducciones internas para colaboradores."
         ),
         "paper_view_github": "Ver en GitHub",
@@ -561,10 +595,11 @@ propios runs contra el MCAP capturado sin confiar en el productor.
         "sec_decisions": "Decisiones",
         "sec_calibration": "Calibración en el tiempo",
         "sec_provenance": "Procedencia",
-        "sec_properties": "Propiedades formales de safety (ADR-0031..0035)",
+        "sec_properties": "Propiedades formales de safety (v0.2.5: 7 contratos shipped)",
         "properties_caption": (
-            "Cinco propiedades formales verificadas inline sobre el MCAP "
-            "capturado. Cada veredicto es byte-exacto reproducible; el "
+            "Siete propiedades formales verificadas inline sobre el MCAP "
+            "capturado, registradas en el framework EpistemicSafetyContract "
+            "(ADR-0045). Cada veredicto es byte-exacto reproducible; el "
             "mismo <code>ghost verify-properties --mcap &lt;path&gt;</code> "
             "desde shell produce salida idéntica."
         ),
@@ -715,6 +750,293 @@ propios runs contra el MCAP capturado sin confiar en el productor.
         "axis_outcome": "Outcome",
         "axis_stddevs": "std-devs",
         "label_downgrade_at": "bajada en ciclo {n}",
+    },
+    "zh": {
+        "lang_label": "语言",
+        "hero_eyebrow": "研究平台 · 不确定性下的自主性",
+        "hero_h1": "Project Ghost",
+        "hero_tagline": (
+            "想象一辆自动驾驶汽车，其内部地图已经偏离现实十米。它仍然<em>"
+            "认为</em>自己认识这条路 —— 并继续前进。Project Ghost 是一个"
+            "供自主系统使用的参考平台，<strong>能在自己的模型已经漂移时"
+            "察觉</strong>，并在造成伤害之前停下来。"
+        ),
+        "c1_num": "01 · 问题",
+        "c1_title": "机器人在沉默中失败",
+        "c1_body": (
+            "自主系统携带着对其位置和正在发生的事情的内部图景。当那幅"
+            "图景与现实不再一致时 —— 传感器退化、突然的阵风袭来、世界"
+            "本身在变化 —— 大多数系统<strong>仍然像没事一样行动</strong>。"
+            "没有警告。没有安全停车。麻烦的第一个迹象通常就是事故本身。"
+        ),
+        "c2_num": "02 · 方法",
+        "c2_title": "机器人观察自己",
+        "c2_body": (
+            "在每一次行动之后，Ghost 问一个问题：<em>我对了吗？</em>它"
+            "比较预期与实际发生的情况。一次猜错是噪声。连续几次就是信号 —— "
+            "模型正在漂移。Ghost 自动地把自己的信心从 <strong>"
+            "“我知道”</strong> 降到 <strong>“我不确定”</strong>。"
+        ),
+        "c3_num": "03 · 结果",
+        "c3_title": "诚实的机器人会停下来",
+        "c3_body": (
+            "当信心下降时，Ghost 停止发出 <strong>proceed</strong>，"
+            "开始发出 <strong>hold</strong>。车辆暂停而不是在过时的信念"
+            "上行动。这不是完美的自主性 —— 这是更安全的自主性。每个决定"
+            "都可以从加密日志中按字节重放，因此可以重建之后发生了什么。"
+        ),
+        "about_label": "关于这项工作 —— 贡献是什么？",
+        "about_body": """
+Project Ghost 在不确定性下的机器人自主性的现有文献上贡献了
+**七项具体且可引用的成果**。基础组件（贝叶斯滤波、校准、FDI、
+运行时监督器）已经很成熟；贡献在于**如何把它们组合、形式化陈述
+并机械化验证**。
+
+- **PV-1 —— 可重现性原语。**
+  `ghost verify-properties --mcap <log>` 把"这次运行安全吗？"
+  简化为一条 shell 命令，返回字节精确的判定，退出码 `0` 当且仅当
+  所有契约都满足。验证器是基于内容寻址 MCAP 的纯函数 —— 没有重放，
+  没有模拟，不依赖于生产者。
+- **PV-2 —— 形式化分区定理。**
+  BAUD-v1 + ERUR-v1 按周期划分行为空间。在 TLA+ 中表述为
+  `INV_PARTITION`，**通过 TLC 机械验证**于抽象模型的完整可达
+  状态空间（ADR-0036），并在 **Lean 4 中完全证明，无 `sorry`**
+  （ADR-0042）。
+- **PV-3 —— 结构化恢复延迟界限。**
+  对于使用 `MahalanobisDowngradePolicy(M, K)` 的滑动窗口校准
+  历史：`L ≤ peak + W − 1`。drift-then-recovery 烟雾测试精确
+  触发界限（38 = 7 + 32 − 1），证明界限紧致（RLB-v1，ADR-0034）。
+  v0.2.5 通过 TLC 参数化扫描在 `W ∈ {4, 8, 16}` 验证机械化，
+  并在 Lean 4 中证明（9 个引理 + Theorem 1 statement；
+  仅剩 1 个 `sorry`，ADR-0038/ADR-0042）。
+- **PV-4 —— EpistemicSafetyContract 框架。**
+  v0.2.5 中将属性类形式化为 Python `Protocol`，加上 7 个 shipped
+  契约的 registry（BAUD-v1、ERUR-v1/v2、MD-v1、RLB-v1、FPB-v1/v2）。
+  添加第 8 个契约只需要一次 `register_contract(...)`；测试中固定
+  了 8 个 framework 级别的不变量（ADR-0045）。
+- **PV-5 —— 端到端 safety 引用模式。**
+  内容寻址 MCAP + ADR + 纯函数验证器 + Hypothesis 属性测试 +
+  CI gate + 带标签的 release + 在 PyPI 上 OIDC 签名的 wheel ——
+  作为单一连贯的可重现性单元组装。主要主张可从
+  `pip install project-ghost==0.2.5` 操作性地重新执行。
+- **PV-6 —— 真实遥测的区分实验。**
+  在 PX4 SITL 飞行日志的 3-ULog × 6 类别矩阵上，启用自动检测的
+  独立 SITL GT（ADR-0037），生成 18/18 检测；15/18 隔离违规
+  到预期属性（§8.8.2）。
+- **PV-7 —— 机械化 Python ↔ TLA+ 桥（ADR-0043）。**
+  之前的"by inspection"caveat 在 v0.2.5 由 Hypothesis-checked
+  合规测试关闭，对每个生成的 trace assert verifier core 和 TLA+
+  state machine 一致。
+
+每一项：约束 ADR 是形式陈述，verifier 是可执行测试，`SmokeSummary`
+和 `matrix.json` 中的内联见证是自我证据，CI 是持续保证。
+
+理论新颖性？没有 —— 这是工程和引用模式贡献，不是新定理。
+**操作新颖性？有** —— 这是实际构建和发布的模式，使第三方能够
+验证他们自己对捕获的 MCAP 的运行，而无需信任生产者。
+""",
+        "pipeline_eyebrow": "8 步闭环",
+        "phase_perception": "感知",
+        "phase_action": "行动",
+        "phase_learning": "学习",
+        "step_fusion_name": "融合",
+        "step_fusion_desc": "传感器 → belief",
+        "step_assess_name": "自评估",
+        "step_assess_desc": "原始信心",
+        "step_calib_name": "校准",
+        "step_calib_desc": "按过去错误调整",
+        "step_dec_name": "决策",
+        "step_dec_desc": "Proceed · Hold · Abort",
+        "step_act_name": "执行",
+        "step_act_desc": "向车辆发出命令",
+        "step_pred_name": "预测",
+        "step_pred_desc": "预期状态",
+        "step_out_name": "Outcome",
+        "step_out_desc": "Mahalanobis 判定",
+        "step_fb_name": "反馈",
+        "step_fb_desc": "更新信心模型",
+        "pipeline_caption": (
+            "<strong>反馈</strong>箭头（Outcome → 校准）闭合循环。"
+            "当预测持续错误时，信心等级自动下降，阻止 PROCEED 决策直到"
+            "模型恢复。没有它，代理会在过时的信念上沉默地行动。"
+        ),
+        "tab_run": "尝试模拟",
+        "tab_inspect": "检查运行",
+        "tab_paper": "阅读论文",
+        "paper_eyebrow": "技术论文",
+        "paper_h1": (
+            "自主代理的 Epistemic Safety Contracts 作为属性类："
+            "带有机械证明和真实遥测区分实验的形式化框架"
+        ),
+        "paper_lang_label": "论文语言",
+        "paper_intro": (
+            "完整的技术论文 —— 摘要、贡献、恢复延迟界限的证明、评估和"
+            "参考文献 —— 有三种语言版本。英文版是 arXiv 的规范版本，"
+            "也是 TOSEM 提交的版本；西班牙文和中文版本是供合作者使用的"
+            "内部翻译。"
+        ),
+        "paper_view_github": "在 GitHub 上查看",
+        "paper_download_md": "下载 Markdown",
+        "paper_loading_error": (
+            "无法加载论文文件。论文也可在以下位置获取： "
+        ),
+        "run_intro": (
+            "每次点击<strong>运行</strong>都会在浏览器中执行完整的 8 步"
+            "管道：融合预言机 → 自评估 → 校准反馈 → 决策 → 执行 → 预测 → "
+            "差异评估。结果捕获在可下载的 MCAP 文件中，你可以在下面检查。"
+        ),
+        "configure_eyebrow": "配置运行",
+        "slider_label": "周期数",
+        "slider_help": (
+            "一个周期 = 8 个步骤的一次完整传递。少于 5 个不会触发校准"
+            "下调 —— 使用 10 个或更多来观察反馈循环的实际运行。"
+        ),
+        "run_caption": (
+            "模拟使用故意的过度自信陷阱：预言机认为车辆静止不动，而背景"
+            "真实情况以 5 m/s 漂移。校准反馈循环是唯一能检测它的机制。"
+        ),
+        "run_button": "运行模拟",
+        "spinner_run": "运行 {n} 个周期的闭环……",
+        "results_eyebrow": "结果",
+        "stat_cycles": "周期",
+        "stat_decisions": "决策",
+        "stat_outcomes": "Outcomes",
+        "stat_quality": "预测质量",
+        "sec_decisions": "决策",
+        "sec_calibration": "随时间变化的校准",
+        "sec_provenance": "出处",
+        "sec_properties": "形式化 safety 属性（v0.2.5 的 7 个契约）",
+        "properties_caption": (
+            "在捕获的 MCAP 上内联验证了七个形式化属性。每个判定都是字节"
+            "精确可重现的；从 shell 运行相同的 "
+            "<code>ghost verify-properties --mcap &lt;path&gt;</code> "
+            "产生相同的输出。"
+        ),
+        "verdict_holds": "HOLDS",
+        "verdict_violated": "VIOLATED",
+        "banner_downgrade": (
+            "<strong>在周期 {n} 信心被降级</strong> —— 预测错误超过了阈值"
+        ),
+        "banner_held": (
+            "<strong>信心保持</strong> —— 模型在整个运行中保持准确"
+        ),
+        "banner_held_known": (
+            "<strong>信心整个过程中保持 KNOWN</strong>"
+        ),
+        "provenance_caption": (
+            "此 MCAP 的 SHA-256 内容地址。相同的输入产生相同的哈希。"
+            "用它来证明这次确切的运行未被篡改。"
+        ),
+        "download_button": "下载 MCAP",
+        "upload_title": "上传 MCAP 遥测文件",
+        "upload_body": (
+            "在<strong>尝试模拟</strong>标签中运行模拟，下载 MCAP，然后"
+            "在此处加载它以探索管道的每一层。"
+        ),
+        "upload_label": "选择 MCAP 文件",
+        "upload_help": (
+            "由 ghost-app、ghost CLI 或 run_closed_loop_smoke() 生成的文件。"
+        ),
+        "decoding_spinner": "解码 MCAP……",
+        "no_messages_error": (
+            "未找到可解码消息。这是有效的 Project Ghost MCAP 吗？"
+        ),
+        "loaded_msg": (
+            "已加载 <strong>{n_channels} 个通道</strong> · <strong>{n_msgs} 条消息</strong>"
+        ),
+        "channel_overview_label": "通道概览",
+        "ins_dec_title": "决策",
+        "ins_dec_desc": (
+            "每个周期，代理根据其校准信心选择一个动作。PROCEED = 足够"
+            "信心继续。HOLD = 检测到不确定性，代理停下来重新评估。"
+        ),
+        "ins_cal_title": "校准",
+        "ins_cal_desc": (
+            "由反馈循环调整的原始信心。当过去的预测持续错误时，等级"
+            "从 KNOWN 降到 UNCERTAIN，阻止更多 PROCEED 决策直到模型恢复。"
+        ),
+        "ins_div_title": "差异 outcomes",
+        "ins_div_desc": (
+            "每个周期的预测与真实情况比较。Mahalanobis 距离是预测离"
+            "实际有多少个标准惊讶。高于 5-sigma 的值表示严重错误的模型。"
+        ),
+        "ins_act_title": "执行",
+        "ins_act_desc": (
+            "每个周期发出的物理命令。AttitudeCommand 保持姿态和推力。"
+            "DirectMotorCommand 直接控制电机（紧急情况）。None 表示"
+            "策略抑制了命令。"
+        ),
+        "ins_self_title": "原始自评估",
+        "ins_self_desc": (
+            "在校准循环之前未过滤的信心估计。将其与校准等级比较以查看"
+            "循环改变了什么。"
+        ),
+        "ins_fus_title": "融合结果",
+        "ins_fus_desc": (
+            "来自融合层的代理对其当前状态的信念。在此模拟中，预言机"
+            "总是报告位置 ≈ 0 m，而背景真相在漂移。那个间隙就是触发"
+            "差异的原因。"
+        ),
+        "fus_belief_caption": (
+            "预言机总是报告 x ≈ 0 m —— 背景真相以 5 m/s 漂移。那个"
+            "间隙触发 Mahalanobis 差异。"
+        ),
+        "replay_label": "重放验证",
+        "replay_intro": (
+            "从存储的 <code>/fusion/results</code> 通道重新执行下游管道，"
+            "并将每个输出消息按字节与原始消息比较。匹配证明管道没有"
+            "隐藏的非确定性。"
+        ),
+        "replay_button": "运行字节精确验证",
+        "replay_spinner": "重新执行下游管道……",
+        "replay_ok": (
+            "<strong>字节完美重放</strong> —— 原始运行与重放之间 6 个"
+            "下游通道相同"
+        ),
+        "replay_warn": (
+            "<strong>检测到差异</strong> —— 至少一个通道不同，表明"
+            "管道中可能有非确定性"
+        ),
+        "replay_col_channel": "通道",
+        "replay_col_orig": "原始消息",
+        "replay_col_rep": "重放消息",
+        "replay_col_result": "结果",
+        "replay_byte_equal": "字节相等",
+        "replay_differs": "不同",
+        "narr_cycles": "代理运行了 <strong>{n} 个完整周期</strong>。",
+        "narr_downgrade": (
+            "周期 1–{prev}：完全信心（<em>known</em>），决策每次都是 "
+            "<strong>PROCEED</strong>。在周期 <strong>{cyc}</strong>，"
+            "累积的预测错误超过校准阈值 —— 信心降到 <em>uncertain</em>，"
+            "将所有后续决策切换为 <strong>HOLD</strong>。"
+        ),
+        "narr_uncertain_start": (
+            "代理从周期 1 开始就<em>uncertain</em>并始终保持 HOLD —— "
+            "模型从未足够可靠到可以行动。"
+        ),
+        "narr_held": (
+            "信心在每个周期都保持<em>known</em> —— 代理在整个运行中都"
+            "选择了 <strong>PROCEED</strong>。"
+        ),
+        "narr_outro": (
+            "预测质量：{verdict_human}。模拟故意陷入过度自信的代理："
+            "预言机报告车辆静止，而背景真相以 5 m/s 漂移。校准循环是"
+            "唯一能检测它的机制。"
+        ),
+        "verdict_5": (
+            "持续<strong>非常远</strong>（&gt;5-sigma）—— 模型严重失败"
+        ),
+        "verdict_3": "显著远（&gt;3-sigma）—— 模型不可靠",
+        "verdict_1": "适度远（&gt;1-sigma）—— 检测到轻微漂移",
+        "verdict_in": "精确（1-sigma 内）—— 模型保持住了",
+        "chart_dec_dist": "决策分布",
+        "chart_calib_title": "每周期信心等级",
+        "chart_div_title": "Mahalanobis 距离（位置）",
+        "chart_fusion_title": "x 上的信念（预言机 vs. 真实漂移）",
+        "axis_cycle": "周期",
+        "axis_outcome": "Outcome",
+        "axis_stddevs": "标准差",
+        "label_downgrade_at": "在周期 {n} 降级",
     },
 }
 
@@ -1023,22 +1345,28 @@ def _ms(ns: int) -> float:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+_LANG_CHOICES: tuple[str, ...] = ("EN", "ES", "中文")
+_LANG_CODE_OF: dict[str, str] = {"EN": "en", "ES": "es", "中文": "zh"}
+_LANG_LABEL_OF: dict[str, str] = {"en": "EN", "es": "ES", "zh": "中文"}
+
+
 def _language_picker() -> None:
     if "lang" not in st.session_state:
         st.session_state["lang"] = "en"
 
-    _, col = st.columns([10, 1])
+    _, col = st.columns([8, 2])
     with col:
-        current_idx = 0 if st.session_state["lang"] == "en" else 1
+        current = _LANG_LABEL_OF.get(st.session_state["lang"], "EN")
+        current_idx = _LANG_CHOICES.index(current)
         choice = st.radio(
             t("lang_label"),
-            ["EN", "ES"],
+            list(_LANG_CHOICES),
             horizontal=True,
             label_visibility="collapsed",
             index=current_idx,
             key="_lang_radio",
         )
-        new_lang = "en" if choice == "EN" else "es"
+        new_lang = _LANG_CODE_OF[choice]
         if new_lang != st.session_state["lang"]:
             st.session_state["lang"] = new_lang
             st.rerun()
@@ -2150,7 +2478,13 @@ st.set_page_config(
     page_title="Project Ghost",
     page_icon="◉",
     layout="wide",
-    menu_items={"About": "Project Ghost — autonomy under uncertainty · Apache 2.0"},
+    menu_items={
+        "About": (
+            "Project Ghost v0.2.5 — Epistemic Safety Contracts for "
+            "autonomous agents · 7 verified contracts · Apache-2.0 · "
+            "https://github.com/JFHelvetius/ghost"
+        ),
+    },
 )
 
 st.markdown(_CSS, unsafe_allow_html=True)
