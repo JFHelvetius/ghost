@@ -954,11 +954,30 @@ partial discharge):
    Discharge plan at
    [`docs/proofs/TLAPS_roadmap.md`](docs/proofs/TLAPS_roadmap.md).
 
-The three artefacts compose into ADR-0038's "triple evidence"
-package. A full TLAPS-mechanical proof remains an open follow-up
-(ADR-0042 candidate); the v0.2.5 round ships the partial
-discharge, with §9 explicitly acknowledging which leg is still
-unfilled.
+4. **Lean 4 mechanical proof** at
+   [`docs/proofs/Lean/RlbUnbounded.lean`](docs/proofs/Lean/RlbUnbounded.lean)
+   (ADR-0042). Independent of TLAPS: Lean 4 installs natively
+   on Windows via `elan`. Ships **9 mechanically verified
+   lemmas** (Lemmas 1–3 of the hand proof + auxiliaries +
+   `cleanAfterDirty_length`) plus the **Theorem 1 statement**
+   mechanically reduced to the load-bearing Lemma 4. Lemma 4
+   itself remains as a documented `sorry` placeholder; closing
+   it is the ADR-0044 follow-up. The full axiom set for the
+   discharged lemmas is `{propext, Quot.sound}` — the same
+   axioms TLAPS proofs rely on through Isabelle / Zenon. The
+   sister
+   [`docs/proofs/Lean/PartitionTheorem.lean`](docs/proofs/Lean/PartitionTheorem.lean)
+   ships the **partition theorem `BAUD ⊕ ERUR` fully verified
+   with no `sorry`**, closing a separate paper §10 future-work
+   item with the same routes.
+
+The four artefacts compose into ADR-0038 + ADR-0042's "quadruple
+evidence" package. The full TLAPS-mechanical proof remains a
+follow-up (ADR-0044 candidate, naturally extending the Lean 4
+work for Lemma 4). The Lean 4 partition-theorem proof is the
+first **fully mechanical** evidence in the unbounded family;
+v0.2.5 §9 acknowledges Lemma 4's `sorry` as the last remaining
+discharge for RLB-v1 unbounded.
 
 ---
 
@@ -1644,19 +1663,31 @@ per-property §Scope sections of the ADRs.
   `AttitudeHoldReferencePolicy`). Each non-reference policy would
   need its own ADR, its own verifier specialisation (or a contract
   the verifier can dispatch on), and its own TLA+ spec.
-- **Bounded TLC, partial unbounded coverage.** TLC is exhaustive
-  over the finite state space at each configured `W`. v0.2.5
-  ships a parametric sweep over `W ∈ {4, 8, 16}` (§6.3,
-  ADR-0038) and a rigorous hand proof of the unbounded theorem;
-  the full TLAPS-mechanical proof of the unbounded statement
-  remains open. The TLAPS outline at `Rlb_unbounded.tla`
-  contains the lemma structure + per-step discharge guidance for
-  a future contributor with TLAPS installed (Linux/macOS;
-  Windows native unsupported).
-- **Python↔TLA+ bridge by inspection.** A future divergence between
-  the Python policy and the TLA+ definition could silently weaken the
-  claim. Mitigation: review and re-run TLC on every change to the
-  reference calibrator or decision policy.
+- **Bounded TLC, near-full unbounded coverage.** TLC is exhaustive
+  at each configured `W`. v0.2.5 ships (1) a parametric sweep
+  over `W ∈ {4, 8, 16}` (§6.3, ADR-0038), (2) a rigorous hand
+  proof of the unbounded theorem, (3) a refined TLAPS outline
+  for a future Linux/macOS contributor, and (4) Lean 4
+  mechanical proofs (ADR-0042): the partition theorem
+  `BAUD ⊕ ERUR` is **fully verified with no `sorry`**, and
+  unbounded RLB-v1 has 9 mechanically verified lemmas with the
+  Theorem 1 statement reduced to a single load-bearing
+  `cleanAfterDirty_count` (Lemma 4) that ships as a documented
+  `sorry`. The full Lean 4 discharge of Lemma 4 is the natural
+  ADR-0044 follow-up.
+- **Python ↔ TLA+ bridge — closed mechanically (ADR-0043).** The
+  previous "by inspection" caveat is closed in v0.2.5 by a
+  Hypothesis-checked conformance test
+  (`tests/properties/test_python_tla_bridge.py`): two
+  re-implementations (one of the verifier core, one of the TLA+
+  state machine, written independently from their respective
+  sources) must agree on the `INV_RLB` verdict for every trace
+  Hypothesis can synthesise within the bounds. ~600 random
+  traces plus 4 pinned paper examples per run; the test runs in
+  under a second on every push. A future divergence between the
+  verifier and the TLA+ spec fails the test before it ships. The
+  template extends to BAUD / ERUR / MD / FPB as follow-up
+  per-property ADRs.
 - **Statistical FPB shipped, narrow-scope.** FPB-v2 (ADR-0039,
   v0.2.5) closes the previously-deferred statistical bound with
   closed-form Hoeffding and Clopper-Pearson estimators (§3.5).
@@ -1695,15 +1726,15 @@ per-property §Scope sections of the ADRs.
   stack remain open. Roadmap documented at
   [`docs/paper/venues/dataset_integration.md`](docs/paper/venues/dataset_integration.md).
 - **ADR-0038 (accepted with partial discharge, v0.2.5)**:
-  unbounded RLB-v1 evidence. Ships three artefacts: (1) TLC
+  unbounded RLB-v1 evidence. Ships four artefacts: (1) TLC
   parametric sweep at `W ∈ {4, 8, 16}` (mechanical, full state
   enumeration at each scale), (2) rigorous hand proof of the
   unbounded theorem with no `W` dependence in its arguments
-  (auditable, not SMT-checked), and (3) refined TLAPS outline
-  with per-lemma discharge guidance. A full TLAPS-mechanical
-  proof remains open as a candidate ADR-0042 follow-up. The
-  partition-theorem unbounded TLAPS proof is independent and
-  remains a future-work item. Sweep driver:
+  (auditable, not SMT-checked), (3) refined TLAPS outline with
+  per-lemma discharge guidance, and (4) **Lean 4 mechanical
+  proof** of 9 lemmas + Theorem 1 statement (ADR-0042). Lemma
+  4 ships as a documented `sorry`; closing it is ADR-0044's
+  scope. Sweep driver:
   [`docs/paper/scripts/run_rlb_tlc_sweep.py`](docs/paper/scripts/run_rlb_tlc_sweep.py).
 - **ADR-0039 (accepted, v0.2.5)**: statistical FPB-v2. Ships
   closed-form Hoeffding (default, stdlib-only) and exact
@@ -1721,6 +1752,30 @@ per-property §Scope sections of the ADRs.
   Mahalanobis, EWMA and PerAxisHysteresis policies all implement
   the Protocol. Tested by
   `tests/properties/test_erur_v2_property.py`.
+- **ADR-0042 (accepted, v0.2.5)**: Lean 4 mechanical proofs.
+  Ships the partition theorem `BAUD ⊕ ERUR` fully verified with
+  no `sorry`, plus 9 mechanically verified lemmas + Theorem 1
+  statement of unbounded RLB-v1 (Lemma 4 as documented
+  placeholder). Lean 4 installs natively on Windows via `elan`;
+  axiom set is `{propext, Quot.sound}` (no extra commitments).
+  Proof files:
+  [`docs/proofs/Lean/PartitionTheorem.lean`](docs/proofs/Lean/PartitionTheorem.lean),
+  [`docs/proofs/Lean/RlbUnbounded.lean`](docs/proofs/Lean/RlbUnbounded.lean).
+- **ADR-0043 (accepted, v0.2.5)**: Python ↔ TLA+ bridge by
+  mechanical conformance. Hypothesis-checked test that
+  re-implements both the verifier core and the TLA+ state machine
+  from their respective sources (no shared code) and asserts they
+  agree on `INV_RLB` for every trace within bounds (600+ random
+  traces per run). Closes the §9 "by inspection" caveat. Test
+  surface: `tests/properties/test_python_tla_bridge.py`.
+- **ADR-0044 (candidate)**: discharge Lemma 4
+  (`cleanAfterDirty_count`) in Lean 4, closing the last
+  remaining `sorry` of unbounded RLB-v1. Strategy already
+  scaffolded in
+  [`docs/proofs/Lean/RlbUnbounded.lean`](docs/proofs/Lean/RlbUnbounded.lean):
+  the proof needs an auxiliary "DIRTYs precede CLEANs in the
+  window" invariant + a case split on `k` matching the hand
+  proof. May benefit from mathlib's `List.IsPrefix` machinery.
 - **HAL backend campaign.** A first hardware backend (Pixhawk +
   Linux companion computer) would lift the reproducibility surface
   from simulation to flight logs.

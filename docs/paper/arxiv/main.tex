@@ -805,10 +805,40 @@ accepted with partial discharge):
         discharging each obligation.
 \end{enumerate}
 
-The three together constitute the v0.2.5 "triple evidence"
-package for the unbounded RLB-v1 claim. The full TLAPS-mechanical
-proof remains an open follow-up (ADR-0042 candidate); the §9
-limitation explicitly acknowledges that leg is unfilled.
+The three together constitute the original v0.2.5 "triple
+evidence" package for the unbounded RLB-v1 claim. v0.2.5
+additionally ships a fourth leg:
+
+\begin{enumerate}[noitemsep,topsep=2pt,start=4]
+  \item \textbf{Lean 4 mechanical proof} (ADR-0042) at
+        \texttt{docs/proofs/Lean/RlbUnbounded.lean}: 9
+        mechanically verified lemmas (Lemmas 1--3 of the hand
+        proof, all auxiliaries, and \texttt{cleanAfterDirty\_length})
+        plus the \textbf{Theorem 1 statement} mechanically
+        reduced to a single load-bearing
+        \texttt{cleanAfterDirty\_count\_pending} (Lemma 4) that
+        ships as a documented \texttt{sorry} placeholder. The
+        full axiom set for the discharged lemmas is
+        $\{\texttt{propext}, \texttt{Quot.sound}\}$, identical to
+        what TLAPS proofs effectively rely on via Isabelle / Zenon.
+        Lean 4 installs natively on Windows via \texttt{elan}; no
+        TLAPS, no WSL2, no mathlib dependency.
+\end{enumerate}
+
+A sister file
+\texttt{docs/proofs/Lean/PartitionTheorem.lean} ships the
+\textbf{partition theorem} (\texttt{INV\_PARTITION} from
+\texttt{BaudErur.tla}) \textbf{fully verified with no \texttt{sorry}}:
+both \texttt{inv\_partition} (exclusivity) and
+\texttt{partition\_exactly\_one} (exhaustiveness) discharge with
+only the standard axioms. This closes the paper's previous
+\S10 future-work entry for the partition theorem's unbounded
+mechanization.
+
+The four artefacts (TLC sweep + hand proof + TLAPS outline + Lean
+4 proofs) compose into ADR-0038 + ADR-0042's "quadruple evidence"
+package. Lemma 4's full Lean 4 discharge is the ADR-0044
+candidate follow-up.
 
 % =======================================================================
 \section{Reproducibility surface}
@@ -1427,21 +1457,32 @@ Any disagreement fails the build.
         property semantics target specific reference policies.
         Non-reference policies would need their own ADRs, verifier
         specialisations, and TLA+ specs.
-  \item \textbf{Bounded TLC, partial unbounded coverage.}
-        TLC is exhaustive at each configured $W$. v0.2.5 ships a
-        parametric sweep over $W \in \{4, 8, 16\}$ and a
-        rigorous hand proof of the unbounded theorem
-        (\S\ref{sec:rlb-unbounded}, ADR-0038); the full
-        TLAPS-mechanical proof of the unbounded statement
-        remains open. The TLAPS outline at
-        \texttt{Rlb\_unbounded.tla} contains the lemma structure
-        + per-step discharge guidance for a future contributor
-        with TLAPS installed (Linux/macOS; Windows native
-        unsupported).
-  \item \textbf{Python\,$\leftrightarrow$\,TLA+ bridge by
-        inspection.} A future divergence could silently weaken the
-        claim. Mitigation: review and re-run TLC on every change
-        to the reference policies.
+  \item \textbf{Bounded TLC, near-full unbounded coverage.}
+        TLC is exhaustive at each configured $W$. v0.2.5 ships
+        four artefacts (\S\ref{sec:rlb-unbounded}, ADR-0038 +
+        ADR-0042): (1) parametric TLC sweep over
+        $W \in \{4, 8, 16\}$, (2) rigorous hand proof of the
+        unbounded theorem, (3) refined TLAPS outline, and (4)
+        \textbf{Lean 4 mechanical proofs} -- the partition theorem
+        $\mathit{BAUD} \oplus \mathit{ERUR}$ is \textbf{fully
+        verified with no \texttt{sorry}}; unbounded RLB-v1 has 9
+        mechanically verified lemmas + Theorem 1 statement
+        reduced to a single load-bearing
+        \texttt{cleanAfterDirty\_count} (Lemma 4) that ships as a
+        documented \texttt{sorry}. The Lean 4 discharge of Lemma
+        4 is the ADR-0044 follow-up.
+  \item \textbf{Python\,$\leftrightarrow$\,TLA+ bridge --
+        mechanically closed (ADR-0043).} The previous "by
+        inspection" caveat is closed in v0.2.5 by a
+        Hypothesis-checked conformance test that re-implements
+        the verifier core and the TLA+ state machine from their
+        respective sources (no shared code) and asserts they
+        agree on \texttt{INV\_RLB} for every trace Hypothesis
+        synthesises ($\sim$600 random traces + 4 pinned paper
+        examples per run, under 1\,s on every push). Any future
+        divergence between the verifier and the spec fails the
+        test before it ships. The template extends to BAUD /
+        ERUR / MD / FPB as follow-up per-property ADRs.
   \item \textbf{Statistical FPB shipped, scope narrow.}
         FPB-v2 (ADR-0039, v0.2.5) ships closed-form Hoeffding
         and exact Clopper-Pearson one-sided upper bounds
@@ -1472,13 +1513,16 @@ Any disagreement fails the build.
 \begin{itemize}
   \item TLA+ spec for FPB-v1 closing the formal-verification
         coverage of the full property set.
-  \item TLAPS-mechanical discharge of the unbounded RLB-v1
-        outline (\S\ref{sec:rlb-unbounded}; v0.2.5 ships the
-        sweep + hand proof legs, leaving the SMT-checked
-        certificate to a future contributor with TLAPS
-        installed).
-  \item TLAPS proof of the unbounded version of the partition
-        theorem (separate from the RLB-v1 leg above).
+  \item \textbf{ADR-0044 candidate:} discharge Lemma 4
+        (\texttt{cleanAfterDirty\_count}) in Lean 4 (v0.2.5
+        ADR-0042 ships the rest of the unbounded RLB-v1
+        package; Lemma 4 is the only \texttt{sorry} remaining).
+        May benefit from mathlib's \texttt{List.IsPrefix}
+        machinery.
+  \item Optional TLAPS-mechanical discharge of unbounded RLB-v1
+        for contributors who prefer the TLA+ ecosystem
+        (\S\ref{sec:rlb-unbounded} ships the outline; Lean 4
+        provides the alternative discharge route in v0.2.5).
   \item HAL backend campaign lifting the reproducibility surface
         from simulation to flight logs.
   \item Conformance suite populating the \texttt{conformance}

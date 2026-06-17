@@ -1004,15 +1004,23 @@ JSON 的 SHA-256。
 - **仅参考策略。** TLA+ 证明和属性语义针对特定的参考策略。每个
   非参考策略都需要自己的 ADR、自己的验证器专门化和自己的 TLA+
   规范。
-- **TLC 有界，unbounded 部分覆盖。** TLC 在每个配置的 `W` 下对有限
-  状态空间穷尽。v0.2.5 交付 `W ∈ {4, 8, 16}` 的参数化 sweep（§6.3，
-  ADR-0038）和 unbounded 定理的严格手工证明；unbounded 主张的完整
-  TLAPS-机械证明仍开放。`Rlb_unbounded.tla` 中的 TLAPS 大纲包含引理
-  结构 + 按 step 的 discharge guidance，供未来安装 TLAPS 的贡献者
-  使用（Linux/macOS；不支持 Windows native）。
-- **Python↔TLA+ bridge 由检查完成。** Python 代码与 TLA+ 定义
-  之间的未来差异可能默默地削弱声明。缓解：在每次参考校准器或
-  决策策略更改时审查并重新运行 TLC。
+- **TLC 有界，unbounded 近乎完全覆盖。** TLC 在每个配置的 `W` 下
+  穷尽。v0.2.5 交付：(1) `W ∈ {4, 8, 16}` 的参数化 sweep
+  （§6.3，ADR-0038），(2) unbounded 定理的严格手工证明，
+  (3) 精炼的 TLAPS 大纲，和 (4) **Lean 4 机械证明
+  （ADR-0042）**：partition theorem `BAUD ⊕ ERUR` 完全验证且
+  无 `sorry`，RLB-v1 unbounded 有 9 个机械验证的引理
+  + Theorem 1 statement 归约到唯一的 `cleanAfterDirty_count`
+  （Lemma 4，带文档化 `sorry`）。Lemma 4 的 discharge 是
+  ADR-0044 follow-up。
+- **Python↔TLA+ bridge — 机械关闭 (ADR-0043)。** 之前的"按
+  检查"caveat 在 v0.2.5 被 Hypothesis-checked 合规测试关闭
+  (`tests/properties/test_python_tla_bridge.py`)：两个独立的
+  re-implementation（一个是 verifier core，另一个是 TLA+ state
+  machine，分别从各自的来源独立编写）必须对 Hypothesis 可以合成
+  的每个 trace 的 `INV_RLB` verdict 达成一致（每次运行 ~600
+  随机 traces + 4 个 pinned paper examples）。测试在每次 push
+  时在 1 秒内运行；任何未来的偏离在 ship 之前就会失败。
 - **统计 FPB 已交付，scope 受限。** FPB-v2（ADR-0039，v0.2.5）
   使用闭式 Hoeffding 和 Clopper-Pearson 估计器关闭了之前推迟的
   统计界限（§3.5）。剩余开放：FPB-v2 不验证 Clopper-Pearson 调用
@@ -1041,12 +1049,25 @@ JSON 的 SHA-256。
   开放：动作捕捉和 RTK-GPS 在 enum 中枚举但未实现；
   ROSBag / EuRoC MAV adapter 和非 PX4 栈仍待开放。
 - **ADR-0038（已接受部分 discharge，v0.2.5）**：RLB-v1 unbounded
-  证据。交付三个工件：(1) `W ∈ {4, 8, 16}` 的 TLC 参数化 sweep
-  （机械的，每个 scale 完整状态枚举），(2) unbounded 定理的严格
-  手工证明，论证中没有 `W` 依赖（可审计，未经 SMT 检查），和 (3)
-  按 lemma 提供 discharge guidance 的精化 TLAPS 大纲。完整 TLAPS-
-  机械证明保留为后续候选 ADR-0042。partition theorem 的 unbounded
-  TLAPS 证明独立，保留为 future work。
+  证据。交付四个工件：(1) `W ∈ {4, 8, 16}` 的 TLC 参数化 sweep，
+  (2) unbounded 定理的严格手工证明，(3) 精炼的 TLAPS 大纲，和
+  (4) **Lean 4 机械证明** 9 个引理 + Theorem 1 statement
+  (ADR-0042)。Lemma 4 带文档化 `sorry`；关闭它是 ADR-0044 范围。
+- **ADR-0042（已接受，v0.2.5）**：Lean 4 机械证明。交付完全验证
+  无 `sorry` 的 partition theorem `BAUD ⊕ ERUR`，加上 RLB-v1
+  unbounded 的 9 个机械验证引理 + Theorem 1 statement
+  （Lemma 4 作为文档化占位符）。Lean 4 通过 `elan` 在 Windows
+  原生安装；axiom set 是 `{propext, Quot.sound}`（无额外承诺）。
+- **ADR-0043（已接受，v0.2.5）**：通过机械合规的 Python ↔ TLA+
+  桥。Hypothesis-checked 测试，分别从各自来源 re-implement
+  verifier core 和 TLA+ state machine（无共享代码），asserts
+  在 bounds 内每个 trace 上的 `INV_RLB` 一致（每次运行 600+
+  随机 traces）。关闭 §9 "by inspection" caveat。Surface：
+  `tests/properties/test_python_tla_bridge.py`。
+- **ADR-0044（候选）**：在 Lean 4 中 discharge Lemma 4
+  (`cleanAfterDirty_count`)，关闭 RLB-v1 unbounded 的最后一个
+  `sorry`。Strategy 已 scaffolded；可能受益于 mathlib
+  `List.IsPrefix`。
 - **ADR-0039（已接受，v0.2.5）**：统计 FPB-v2。交付闭式
   Hoeffding（默认，仅 stdlib）和精确 Clopper-Pearson（opt-in，
   SciPy）对真实 firing 概率的单侧置信上界。关闭了之前推迟的

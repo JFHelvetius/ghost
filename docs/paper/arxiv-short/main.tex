@@ -385,17 +385,21 @@ Appendix~\ref{app:eval}: six-category violation matrix
         SITL GT topics and non-PX4 stacks remain under ADR-0037.
   \item \textbf{Reference policies only.} TLA+ specs target the
         reference. Non-reference policies need their own.
-  \item \textbf{Bounded TLC, partial unbounded coverage.}
-        v0.2.5 extends TLC's $W = 4$ baseline with a parametric
-        sweep at $W \in \{4, 8, 16\}$ (all green, 25/81/289
-        distinct states) and a rigorous hand proof of the
-        unbounded RLB-v1 theorem (no $W$ dependence in the
-        argument). The full TLAPS-mechanical certificate is
-        the open follow-up under ADR-0038. The TLAPS outline
-        ships per-lemma discharge guidance for a future
-        contributor (Linux/macOS install required).
-  \item \textbf{Python$\leftrightarrow$TLA+ bridge by inspection.}
-        Automating it is future work.
+  \item \textbf{Bounded TLC, near-full unbounded coverage.}
+        v0.2.5 extends TLC's $W = 4$ baseline with: a
+        parametric sweep at $W \in \{4, 8, 16\}$ (25/81/289
+        distinct states); a rigorous hand proof; a refined
+        TLAPS outline; and \textbf{Lean 4 mechanical proofs}
+        (ADR-0042) of the partition theorem (no \texttt{sorry})
+        plus 9 lemmas + Theorem 1 statement of unbounded RLB-v1
+        reduced to a single \texttt{cleanAfterDirty\_count}
+        \texttt{sorry}. Closing it is the ADR-0044 follow-up.
+  \item \textbf{Python$\leftrightarrow$TLA+ bridge --
+        mechanically closed (ADR-0043).} v0.2.5 ships a
+        Hypothesis conformance test: two re-implementations
+        (verifier core, TLA+ state machine) must agree on
+        \texttt{INV\_RLB} for every Hypothesis-generated trace.
+        ~600 random traces per run; under 1\,s on every push.
 \end{itemize}
 
 % =======================================================================

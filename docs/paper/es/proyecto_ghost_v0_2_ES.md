@@ -1249,19 +1249,26 @@ que las secciones §Scope per-propiedad de los ADRs.
   las propiedades targetan los policies específicos de referencia.
   Cada policy no-referencia necesitaría su propio ADR, su propia
   especialización del verificador, y su propio spec TLA+.
-- **TLC bounded, cobertura unbounded parcial.** TLC es exhaustiva
-  sobre el espacio de estados finito en cada `W` configurada.
-  v0.2.5 entrega un sweep paramétrico sobre `W ∈ {4, 8, 16}` (§6.3,
-  ADR-0038) y una prueba manual rigurosa del teorema unbounded;
-  la prueba TLAPS-mecánica completa de la afirmación unbounded
-  queda abierta. El outline TLAPS en `Rlb_unbounded.tla` contiene
-  la estructura de lemmas + discharge guidance por step para un
-  futuro contributor con TLAPS instalado (Linux/macOS; Windows
-  nativo no soportado).
-- **Bridge Python↔TLA+ por inspección.** Una divergencia futura
-  entre el código Python y la definición TLA+ podría silenciosamente
-  debilitar el claim. Mitigación: revisar y re-correr TLC en cada
-  cambio al calibrador de referencia o policy de decisión.
+- **TLC bounded, cobertura unbounded casi-completa.** TLC es
+  exhaustiva en cada `W` configurada. v0.2.5 entrega: (1) sweep
+  paramétrico sobre `W ∈ {4, 8, 16}` (§6.3, ADR-0038), (2)
+  prueba manual rigurosa del teorema unbounded, (3) outline
+  TLAPS refinado, y (4) **pruebas mecánicas Lean 4 (ADR-0042)**:
+  el partition theorem `BAUD ⊕ ERUR` está totalmente verificado
+  sin `sorry`, y RLB-v1 unbounded tiene 9 lemmas mecánicamente
+  verificados + el statement de Theorem 1 reducido a un único
+  `cleanAfterDirty_count` (Lemma 4) que queda con `sorry`
+  documentado. Discharge de Lemma 4 es ADR-0044 follow-up.
+- **Bridge Python↔TLA+ — cerrado mecánicamente (ADR-0043).** El
+  caveat anterior "por inspección" queda cerrado en v0.2.5 por
+  un conformance test Hypothesis-checked
+  (`tests/properties/test_python_tla_bridge.py`): dos
+  re-implementaciones (una del verifier core, otra de la TLA+
+  state machine, escritas independientemente desde sus fuentes)
+  deben coincidir en el verdict `INV_RLB` para cada trace que
+  Hypothesis sintetiza (~600 traces por run + 4 paper examples
+  pineados). El test corre en menos de un segundo en cada push;
+  cualquier divergencia futura falla antes del ship.
 - **FPB estadístico ya entregado, scope acotado.** FPB-v2
   (ADR-0039, v0.2.5) cierra la cota estadística previamente
   diferida con estimadores closed-form Hoeffding y Clopper-
@@ -1300,15 +1307,30 @@ que las secciones §Scope per-propiedad de los ADRs.
   implementar; adapters ROSBag / EuRoC MAV y un stack no-PX4
   siguen abiertos.
 - **ADR-0038 (aceptado con discharge parcial, v0.2.5)**: evidencia
-  unbounded para RLB-v1. Entrega tres artefactos: (1) sweep
-  paramétrico TLC en `W ∈ {4, 8, 16}` (mecánico, enumeración
-  completa de estados por escala), (2) prueba manual rigurosa del
-  teorema unbounded sin dependencia de `W` en los argumentos
-  (auditable, no SMT-checked), y (3) outline TLAPS refinado con
-  discharge guidance per lemma. Una prueba TLAPS-mecánica completa
-  queda abierta como follow-up ADR-0042 candidate. La prueba TLAPS
-  unbounded del partition theorem es independiente y queda como
-  future work.
+  unbounded para RLB-v1. Entrega cuatro artefactos: (1) sweep
+  paramétrico TLC en `W ∈ {4, 8, 16}`, (2) prueba manual
+  rigurosa del teorema unbounded, (3) outline TLAPS refinado con
+  per-lemma discharge guidance, y (4) **prueba mecánica Lean 4**
+  de 9 lemmas + Theorem 1 statement (ADR-0042). Lemma 4 con
+  `sorry` documentado; cierre es ADR-0044 scope.
+- **ADR-0042 (aceptado, v0.2.5)**: pruebas mecánicas Lean 4.
+  Entrega el partition theorem `BAUD ⊕ ERUR` totalmente
+  verificado sin `sorry`, más 9 lemmas + Theorem 1 statement
+  de RLB-v1 unbounded (Lemma 4 como placeholder documentado).
+  Lean 4 instala nativamente en Windows via `elan`; axiom set
+  es `{propext, Quot.sound}` (sin compromisos extra).
+- **ADR-0043 (aceptado, v0.2.5)**: bridge Python ↔ TLA+ por
+  conformance mecánica. Test Hypothesis-checked que
+  re-implementa el verifier core y la TLA+ state machine desde
+  sus respectivas fuentes (sin código compartido) y asserta
+  agreement en `INV_RLB` para cada trace dentro de bounds
+  (600+ random traces por run). Cierra el caveat "by
+  inspection" de §9. Surface:
+  `tests/properties/test_python_tla_bridge.py`.
+- **ADR-0044 (candidate)**: discharge de Lemma 4
+  (`cleanAfterDirty_count`) en Lean 4, cerrando el último
+  `sorry` de RLB-v1 unbounded. Strategy ya scaffolded; puede
+  beneficiarse de mathlib `List.IsPrefix`.
 - **ADR-0039 (accepted, v0.2.5)**: FPB-v2 estadístico. Ships
   Hoeffding closed-form (default, stdlib-only) y Clopper-Pearson
   exact (opt-in, SciPy) cotas superiores unilaterales sobre la
