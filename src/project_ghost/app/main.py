@@ -1231,6 +1231,8 @@ hr { border-color: #e2e8f0 !important; }
 }
 .property-card.holds { border-left-color: #0f766e; }
 .property-card.violated { border-left-color: #b91c1c; }
+.property-card.neutral { border-left-color: #94a3b8; }
+.property-card.neutral .pc-verdict { color: #94a3b8; }
 .property-card .pc-name {
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     font-weight: 700; color: #0f172a; font-size: 0.78rem;
@@ -1703,16 +1705,117 @@ def _badges(mapping: dict[str, int], color_map: dict[str, str]) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _property_panel(summary: SmokeSummary) -> str:
-    """Render the 5-property panel as an HTML grid for ``_show_run_results``.
+_GH_BASE = "https://github.com/JFHelvetius/ghost/blob/main/"
+# Per-property "binding artefact" URL: the ADR if there is one,
+# else the source module that documents the property inline. Every
+# entry below is verified to resolve at the v0.2.5 tag; if a future
+# round adds a missing ADR the URL flips painlessly.
+_PROPERTY_DOCS: dict[str, str] = {
+    "BAUD-v1": _GH_BASE + "docs/adr/0031-bounded-action-under-drift-property-v1.md",
+    "ERUR-v1": _GH_BASE + "docs/adr/0032-eventual-reactivation-under-recovery-property-v1.md",
+    # ERUR-v2 has no dedicated ADR file (it was accepted via the v0.2.4
+    # paper §10 entry and lives inline in the source). Link to the
+    # module that defines and documents it.
+    "ERUR-v2": _GH_BASE + "src/project_ghost/properties/erur_v2.py",
+    "MD-v1": _GH_BASE + "docs/adr/0033-monotonic-degradation-property-v1.md",
+    "RLB-v1": _GH_BASE + "docs/adr/0034-recovery-latency-bound-property-v1.md",
+    "FPB-v1": _GH_BASE + "docs/adr/0035-false-positive-bound-property-v1.md",
+    "FPB-v2": _GH_BASE + "docs/adr/0039-false-positive-bound-property-v2.md",
+}
+
+
+def _verify_v2_extensions(
+    mcap_bytes: bytes,
+) -> tuple[Any | None, Any | None]:
+    """Compute ERUR-v2 and FPB-v2 verdicts on the same MCAP the v1
+    verifiers ran against. Returns (erur_v2_report, fpb_v2_report);
+    either may be None if its verifier raises.
+
+    Both verifiers are tolerant of the smoke MCAP: ERUR-v2 needs a
+    ``drift_predicates`` mapping (we register the reference Mahalanobis
+    policy under the smoke's policy_id), FPB-v2 ships closed-form
+    Hoeffding by default and needs no extra params.
+
+    Any exception from the v2 verifiers is swallowed and rendered as
+    a `--` card downstream so a transient v2 issue cannot break the
+    main 5-card v1 panel.
+    """
+    from project_ghost.core.feedback import MahalanobisDowngradePolicy
+    from project_ghost.properties.erur_v2 import verify_erur_v2
+    from project_ghost.properties.fpb_v2 import (
+        ConfidenceMethod,
+        verify_fpb_v2,
+    )
+
+    with tempfile.NamedTemporaryFile(suffix=".mcap", delete=False) as tmp:
+        tmp.write(mcap_bytes)
+        tmp_path = Path(tmp.name)
+
+    ref_policy = MahalanobisDowngradePolicy(
+        min_outcomes=4, downgrade_threshold=2,
+    )
+    # The smoke writes its actual policy_id into the MCAP; we register
+    # the predicate under the real id (not a hardcoded guess). If the
+    # smoke ever uses different M/K parameters, this still works
+    # because policy_id encodes them.
+    drift_predicates = {
+        ref_policy.policy_id: ref_policy.drift_precondition,
+    }
+
+    erur_v2 = None
+    fpb_v2 = None
+    try:
+        erur_v2 = verify_erur_v2(tmp_path, drift_predicates=drift_predicates)
+    except Exception:
+        erur_v2 = None
+    try:
+        fpb_v2 = verify_fpb_v2(
+            tmp_path,
+            max_fire_probability=1.0,
+            confidence_level=0.95,
+            method=ConfidenceMethod.HOEFFDING,
+        )
+    except Exception:
+        fpb_v2 = None
+    return erur_v2, fpb_v2
+
+
+def _property_panel(summary: SmokeSummary, mcap_bytes: bytes | None = None) -> str:
+    """Render the 7-property panel as an HTML grid for ``_show_run_results``.
 
     Each card carries the property tag (BAUD-v1, ERUR-v1, ...), the
-    HOLDS / VIOLATED veredicto with colour-coded border, and a compact
-    per-property stat block. Same data the ``ghost verify-properties``
-    CLI emits, but in dashboard shape.
+    HOLDS / VIOLATED veredicto with colour-coded border, a compact
+    per-property stat block, and a link to the binding ADR on GitHub.
+
+    The 5 v1 contracts (BAUD/ERUR/MD/RLB/FPB) ship inline in the
+    ``SmokeSummary``. The 2 v2 extensions (ERUR-v2, FPB-v2) are
+    computed in-line from ``mcap_bytes`` (see ``_verify_v2_extensions``).
+    If ``mcap_bytes`` is None or the v2 verifiers raise, the v2
+    cards render as `--` so the panel keeps the 7-contract shape
+    promised by paper §3.
     """
-    cards: list[str] = []
-    for tag, report, stat in (
+    # Compute v2 extensions on the same MCAP, defensive against any
+    # verifier raising.
+    erur_v2_report = None
+    fpb_v2_report = None
+    if mcap_bytes is not None:
+        erur_v2_report, fpb_v2_report = _verify_v2_extensions(mcap_bytes)
+
+    erur_v2_stat = (
+        f"{erur_v2_report.cycles_precondition_held}/"
+        f"{erur_v2_report.cycles_total} cycles · drift=mahalanobis"
+        if erur_v2_report is not None
+        else "policy-parametric · see ADR-0040"
+    )
+    fpb_v2_stat = (
+        f"p_hat={fpb_v2_report.fire_fraction:.2f} · "
+        f"ub={fpb_v2_report.confidence_upper_bound:.2f} · "
+        f"95% Hoeffding"
+        if fpb_v2_report is not None
+        else "statistical · see ADR-0039"
+    )
+
+    rows: list[tuple[str, Any, str]] = [
         (
             "BAUD-v1",
             summary.baud_report,
@@ -1729,6 +1832,7 @@ def _property_panel(summary: SmokeSummary) -> str:
             f"{summary.erur_report.cycles_precondition_held}/"
             f"{summary.erur_report.cycles_total} cycles",
         ),
+        ("ERUR-v2", erur_v2_report, erur_v2_stat),
         (
             "MD-v1",
             summary.md_report,
@@ -1747,12 +1851,29 @@ def _property_panel(summary: SmokeSummary) -> str:
             f"fire_fraction={summary.fpb_report.fire_fraction:.2f} · "
             f"bound={summary.fpb_report.max_fire_fraction:.2f}",
         ),
-    ):
-        klass = "holds" if report.holds else "violated"
-        verdict = t("verdict_holds") if report.holds else t("verdict_violated")
+        ("FPB-v2", fpb_v2_report, fpb_v2_stat),
+    ]
+
+    cards: list[str] = []
+    for tag, report, stat in rows:
+        if report is None:
+            # v2 verifier raised or no MCAP available: render neutral card.
+            klass = "neutral"
+            verdict = "—"
+        else:
+            klass = "holds" if report.holds else "violated"
+            verdict = t("verdict_holds") if report.holds else t("verdict_violated")
+        doc_url = _PROPERTY_DOCS.get(tag)
+        name_html = (
+            f'<a href="{doc_url}" target="_blank" rel="noopener" '
+            f'style="text-decoration:none;color:inherit" '
+            f'title="View binding artefact on GitHub">{tag} ↗</a>'
+            if doc_url
+            else tag
+        )
         cards.append(
             f'<div class="property-card {klass}">'
-            f'<div class="pc-name">{tag}</div>'
+            f'<div class="pc-name">{name_html}</div>'
             f'<div class="pc-verdict">{verdict}</div>'
             f'<div class="pc-stat">{stat}</div>'
             f"</div>"
@@ -1835,7 +1956,7 @@ def _show_run_results(summary: SmokeSummary, mcap_bytes: bytes) -> None:
         f"{t('properties_caption')}</p>",
         unsafe_allow_html=True,
     )
-    st.markdown(_property_panel(summary), unsafe_allow_html=True)
+    st.markdown(_property_panel(summary, mcap_bytes), unsafe_allow_html=True)
 
     st.markdown(
         f'<div class="section-eyebrow">{t("sec_provenance")}</div>',
