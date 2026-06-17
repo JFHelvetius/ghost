@@ -1127,6 +1127,15 @@ hr { border-color: #e2e8f0 !important; }
     padding-bottom: 0.4rem; border-bottom: 1px solid #e2e8f0;
 }
 
+/* Translated tab subheader (rendered inside each tab; the tab labels
+   themselves are kept language-neutral to preserve active-tab state
+   across language switches). */
+.tab-header {
+    font-size: 1.05rem; font-weight: 600; color: #0f172a;
+    margin: 0.6rem 0 1.0rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
 /* Pipeline */
 .pipe-phase {
     font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
@@ -2697,13 +2706,34 @@ _language_picker()
 
 _hero()
 
-_tab_run, _tab_inspect, _tab_paper = st.tabs([t("tab_run"), t("tab_inspect"), t("tab_paper")])
+# IMPORTANT: tab labels are STABLE (emoji + short ASCII, never translated).
+# When the language picker fires, st.rerun() restarts the script. If the
+# tab labels were different strings between reruns (e.g. "Inspect a run"
+# vs "Inspeccionar..."), Streamlit treats them as different widgets and
+# the active tab silently resets to the first one. The translated header
+# is rendered as a markdown subheader INSIDE each tab so the human text
+# still adapts to the chosen language.
+_tab_run, _tab_inspect, _tab_paper = st.tabs(
+    ["▶  Run", "🔍  Inspect", "📄  Paper"]
+)
 
 with _tab_run:
+    st.markdown(
+        f'<div class="tab-header">{t("tab_run")}</div>',
+        unsafe_allow_html=True,
+    )
     _run_tab()
 
 with _tab_inspect:
+    st.markdown(
+        f'<div class="tab-header">{t("tab_inspect")}</div>',
+        unsafe_allow_html=True,
+    )
     _inspect_tab()
 
 with _tab_paper:
+    st.markdown(
+        f'<div class="tab-header">{t("tab_paper")}</div>',
+        unsafe_allow_html=True,
+    )
     _paper_tab()
