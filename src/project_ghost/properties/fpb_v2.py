@@ -129,13 +129,9 @@ class FPBv2Violation:
 
     def __post_init__(self) -> None:
         if not isinstance(self.kind, FPBv2ViolationKind):
-            raise TypeError(
-                f"kind must be FPBv2ViolationKind; got {type(self.kind).__name__}"
-            )
+            raise TypeError(f"kind must be FPBv2ViolationKind; got {type(self.kind).__name__}")
         if not isinstance(self.method, ConfidenceMethod):
-            raise TypeError(
-                f"method must be ConfidenceMethod; got {type(self.method).__name__}"
-            )
+            raise TypeError(f"method must be ConfidenceMethod; got {type(self.method).__name__}")
         for name, value in (
             ("observed_fire_fraction", self.observed_fire_fraction),
             ("confidence_upper_bound", self.confidence_upper_bound),
@@ -144,17 +140,11 @@ class FPBv2Violation:
             if not (0.0 <= value <= 1.0) or math.isnan(value):
                 raise ValueError(f"{name} must be in [0.0, 1.0]; got {value}")
         if not (0.0 < self.confidence_level < 1.0) or math.isnan(self.confidence_level):
-            raise ValueError(
-                f"confidence_level must be in (0.0, 1.0); got {self.confidence_level}"
-            )
+            raise ValueError(f"confidence_level must be in (0.0, 1.0); got {self.confidence_level}")
         if self.cycles_baud_fires < 0:
-            raise ValueError(
-                f"cycles_baud_fires must be >= 0; got {self.cycles_baud_fires}"
-            )
+            raise ValueError(f"cycles_baud_fires must be >= 0; got {self.cycles_baud_fires}")
         if self.cycles_total <= 0:
-            raise ValueError(
-                f"cycles_total must be > 0 for a violation; got {self.cycles_total}"
-            )
+            raise ValueError(f"cycles_total must be > 0 for a violation; got {self.cycles_total}")
 
 
 @dataclass(frozen=True)
@@ -193,9 +183,7 @@ class FPBv2VerificationReport:
         if self.min_outcomes < 0:
             raise ValueError(f"min_outcomes must be >= 0; got {self.min_outcomes}")
         if self.downgrade_threshold < 1:
-            raise ValueError(
-                f"downgrade_threshold must be >= 1; got {self.downgrade_threshold}"
-            )
+            raise ValueError(f"downgrade_threshold must be >= 1; got {self.downgrade_threshold}")
         for name, value in (
             ("max_fire_probability", self.max_fire_probability),
             ("fire_fraction", self.fire_fraction),
@@ -204,13 +192,9 @@ class FPBv2VerificationReport:
             if not (0.0 <= value <= 1.0) or math.isnan(value):
                 raise ValueError(f"{name} must be in [0.0, 1.0]; got {value}")
         if not (0.0 < self.confidence_level < 1.0) or math.isnan(self.confidence_level):
-            raise ValueError(
-                f"confidence_level must be in (0.0, 1.0); got {self.confidence_level}"
-            )
+            raise ValueError(f"confidence_level must be in (0.0, 1.0); got {self.confidence_level}")
         if not isinstance(self.method, ConfidenceMethod):
-            raise TypeError(
-                f"method must be ConfidenceMethod; got {type(self.method).__name__}"
-            )
+            raise TypeError(f"method must be ConfidenceMethod; got {type(self.method).__name__}")
         if self.cycles_total < 0:
             raise ValueError(f"cycles_total must be >= 0; got {self.cycles_total}")
         if not 0 <= self.cycles_precondition_held <= self.cycles_total:
@@ -256,9 +240,7 @@ class FPBv2VerificationReport:
                 "cycles_precondition_held > 0"
             )
         if not isinstance(self.violations, tuple):
-            raise TypeError(
-                f"violations must be tuple; got {type(self.violations).__name__}"
-            )
+            raise TypeError(f"violations must be tuple; got {type(self.violations).__name__}")
         if self.property_version != FPB_V2_PROPERTY_VERSION:
             raise ValueError(
                 f"property_version must be {FPB_V2_PROPERTY_VERSION!r}; got "
@@ -275,9 +257,7 @@ class FPBv2VerificationReport:
 # ---------------------------------------------------------------------------
 
 
-def _hoeffding_upper_bound(
-    cycles_fires: int, cycles_total: int, confidence_level: float
-) -> float:
+def _hoeffding_upper_bound(cycles_fires: int, cycles_total: int, confidence_level: float) -> float:
     """One-sided Hoeffding upper bound on the true firing probability.
 
     For ``X_i in [0, 1]`` iid with mean ``p``, Hoeffding's inequality
@@ -359,9 +339,7 @@ def _upper_bound(
     if method is ConfidenceMethod.HOEFFDING:
         return _hoeffding_upper_bound(cycles_fires, cycles_total, confidence_level)
     if method is ConfidenceMethod.CLOPPER_PEARSON:
-        return _clopper_pearson_upper_bound(
-            cycles_fires, cycles_total, confidence_level
-        )
+        return _clopper_pearson_upper_bound(cycles_fires, cycles_total, confidence_level)
     raise ValueError(f"unhandled ConfidenceMethod: {method}")
 
 
@@ -424,17 +402,11 @@ def verify_fpb_v2(  # noqa: PLR0912 -- one branch per of seven validated paramet
     if downgrade_threshold < 1:
         raise ValueError(f"downgrade_threshold must be >= 1; got {downgrade_threshold}")
     if not (0.0 <= max_fire_probability <= 1.0) or math.isnan(max_fire_probability):
-        raise ValueError(
-            f"max_fire_probability must be in [0.0, 1.0]; got {max_fire_probability}"
-        )
+        raise ValueError(f"max_fire_probability must be in [0.0, 1.0]; got {max_fire_probability}")
     if not (0.0 < confidence_level < 1.0) or math.isnan(confidence_level):
-        raise ValueError(
-            f"confidence_level must be in (0.0, 1.0); got {confidence_level}"
-        )
+        raise ValueError(f"confidence_level must be in (0.0, 1.0); got {confidence_level}")
     if not isinstance(method, ConfidenceMethod):
-        raise TypeError(
-            f"method must be ConfidenceMethod; got {type(method).__name__}"
-        )
+        raise TypeError(f"method must be ConfidenceMethod; got {type(method).__name__}")
 
     mcap_sha = hashlib.sha256(mcap_path.read_bytes()).hexdigest()
 

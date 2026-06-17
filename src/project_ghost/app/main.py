@@ -878,9 +878,7 @@ Project Ghost 在不确定性下的机器人自主性的现有文献上贡献了
         ),
         "paper_view_github": "在 GitHub 上查看",
         "paper_download_md": "下载 Markdown",
-        "paper_loading_error": (
-            "无法加载论文文件。论文也可在以下位置获取： "
-        ),
+        "paper_loading_error": ("无法加载论文文件。论文也可在以下位置获取： "),
         "run_intro": (
             "每次点击<strong>运行</strong>都会在浏览器中执行完整的 8 步"
             "管道：融合预言机 → 自评估 → 校准反馈 → 决策 → 执行 → 预测 → "
@@ -915,15 +913,9 @@ Project Ghost 在不确定性下的机器人自主性的现有文献上贡献了
         ),
         "verdict_holds": "HOLDS",
         "verdict_violated": "VIOLATED",
-        "banner_downgrade": (
-            "<strong>在周期 {n} 信心被降级</strong> —— 预测错误超过了阈值"
-        ),
-        "banner_held": (
-            "<strong>信心保持</strong> —— 模型在整个运行中保持准确"
-        ),
-        "banner_held_known": (
-            "<strong>信心整个过程中保持 KNOWN</strong>"
-        ),
+        "banner_downgrade": ("<strong>在周期 {n} 信心被降级</strong> —— 预测错误超过了阈值"),
+        "banner_held": ("<strong>信心保持</strong> —— 模型在整个运行中保持准确"),
+        "banner_held_known": ("<strong>信心整个过程中保持 KNOWN</strong>"),
         "provenance_caption": (
             "此 MCAP 的 SHA-256 内容地址。相同的输入产生相同的哈希。"
             "用它来证明这次确切的运行未被篡改。"
@@ -935,13 +927,9 @@ Project Ghost 在不确定性下的机器人自主性的现有文献上贡献了
             "在此处加载它以探索管道的每一层。"
         ),
         "upload_label": "选择 MCAP 文件",
-        "upload_help": (
-            "由 ghost-app、ghost CLI 或 run_closed_loop_smoke() 生成的文件。"
-        ),
+        "upload_help": ("由 ghost-app、ghost CLI 或 run_closed_loop_smoke() 生成的文件。"),
         "decoding_spinner": "解码 MCAP……",
-        "no_messages_error": (
-            "未找到可解码消息。这是有效的 Project Ghost MCAP 吗？"
-        ),
+        "no_messages_error": ("未找到可解码消息。这是有效的 Project Ghost MCAP 吗？"),
         "loaded_msg": (
             "已加载 <strong>{n_channels} 个通道</strong> · <strong>{n_msgs} 条消息</strong>"
         ),
@@ -969,8 +957,7 @@ Project Ghost 在不确定性下的机器人自主性的现有文献上贡献了
         ),
         "ins_self_title": "原始自评估",
         "ins_self_desc": (
-            "在校准循环之前未过滤的信心估计。将其与校准等级比较以查看"
-            "循环改变了什么。"
+            "在校准循环之前未过滤的信心估计。将其与校准等级比较以查看循环改变了什么。"
         ),
         "ins_fus_title": "融合结果",
         "ins_fus_desc": (
@@ -979,8 +966,7 @@ Project Ghost 在不确定性下的机器人自主性的现有文献上贡献了
             "差异的原因。"
         ),
         "fus_belief_caption": (
-            "预言机总是报告 x ≈ 0 m —— 背景真相以 5 m/s 漂移。那个"
-            "间隙触发 Mahalanobis 差异。"
+            "预言机总是报告 x ≈ 0 m —— 背景真相以 5 m/s 漂移。那个间隙触发 Mahalanobis 差异。"
         ),
         "replay_label": "重放验证",
         "replay_intro": (
@@ -990,13 +976,9 @@ Project Ghost 在不确定性下的机器人自主性的现有文献上贡献了
         ),
         "replay_button": "运行字节精确验证",
         "replay_spinner": "重新执行下游管道……",
-        "replay_ok": (
-            "<strong>字节完美重放</strong> —— 原始运行与重放之间 6 个"
-            "下游通道相同"
-        ),
+        "replay_ok": ("<strong>字节完美重放</strong> —— 原始运行与重放之间 6 个下游通道相同"),
         "replay_warn": (
-            "<strong>检测到差异</strong> —— 至少一个通道不同，表明"
-            "管道中可能有非确定性"
+            "<strong>检测到差异</strong> —— 至少一个通道不同，表明管道中可能有非确定性"
         ),
         "replay_col_channel": "通道",
         "replay_col_orig": "原始消息",
@@ -1012,8 +994,7 @@ Project Ghost 在不确定性下的机器人自主性的现有文献上贡献了
             "将所有后续决策切换为 <strong>HOLD</strong>。"
         ),
         "narr_uncertain_start": (
-            "代理从周期 1 开始就<em>uncertain</em>并始终保持 HOLD —— "
-            "模型从未足够可靠到可以行动。"
+            "代理从周期 1 开始就<em>uncertain</em>并始终保持 HOLD —— 模型从未足够可靠到可以行动。"
         ),
         "narr_held": (
             "信心在每个周期都保持<em>known</em> —— 代理在整个运行中都"
@@ -1024,9 +1005,7 @@ Project Ghost 在不确定性下的机器人自主性的现有文献上贡献了
             "预言机报告车辆静止，而背景真相以 5 m/s 漂移。校准循环是"
             "唯一能检测它的机制。"
         ),
-        "verdict_5": (
-            "持续<strong>非常远</strong>（&gt;5-sigma）—— 模型严重失败"
-        ),
+        "verdict_5": ("持续<strong>非常远</strong>（&gt;5-sigma）—— 模型严重失败"),
         "verdict_3": "显著远（&gt;3-sigma）—— 模型不可靠",
         "verdict_1": "适度远（&gt;1-sigma）—— 检测到轻微漂移",
         "verdict_in": "精确（1-sigma 内）—— 模型保持住了",
@@ -1770,7 +1749,8 @@ def _verify_v2_extensions(
         tmp_path = Path(tmp.name)
 
     ref_policy = MahalanobisDowngradePolicy(
-        min_outcomes=4, downgrade_threshold=2,
+        min_outcomes=4,
+        downgrade_threshold=2,
     )
     # The smoke writes its actual policy_id into the MCAP; we register
     # the predicate under the real id (not a hardcoded guess). If the
@@ -2354,7 +2334,7 @@ def _inspect_tab() -> None:
     st.markdown(
         f'<p style="color:#94a3b8;font-size:0.78rem;margin:0.5rem 0 0;'
         f'font-family:ui-monospace,Consolas,monospace">'
-        f'📎 {cached_name} · {len(file_bytes) / 1024:.1f} KB</p>',
+        f"📎 {cached_name} · {len(file_bytes) / 1024:.1f} KB</p>",
         unsafe_allow_html=True,
     )
 
@@ -2713,9 +2693,7 @@ _hero()
 # the active tab silently resets to the first one. The translated header
 # is rendered as a markdown subheader INSIDE each tab so the human text
 # still adapts to the chosen language.
-_tab_run, _tab_inspect, _tab_paper = st.tabs(
-    ["▶  Run", "🔍  Inspect", "📄  Paper"]
-)
+_tab_run, _tab_inspect, _tab_paper = st.tabs(["▶  Run", "🔍  Inspect", "📄  Paper"])
 
 with _tab_run:
     st.markdown(

@@ -111,12 +111,10 @@ _MD_V1_SCOPE = ScopeStatement(
         "Under the reference Mahalanobis calibration policy, the adjusted "
         "level is never more confident than the raw level. Confidence "
         "levels are ordered KNOWN < UNCERTAIN < UNKNOWN.",
-        "Structural (not drift-conditional) -- holds on every cycle "
-        "regardless of history shape.",
+        "Structural (not drift-conditional) -- holds on every cycle regardless of history shape.",
     ),
     does_not_claim=(
-        "MD-v1 does not specify when downgrades occur; only that "
-        "upgrades are prohibited.",
+        "MD-v1 does not specify when downgrades occur; only that upgrades are prohibited.",
         "MD-v1 is conditional on the reference calibrator; an "
         "alternative calibrator with multi-step downgrades or "
         "confidence-inflation behaviour needs its own contract.",
@@ -132,8 +130,7 @@ _RLB_V1_SCOPE = ScopeStatement(
         "max_history. Proved by structural induction in the hand proof "
         "and Lean 4 (Lemma 4 pending) and exhaustively in TLC at "
         "W in {4, 8, 16}.",
-        "The bound is tight: the smoke harness exhibits "
-        "L = peak + W - 1 with peak = 7 and W = 32.",
+        "The bound is tight: the smoke harness exhibits L = peak + W - 1 with peak = 7 and W = 32.",
     ),
     does_not_claim=(
         "RLB-v1 does not apply to mixed dirty/clean traces -- only to "
@@ -158,8 +155,7 @@ _FPB_V1_SCOPE = ScopeStatement(
         "FPB-v1 does not estimate the underlying firing probability; "
         "it is a point estimate, statistically meaningless on small "
         "samples. For a statistical bound use FPB-v2.",
-        "FPB-v1 does not adjust for multiple-testing across parameter "
-        "sweeps.",
+        "FPB-v1 does not adjust for multiple-testing across parameter sweeps.",
         "FPB-v1 does not distinguish true positives from false "
         "positives -- the verifier cannot tell from the MCAP alone.",
     ),

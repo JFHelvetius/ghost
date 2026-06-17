@@ -83,19 +83,13 @@ class ScopeStatement:
 
     def __post_init__(self) -> None:
         if not isinstance(self.claims, tuple):
-            raise TypeError(
-                f"claims must be tuple; got {type(self.claims).__name__}"
-            )
+            raise TypeError(f"claims must be tuple; got {type(self.claims).__name__}")
         if not isinstance(self.does_not_claim, tuple):
             raise TypeError(
-                f"does_not_claim must be tuple; got "
-                f"{type(self.does_not_claim).__name__}"
+                f"does_not_claim must be tuple; got {type(self.does_not_claim).__name__}"
             )
         if not isinstance(self.dependencies, tuple):
-            raise TypeError(
-                f"dependencies must be tuple; got "
-                f"{type(self.dependencies).__name__}"
-            )
+            raise TypeError(f"dependencies must be tuple; got {type(self.dependencies).__name__}")
         if not self.claims:
             raise ValueError("ScopeStatement.claims must be non-empty")
         if not self.does_not_claim:
@@ -205,17 +199,12 @@ class ContractRecord:
     def __post_init__(self) -> None:
         if not self.property_version or not isinstance(self.property_version, str):
             raise ValueError(
-                "property_version must be a non-empty string; got "
-                f"{self.property_version!r}"
+                f"property_version must be a non-empty string; got {self.property_version!r}"
             )
         if not isinstance(self.scope, ScopeStatement):
-            raise TypeError(
-                f"scope must be ScopeStatement; got {type(self.scope).__name__}"
-            )
+            raise TypeError(f"scope must be ScopeStatement; got {type(self.scope).__name__}")
         if not callable(self.verifier):
-            raise TypeError(
-                f"verifier must be callable; got {type(self.verifier).__name__}"
-            )
+            raise TypeError(f"verifier must be callable; got {type(self.verifier).__name__}")
 
 
 _REGISTRY: dict[str, ContractRecord] = {}
@@ -234,10 +223,7 @@ def register_contract(record: ContractRecord) -> ContractRecord:
         return record
     if existing is record:
         return record
-    if (
-        existing.scope == record.scope
-        and existing.verifier is record.verifier
-    ):
+    if existing.scope == record.scope and existing.verifier is record.verifier:
         return existing
     raise ValueError(
         f"Conflicting registration for {record.property_version!r}: "
@@ -258,8 +244,7 @@ def get_contract(property_version: str) -> ContractRecord:
         return _REGISTRY[property_version]
     except KeyError as exc:
         raise KeyError(
-            f"No contract registered for {property_version!r}. "
-            f"Known: {sorted(_REGISTRY)}"
+            f"No contract registered for {property_version!r}. Known: {sorted(_REGISTRY)}"
         ) from exc
 
 

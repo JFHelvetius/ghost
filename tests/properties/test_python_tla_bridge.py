@@ -73,9 +73,7 @@ def _window_update(window: list[str], outcome: str, W: int) -> list[str]:
     return [*window[1:], outcome]
 
 
-def _tla_semantics_invariant_holds(
-    outcomes: list[str], W: int
-) -> tuple[bool, int, int]:
+def _tla_semantics_invariant_holds(outcomes: list[str], W: int) -> tuple[bool, int, int]:
     """Run the Rlb.tla state machine over ``outcomes`` and check
     ``INV_RLB`` at every state.
 
@@ -151,9 +149,7 @@ def _tla_semantics_invariant_holds(
 # ---------------------------------------------------------------------------
 
 
-def _python_verifier_invariant_holds(
-    counts: list[int], W: int
-) -> tuple[bool, int, int]:
+def _python_verifier_invariant_holds(counts: list[int], W: int) -> tuple[bool, int, int]:
     """Reproduce ``verify_rlb`` over a sequence of per-cycle
     ``count_beyond_3_std + count_beyond_5_std`` values, without going
     through MCAP I/O.
@@ -235,9 +231,7 @@ def _accumulating_then_clean(N: int, k: int) -> list[str]:
     k=st.integers(min_value=0, max_value=32),
 )
 @settings(deadline=None, max_examples=300)
-def test_python_and_tla_agree_on_accumulating_then_clean(
-    W: int, N: int, k: int
-) -> None:
+def test_python_and_tla_agree_on_accumulating_then_clean(W: int, N: int, k: int) -> None:
     """For every (W, N, k) trace, the two semantics give the same
     INV_RLB verdict.
 
@@ -269,9 +263,7 @@ def test_python_and_tla_agree_on_accumulating_then_clean(
     ),
 )
 @settings(deadline=None, max_examples=300)
-def test_python_and_tla_agree_on_arbitrary_mixed_traces(
-    W: int, outcomes_raw: list[str]
-) -> None:
+def test_python_and_tla_agree_on_arbitrary_mixed_traces(W: int, outcomes_raw: list[str]) -> None:
     """Stronger property: agreement on arbitrary mixed traces.
 
     RLB-v1 is *stated* over consecutive-drift-then-clean traces, but
@@ -316,6 +308,5 @@ def test_python_and_tla_agree_on_paper_examples(W: int, N: int, k: int) -> None:
     py_holds, py_dr, py_peak = _python_verifier_invariant_holds(counts, W)
 
     assert tla_holds == py_holds, (
-        f"Paper example W={W} N={N} k={k} disagrees: "
-        f"TLA+={tla_holds}, Python={py_holds}"
+        f"Paper example W={W} N={N} k={k} disagrees: TLA+={tla_holds}, Python={py_holds}"
     )

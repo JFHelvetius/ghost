@@ -152,13 +152,10 @@ class ERURv2VerificationReport:
             )
         if not isinstance(self.policies_dispatched, tuple):
             raise TypeError(
-                f"policies_dispatched must be tuple; got "
-                f"{type(self.policies_dispatched).__name__}"
+                f"policies_dispatched must be tuple; got {type(self.policies_dispatched).__name__}"
             )
         if not isinstance(self.violations, tuple):
-            raise TypeError(
-                f"violations must be tuple; got {type(self.violations).__name__}"
-            )
+            raise TypeError(f"violations must be tuple; got {type(self.violations).__name__}")
 
     @property
     def holds(self) -> bool:

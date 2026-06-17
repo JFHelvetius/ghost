@@ -38,9 +38,7 @@ def real_only_ulog() -> Path:
     return p
 
 
-def test_auto_detect_picks_sitl_on_stationary_log(
-    stationary_ulog: Path, tmp_path: Path
-) -> None:
+def test_auto_detect_picks_sitl_on_stationary_log(stationary_ulog: Path, tmp_path: Path) -> None:
     """Default ``groundtruth_source=None`` upgrades stationary log to SITL."""
     out = tmp_path / "auto.mcap"
     summary = run_real_ulog_smoke(stationary_ulog, out)
@@ -49,9 +47,7 @@ def test_auto_detect_picks_sitl_on_stationary_log(
     assert summary.fpb_fire_fraction > 0.1
 
 
-def test_auto_detect_picks_ekf2_on_real_only_log(
-    real_only_ulog: Path, tmp_path: Path
-) -> None:
+def test_auto_detect_picks_ekf2_on_real_only_log(real_only_ulog: Path, tmp_path: Path) -> None:
     """A ULog with no GT topics auto-detects as EKF2_FALLBACK."""
     out = tmp_path / "auto.mcap"
     summary = run_real_ulog_smoke(real_only_ulog, out)
@@ -104,9 +100,7 @@ def test_gt_source_flips_fire_fraction_on_stationary_log(
     )
 
 
-def test_forced_sitl_on_real_only_log_raises(
-    real_only_ulog: Path, tmp_path: Path
-) -> None:
+def test_forced_sitl_on_real_only_log_raises(real_only_ulog: Path, tmp_path: Path) -> None:
     """Forcing SITL on a ULog without GT topics is a programmer error."""
     out = tmp_path / "should_not_exist.mcap"
     with pytest.raises(ULogParseError):

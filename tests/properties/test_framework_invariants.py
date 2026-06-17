@@ -125,8 +125,7 @@ def test_contract_records_satisfy_protocol() -> None:
     accidentally widens the interface."""
     for c in shipped_contracts():
         assert isinstance(c, EpistemicSafetyContract), (
-            f"{c.property_version} does not conform to "
-            "EpistemicSafetyContract Protocol"
+            f"{c.property_version} does not conform to EpistemicSafetyContract Protocol"
         )
 
 

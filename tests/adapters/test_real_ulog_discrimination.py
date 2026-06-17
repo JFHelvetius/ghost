@@ -67,9 +67,7 @@ def test_nominal_real_ulog_all_holds(real_ulog_path: Path, tmp_path: Path) -> No
     assert nom.fpb_holds is True
 
 
-def test_every_buggy_category_discriminates(
-    real_ulog_path: Path, tmp_path: Path
-) -> None:
+def test_every_buggy_category_discriminates(real_ulog_path: Path, tmp_path: Path) -> None:
     """Each buggy category flips its expected property on the real ULog.
 
     This is the §8.8 contribution: not a vacuous all-HOLDS but a
@@ -79,14 +77,11 @@ def test_every_buggy_category_discriminates(
     assert results.all_discriminate is True
     for cell in results.buggy_cells:
         assert cell.discriminates is True, (
-            f"category {cell.category.value} expected to flip "
-            f"{cell.expected_violator} but it held"
+            f"category {cell.category.value} expected to flip {cell.expected_violator} but it held"
         )
 
 
-def test_buggy_mcap_shas_differ_from_nominal(
-    real_ulog_path: Path, tmp_path: Path
-) -> None:
+def test_buggy_mcap_shas_differ_from_nominal(real_ulog_path: Path, tmp_path: Path) -> None:
     """Buggy runs leave a visible mark in MCAP (different policy_id,
     different reason), so SHAs must differ from nominal.
     """
@@ -104,9 +99,7 @@ def test_buggy_mcap_shas_differ_from_nominal(
             assert cell.summary.mcap_sha256 != nominal_sha
 
 
-def test_each_buggy_cell_flips_its_expected_violator(
-    real_ulog_path: Path, tmp_path: Path
-) -> None:
+def test_each_buggy_cell_flips_its_expected_violator(real_ulog_path: Path, tmp_path: Path) -> None:
     """Each of the six buggy categories must flip *its own* expected
     property (paper §8.8 6x6 verdict table) on the bundled real ULog.
 

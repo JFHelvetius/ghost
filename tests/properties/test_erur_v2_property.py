@@ -97,10 +97,7 @@ def test_v2_agrees_with_v1_on_reference_mahalanobis_smoke(tmp_path: Path) -> Non
     assert r1.holds == r2.holds
     assert r1.cycles_total == r2.cycles_total
     assert r1.cycles_precondition_held == r2.cycles_precondition_held
-    assert (
-        r1.first_precondition_cycle_stamp_sim_ns
-        == r2.first_precondition_cycle_stamp_sim_ns
-    )
+    assert r1.first_precondition_cycle_stamp_sim_ns == r2.first_precondition_cycle_stamp_sim_ns
     assert len(r1.violations) == len(r2.violations)
     assert r2.policies_dispatched == (policy.policy_id,)
 
@@ -118,9 +115,7 @@ def test_v2_agrees_with_v1_on_reference_mahalanobis_smoke(tmp_path: Path) -> Non
         PerAxisHysteresisDowngradePolicy,
     ],
 )
-def test_v2_partitions_cycles_by_drift_precondition(
-    policy_class: type, tmp_path: Path
-) -> None:
+def test_v2_partitions_cycles_by_drift_precondition(policy_class: type, tmp_path: Path) -> None:
     """For any DriftPreconditionProvider, v2 partitions cycles exactly.
 
     Run v2 with the policy's ``drift_precondition`` registered against
@@ -205,9 +200,7 @@ def test_v2_raises_unknown_policy_error_on_missing_id(tmp_path: Path) -> None:
     """
     mcap = _make_reference_mcap(tmp_path)
     with pytest.raises(UnknownPolicyError) as excinfo:
-        verify_erur_v2(
-            mcap, drift_predicates={"some_other_policy_id": lambda h: False}
-        )
+        verify_erur_v2(mcap, drift_predicates={"some_other_policy_id": lambda h: False})
     msg = str(excinfo.value)
     assert "mahalanobis_downgrade_v1_min4_thr2" in msg
     assert "some_other_policy_id" in msg
@@ -267,18 +260,12 @@ def test_mahalanobis_drift_precondition_matches_specification(
         worst_orientation_mahalanobis=0.0 if outcomes == 0 else 3.5,
         most_recent_observed_stamp_sim_ns=None if outcomes == 0 else 1000,
     )
-    policy = MahalanobisDowngradePolicy(
-        min_outcomes=min_outcomes, downgrade_threshold=threshold
-    )
+    policy = MahalanobisDowngradePolicy(min_outcomes=min_outcomes, downgrade_threshold=threshold)
     observed = policy.drift_precondition(history)
 
     # Spec: drift iff outcomes_considered > 0 AND outcomes >= M AND
     # dirty_count >= K.
-    expected = (
-        outcomes > 0
-        and outcomes >= min_outcomes
-        and n_dirty >= threshold
-    )
+    expected = outcomes > 0 and outcomes >= min_outcomes and n_dirty >= threshold
     assert observed == expected, (
         f"drift_precondition={observed} but spec says {expected} on "
         f"history outcomes={outcomes} n_dirty={n_dirty} "

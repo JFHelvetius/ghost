@@ -318,10 +318,7 @@ def detect_groundtruth_source(ulog_path: Path) -> GroundTruthSource:
     ulog_obj = pyulog.ULog(str(ulog_path))
     topics = {d.name for d in ulog_obj.data_list}
     names = ULogTopicNames()
-    if (
-        names.local_position_groundtruth in topics
-        and names.attitude_groundtruth in topics
-    ):
+    if names.local_position_groundtruth in topics and names.attitude_groundtruth in topics:
         return GroundTruthSource.SITL_SIMULATOR
     return GroundTruthSource.EKF2_FALLBACK
 

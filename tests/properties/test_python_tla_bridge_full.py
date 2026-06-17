@@ -99,7 +99,9 @@ def _pyver_baud_precondition_fires(
     K=st.integers(min_value=1, max_value=8),
     W=st.integers(min_value=1, max_value=12),
     outcomes=st.lists(
-        st.sampled_from([_DIRTY, _CLEAN]), min_size=0, max_size=20,
+        st.sampled_from([_DIRTY, _CLEAN]),
+        min_size=0,
+        max_size=20,
     ),
 )
 def test_baud_precondition_python_and_tla_agree(
@@ -120,8 +122,7 @@ def test_baud_precondition_python_and_tla_agree(
         K=K,
     )
     assert tla == py, (
-        f"BAUD bridge violated at M={M} K={K} W={W} window={window}: "
-        f"TLA+={tla}, Python={py}"
+        f"BAUD bridge violated at M={M} K={K} W={W} window={window}: TLA+={tla}, Python={py}"
     )
 
 
@@ -130,9 +131,7 @@ def test_baud_precondition_python_and_tla_agree(
 # ---------------------------------------------------------------------------
 
 
-def _tla_erur_precondition(
-    window: list[str], raw_level: str, M: int, K: int
-) -> bool:
+def _tla_erur_precondition(window: list[str], raw_level: str, M: int, K: int) -> bool:
     """ERURPrecondition(h, raw) from BaudErur.tla:
     DriftClean(h) AND raw = KNOWN_L, where
     DriftClean(h) := OutcomesConsidered(h) < M OR CountDirty(h) < K.
@@ -159,7 +158,9 @@ def _pyver_erur_precondition(
     W=st.integers(min_value=1, max_value=12),
     raw=st.sampled_from([_KNOWN, _UNCERTAIN, _UNKNOWN]),
     outcomes=st.lists(
-        st.sampled_from([_DIRTY, _CLEAN]), min_size=0, max_size=20,
+        st.sampled_from([_DIRTY, _CLEAN]),
+        min_size=0,
+        max_size=20,
     ),
 )
 def test_erur_precondition_python_and_tla_agree(
@@ -198,12 +199,12 @@ def test_erur_precondition_python_and_tla_agree(
     K=st.integers(min_value=1, max_value=8),
     W=st.integers(min_value=1, max_value=12),
     outcomes=st.lists(
-        st.sampled_from([_DIRTY, _CLEAN]), min_size=0, max_size=20,
+        st.sampled_from([_DIRTY, _CLEAN]),
+        min_size=0,
+        max_size=20,
     ),
 )
-def test_partition_holds_under_known_raw(
-    M: int, K: int, W: int, outcomes: list[str]
-) -> None:
+def test_partition_holds_under_known_raw(M: int, K: int, W: int, outcomes: list[str]) -> None:
     """When raw = KNOWN, exactly one of BAUD precondition or ERUR
     precondition fires. Pins ``INV_PARTITION`` at the conformance
     layer (Lean 4 already proves the abstract theorem)."""
@@ -214,8 +215,7 @@ def test_partition_holds_under_known_raw(
     baud = _tla_baud_precondition(window, M, K)
     erur = _tla_erur_precondition(window, _KNOWN, M, K)
     assert baud != erur, (
-        f"Partition violated: BAUD={baud}, ERUR={erur} at M={M} K={K} "
-        f"W={W} window={window}"
+        f"Partition violated: BAUD={baud}, ERUR={erur} at M={M} K={K} W={W} window={window}"
     )
 
 
@@ -233,9 +233,7 @@ def _tla_md_downgrade(level: str) -> str:
     return _UNKNOWN
 
 
-def _tla_md_calibrate(
-    raw: str, window: list[str], M: int, K: int
-) -> str:
+def _tla_md_calibrate(raw: str, window: list[str], M: int, K: int) -> str:
     """``Calibrate(raw, h)`` from BaudErur.tla: downgrade if BAUD
     precondition fires, else passthrough."""
     if _tla_baud_precondition(window, M, K):
@@ -261,7 +259,9 @@ def _pyver_md_calibrate(
     W=st.integers(min_value=1, max_value=12),
     raw=st.sampled_from([_KNOWN, _UNCERTAIN, _UNKNOWN]),
     outcomes=st.lists(
-        st.sampled_from([_DIRTY, _CLEAN]), min_size=0, max_size=20,
+        st.sampled_from([_DIRTY, _CLEAN]),
+        min_size=0,
+        max_size=20,
     ),
 )
 def test_md_calibrate_python_and_tla_agree(
@@ -294,12 +294,12 @@ def test_md_calibrate_python_and_tla_agree(
     W=st.integers(min_value=1, max_value=12),
     raw=st.sampled_from([_KNOWN, _UNCERTAIN, _UNKNOWN]),
     outcomes=st.lists(
-        st.sampled_from([_DIRTY, _CLEAN]), min_size=0, max_size=20,
+        st.sampled_from([_DIRTY, _CLEAN]),
+        min_size=0,
+        max_size=20,
     ),
 )
-def test_md_invariant_no_inflation(
-    M: int, K: int, W: int, raw: str, outcomes: list[str]
-) -> None:
+def test_md_invariant_no_inflation(M: int, K: int, W: int, raw: str, outcomes: list[str]) -> None:
     """``INV_NO_INVENTED_CONFIDENCE`` from BaudErur.tla:
     ``LevelNum(adjusted_level) >= LevelNum(raw_level)``.
 
@@ -324,8 +324,10 @@ def test_md_invariant_no_inflation(
 
 
 def _tla_fpb_holds(
-    cycles_fires: int, cycles_total: int,
-    max_fire_numer: int, bound_denom: int,
+    cycles_fires: int,
+    cycles_total: int,
+    max_fire_numer: int,
+    bound_denom: int,
 ) -> bool:
     """``INV_FPB_OBSERVATIONAL_DEFAULT`` from Fpb.tla:
     ``cycles_fires * bound_denom <= max_fire_numer * cycles_total``.
@@ -333,9 +335,7 @@ def _tla_fpb_holds(
     return cycles_fires * bound_denom <= max_fire_numer * cycles_total
 
 
-def _pyver_fpb_holds(
-    cycles_fires: int, cycles_total: int, max_fire_fraction: float
-) -> bool:
+def _pyver_fpb_holds(cycles_fires: int, cycles_total: int, max_fire_fraction: float) -> bool:
     """Reproduce ``FPBVerificationReport.holds`` from
     ``src/project_ghost/properties/fpb.py``:
     ``fire_fraction <= max_fire_fraction``.

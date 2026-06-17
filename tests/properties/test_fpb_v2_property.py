@@ -100,8 +100,7 @@ def test_hoeffding_dominates_clopper_pearson(n: int, k: int, level: float) -> No
     # Allow tiny floating-point slack; binary search in scipy's
     # beta.ppf has ULP-level error vs the closed-form sqrt.
     assert h + 1e-9 >= cp, (
-        f"Hoeffding ub={h:.6f} < Clopper-Pearson ub={cp:.6f} "
-        f"at k={k}, n={n}, level={level}"
+        f"Hoeffding ub={h:.6f} < Clopper-Pearson ub={cp:.6f} at k={k}, n={n}, level={level}"
     )
 
 
@@ -147,7 +146,7 @@ def test_bound_is_decreasing_in_n_at_fixed_p_hat(
     ub_big = fn(2 * k, 2 * n, level)
     assert ub_big <= ub_small + 1e-9, (
         f"{method.value}: bound did not shrink under (k,n)->(2k,2n): "
-        f"ub({k},{n})={ub_small:.6f} ub({2*k},{2*n})={ub_big:.6f}"
+        f"ub({k},{n})={ub_small:.6f} ub({2 * k},{2 * n})={ub_big:.6f}"
     )
 
 
@@ -156,9 +155,7 @@ def test_bound_is_decreasing_in_n_at_fixed_p_hat(
     p_hat_promille=st.integers(min_value=0, max_value=1000),
     method=st.sampled_from(list(ConfidenceMethod)),
 )
-def test_bound_converges_to_p_hat_at_large_n(
-    p_hat_promille: int, method: ConfidenceMethod
-) -> None:
+def test_bound_converges_to_p_hat_at_large_n(p_hat_promille: int, method: ConfidenceMethod) -> None:
     """P5: at n=10000 the bound is within 0.05 of p_hat at level 0.95.
 
     Distribution-free quantitative consistency check. Hoeffding's
@@ -172,9 +169,7 @@ def test_bound_converges_to_p_hat_at_large_n(
     fn = _bound_fn(method)
     ub = fn(k, n, 0.95)
     gap = ub - (k / n)
-    assert gap < 0.05, (
-        f"{method.value}: ub-p_hat={gap:.4f} >= 0.05 at n={n}, p_hat={k/n:.4f}"
-    )
+    assert gap < 0.05, f"{method.value}: ub-p_hat={gap:.4f} >= 0.05 at n={n}, p_hat={k / n:.4f}"
 
 
 @pytest.mark.parametrize("method", list(ConfidenceMethod))

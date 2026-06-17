@@ -175,17 +175,12 @@ def run_multi_ulog_discrimination(
         matrix[cat_value] = {}
         isolation_matrix[cat_value] = {}
         for ulog_name in ulog_names:
-            cells = [
-                c for c in per_ulog[ulog_name].buggy_cells
-                if c.category.value == cat_value
-            ]
+            cells = [c for c in per_ulog[ulog_name].buggy_cells if c.category.value == cat_value]
             if not cells:
                 continue
             cell = cells[0]
             matrix[cat_value][ulog_name] = cell.discriminates
-            isolation_matrix[cat_value][ulog_name] = (
-                cell.discriminates and _is_isolated(cell)
-            )
+            isolation_matrix[cat_value][ulog_name] = cell.discriminates and _is_isolated(cell)
 
     results = MultiULogCorpusResults(
         per_ulog=per_ulog,
@@ -215,12 +210,8 @@ def _emit_matrix_json(
     diagnostics = {
         p.name: {
             "cycles_run": results.per_ulog[p.name].nominal.n_cycles_run,
-            "fpb_fire_fraction": round(
-                results.per_ulog[p.name].nominal.fpb_fire_fraction, 4
-            ),
-            "groundtruth_source": (
-                results.per_ulog[p.name].nominal.groundtruth_source.value
-            ),
+            "fpb_fire_fraction": round(results.per_ulog[p.name].nominal.fpb_fire_fraction, 4),
+            "groundtruth_source": (results.per_ulog[p.name].nominal.groundtruth_source.value),
             "size_bytes": p.stat().st_size if p.exists() else None,
         }
         for p in ulog_paths
