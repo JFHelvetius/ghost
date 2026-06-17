@@ -183,14 +183,16 @@ on their own machine. We close both gaps in one platform. Project
 Ghost is sim-first, written in Python, and ships as a
 \texttt{pip}-installable package with a CLI subcommand
 (\texttt{ghost verify-properties}) that takes a captured MCAP log
-and returns a byte-exact verdict on five epistemic contracts for
+and returns a byte-exact verdict on seven epistemic contracts for
 a reference autonomy supervisor. Each contract is stated as a
 binding ADR, verified by a pure function over the log, exercised
 by Hypothesis-based property tests, and self-enforced on every
-push by CI. Two contracts (BAUD-v1 and ERUR-v1) are additionally
-\textbf{mechanically verified} by TLA+/TLC, along with the
-partition theorem that the two together cover the full
-conditional behaviour space.
+push by CI. The five v1 contracts (BAUD-v1, ERUR-v1, MD-v1,
+RLB-v1, FPB-v1) are additionally \textbf{mechanically verified}
+by TLA+/TLC, along with the partition theorem covering the full
+conditional behaviour space. The two v2 contracts (ERUR-v2 and
+FPB-v2) ship with Hypothesis-checked verifiers and the
+Python$\leftrightarrow$TLA+ bridge gap documented under ADR-0046.
 
 The packaging of an epistemic contract together with its recorded
 run and its verifier into one citable, third-party-falsifiable
@@ -223,8 +225,9 @@ We make \textbf{three contributions}:
         formal definition is in \S\ref{sec:epistemic-def}.
   \item \textbf{C2 --- Reference implementation: Ghost
         (artefact).} A closed-loop autonomy supervisor
-        instantiating five epistemic contracts (BAUD-v1, ERUR-v1,
-        MD-v1, RLB-v1, FPB-v1) packaged as executable safety
+        instantiating seven epistemic contracts (BAUD-v1, ERUR-v1,
+        ERUR-v2, MD-v1, RLB-v1, FPB-v1, FPB-v2) packaged as
+        executable safety
         citations --- binding ADRs, content-addressed MCAP
         telemetry, \texttt{ghost verify-properties --mcap},
         OIDC-signed PyPI wheels, and a policy-agnostic verifier
@@ -304,11 +307,10 @@ Three observations follow:
         rather than as prose.
 \end{enumerate}
 
-The five contracts we ship (\S\ref{sec:properties}) instantiate
+The seven contracts we ship (\S\ref{sec:properties}) instantiate
 this definition on a representative autonomy supervisor. The
-framework permits other contracts; FPB-v1 can be tightened, and
-ports to other agent kinds (delivery, manipulation, multi-agent)
-are scope for future work.
+framework permits other contracts; ports to other agent kinds
+(delivery, manipulation, multi-agent) are scope for future work.
 
 \begin{figure}[t]
 \centering
@@ -734,7 +736,7 @@ proving~\cite{lamport2002specifying} on a cost/benefit argument: TLC
 is exhaustive over a finite state space in seconds, where a Lean
 proof would be weeks.
 
-\subsection{Three specifications, jointly covering 5/5 properties}
+\subsection{Three specifications, jointly covering the five v1 contracts}
 \textbf{\texttt{BaudErur.tla}} (\texttt{docs/proofs/BaudErur.tla},
 bounds $M{=}2, K{=}1, W{=}3$) models the closed loop as a state
 machine with one transition per cycle. It checks five invariants:
@@ -762,8 +764,11 @@ the observational contract; the statistical FPB-v2 (ADR-0039,
 v0.2.5) ships separately with closed-form Hoeffding and exact
 Clopper-Pearson upper bounds (see \S\ref{sec:properties}).
 
-Together the three specs constitute \textbf{5/5 properties with at
-least a structural TLC invariant in CI}.
+Together the three specs constitute \textbf{5 of 7 contracts
+(the v1 family) with at least a structural TLC invariant in CI}.
+The two v2 contracts (ERUR-v2 and FPB-v2) ship without TLC; their
+Python$\leftrightarrow$TLA+ bridge gap is documented under
+ADR-0046.
 
 \subsection{Scope}
 The mechanical proofs do not claim that the Python implementation
@@ -1049,7 +1054,9 @@ failure-mode visibility across the property set.
 To demonstrate stability under variation of the reference
 calibrator parameters, we ran the closed-loop smoke under three
 $(M, K)$ pairs and three trace lengths
-$n \in \{10, 50, 200\}$. All 9 combinations pass all 5 properties.
+$n \in \{10, 50, 200\}$. All 9 combinations pass all 5 v1
+properties evaluated in this experiment (BAUD-v1, ERUR-v1, MD-v1,
+RLB-v1, FPB-v1; the two v2 variants are not part of this matrix).
 Verifier runtime is linear in trace length and policy-insensitive.
 Reproducible via
 \texttt{docs/paper/scripts/measure\_metrics.py}.
@@ -1075,7 +1082,8 @@ $(5,3)$ lax         & 200 & 64\,700 & 104.4 & 406.2 & 0.98 & \checkmark\\
 \caption{Parametric evaluation across three calibrator
          parameterisations and three trace lengths. Verifier
          timing is the mean of 5 replicates with one warm-up.
-         All 9 combinations report all 5 properties HOLDS.}
+         All 9 combinations report all 5 v1 properties HOLDS;
+         v2 variants are not part of this experiment.}
 \label{tab:parametric}
 \end{table}
 
@@ -1165,8 +1173,9 @@ modes documented in the VIO/SLAM evaluation literature.
 \texttt{cascading\_failure}  & 30 & OK & OK & OK & OK & OK & 0.60 \\
 \bottomrule
 \end{tabular}
-\caption{Realistic-shape scenarios: all five properties hold under
-the reference policy. Reproducible via
+\caption{Realistic-shape scenarios: all five v1 properties hold
+under the reference policy (BAUD-v1, ERUR-v1, MD-v1, RLB-v1,
+FPB-v1). Reproducible via
 \texttt{python -m project\_ghost.examples.realistic\_scenarios}.}
 \label{tab:realistic}
 \end{table}
@@ -1560,11 +1569,18 @@ framework's invariants reject it.
 \subsection{Internal validity}
 
 The Python verifier and the TLA+ specification could disagree.
-Until v0.2.5 this was acknowledged ``by inspection''; ADR-0043
-closes it for RLB-v1 with a mechanical Hypothesis conformance
-test (\S\ref{sec:rlb-unbounded}). The remaining six contracts'
-bridges are open under ADR-0046; their absence is the
-remaining internal-validity threat we explicitly disclose.
+Until v0.2.5 this was acknowledged ``by inspection''. ADR-0043
+closes the bridge for RLB-v1 with a mechanical Hypothesis
+conformance test (\S\ref{sec:rlb-unbounded}); ADR-0046 extends
+the closure to BAUD-v1, ERUR-v1, MD-v1, and FPB-v1 against the
+\texttt{BaudErur.tla} and \texttt{Fpb.tla} semantics. The two
+v2 contracts (ERUR-v2 and FPB-v2) remain open: ERUR-v2 is
+parametric over a \texttt{DriftPreconditionProvider} Protocol
+and TLA+-side coverage would require re-implementing each
+policy's predicate; FPB-v2's statistical bound conformance is
+out of scope for the structural conformance harness. The two
+open bridges are the remaining internal-validity threat we
+explicitly disclose.
 
 \subsection{External validity}
 
