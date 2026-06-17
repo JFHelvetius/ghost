@@ -2,7 +2,14 @@
 
 **作者：** Javier Menéndez Mateos (`jfhelvetius@gmail.com`)
 **单位：** 独立研究者
-**版本：** v0.2.3（2026-06-12）
+**版本：** v0.2.5（2026-06-17）
+
+> **关于本翻译。** 本论文的规范参考版本为 EN 版
+> （仓库中的 `docs/paper/arxiv/main.tex`；arXiv 预印本）。
+> 本中文翻译作为推广资源维护；关键章节（摘要、贡献、机械覆
+> 盖、参数化评估、形状真实场景）已与 v0.2.5 同步。关于七个
+> 认识论契约的精确细节、三个 PX4 SITL ULog 上的 18/18 判别
+> 矩阵以及 Python↔TLA+ Hypothesis 检查桥，请参阅 EN 版。
 **代码仓库：** <https://github.com/JFHelvetius/ghost>
 **PyPI：** <https://pypi.org/project/project-ghost/>
 **文档：** <https://JFHelvetius.github.io/ghost/>

@@ -2,7 +2,17 @@
 
 **Autor:** Javier Menéndez Mateos (`jfhelvetius@gmail.com`)
 **Afiliación:** Independiente
-**Versión:** v0.2.3 (2026-06-12)
+**Versión:** v0.2.5 (2026-06-17)
+
+> **Nota sobre esta traducción.** La versión canónica y de
+> referencia del paper es la versión EN (`docs/paper/arxiv/main.tex`
+> en el repo; preprint arXiv). Esta traducción ES se mantiene como
+> recurso de divulgación; las secciones clave (resumen,
+> contribuciones, cobertura mecánica, evaluación paramétrica,
+> escenarios shape-realistic) están sincronizadas con v0.2.5. Para
+> el detalle exacto de los siete contratos epistémicos, la matriz
+> de discriminación 18/18 sobre tres ULogs PX4 SITL y el puente
+> Python↔TLA+ Hypothesis-checked, consultar la versión EN.
 **Repositorio:** <https://github.com/JFHelvetius/ghost>
 **PyPI:** <https://pypi.org/project/project-ghost/>
 **Documentación:** <https://JFHelvetius.github.io/ghost/>
@@ -40,13 +50,20 @@ verificadores runtime existentes preguntan predicados del mundo
 predicados de la postura del agente hacia su propia
 incertidumbre. Los llamamos **contratos epistémicos de
 seguridad**. Describimos **Project Ghost**, una plataforma open
-source que (i) define cinco contratos epistémicos para un
-supervisor de autonomía de referencia (BAUD/ERUR/MD/RLB/FPB),
-(ii) verifica cada uno vía función pura sobre un log MCAP
-content-addressed, (iii) chequea mecánicamente los invariantes
-subyacentes vía TLA+/TLC, y (iv) empaqueta cada contrato junto
-con un run grabado y el verificador en una **cita de seguridad
-ejecutable**: `pip install project-ghost==0.2.3` seguido de
+source que (i) define **siete** contratos epistémicos para un
+supervisor de autonomía de referencia (BAUD-v1, ERUR-v1, ERUR-v2,
+MD-v1, RLB-v1, FPB-v1, FPB-v2), formalizados como un `Protocol`
+de Python y un registro (ADR-0045), (ii) verifica cada uno vía
+función pura sobre un log MCAP content-addressed, (iii) chequea
+mecánicamente los invariantes subyacentes vía TLA+/TLC en cotas
+acotadas, un barrido paramétrico TLC sobre W ∈ {4, 8, 16} y
+pruebas Lean 4 (teorema de partición sin sorry; RLB-v1 unbounded
+reducido a un único lema 4 documentado), (iv) cierra el caveat
+previamente abierto del puente Python↔TLA+ con un test
+Hypothesis-checked para 5 de los 7 contratos (ADR-0043 + ADR-0046),
+y (v) empaqueta cada contrato junto con un run grabado y el
+verificador en una **cita de seguridad ejecutable**:
+`pip install project-ghost==0.2.5` seguido de
 `ghost verify-properties --mcap <log>` permite a un tercero
 reproducir el veredicto — o contradecirlo.
 
@@ -212,8 +229,13 @@ Tres observaciones:
    OIDC-firmado.** A este empaquetado lo llamamos **cita de
    seguridad ejecutable** (Figura 1).
 
-Los cinco contratos que enviamos (§3) instancian esta definición
-sobre un supervisor de autonomía representativo.
+Los siete contratos que enviamos (§3) instancian esta definición
+sobre un supervisor de autonomía representativo. Los cinco contratos
+v1 (BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1) se introdujeron en
+v0.2.2; los dos contratos v2 (ERUR-v2 paramétrico sobre un
+`DriftPreconditionProvider`, y FPB-v2 estadístico vía
+Hoeffding + Clopper-Pearson) se añadieron en v0.2.5 sobre el mismo
+patrón.
 
 ### 1.3 Qué es y qué no es este paper
 
@@ -632,9 +654,11 @@ scope.
 ### 5.3 Invariantes verificados
 
 Los tres specs juntos verifican 11 invariantes en CI continuo (5 en
-BaudErur, 3 en Rlb, 3 en Fpb), cubriendo BAUD/ERUR/MD/RLB/FPB con al
-menos un invariante estructural cada una. Esto eleva la cobertura
-mecánica de 3/5 propiedades en v0.2.1 a **5/5 en v0.2.3**.
+BaudErur, 3 en Rlb, 3 en Fpb), cubriendo BAUD-v1/ERUR-v1/MD-v1/
+RLB-v1/FPB-v1 con al menos un invariante estructural cada una. Esto
+constituye **5 de los 7 contratos (la familia v1) con TLC en CI**;
+los dos contratos v2 (ERUR-v2 y FPB-v2) se entregan sin TLC y su
+gap del puente Python↔TLA+ se documenta bajo ADR-0046.
 
 ### 5.4 Bounds y qué prueban
 
@@ -847,8 +871,10 @@ FPB-v1.
 ### 8.3 Evaluación paramétrica de policy
 
 9 corridas (3 policies × 3 longitudes de trace), las 5 propiedades
-HOLD en todas. Verificador lineal en longitud del trace: 21 ms para
-n=10, 100 ms para n=50, 406 ms para n=200.
+v1 evaluadas en este experimento HOLD en todas (BAUD-v1, ERUR-v1,
+MD-v1, RLB-v1, FPB-v1; las dos variantes v2 no forman parte de esta
+matriz). Verificador lineal en longitud del trace: 21 ms para n=10,
+100 ms para n=50, 406 ms para n=200.
 
 ### 8.4 Verificador policy-agnostic, precondiciones policy-paramétricas
 
@@ -893,9 +919,11 @@ es generada por el verificador en cada push de CI**, no manual;
 ### 8.5 Escenarios shape-realistic
 
 3 perfiles inspirados en literatura VIO/SLAM (gps_denial,
-slow_biased_drift, cascading_failure). Las 5 propiedades HOLD en
-los 3. Honesto: shape-realistic, no data-real; integración con
-datos reales de PX4/ROSBag es roadmap futuro.
+slow_biased_drift, cascading_failure). Las 5 propiedades v1
+(BAUD-v1, ERUR-v1, MD-v1, RLB-v1, FPB-v1) HOLD en los 3. Honesto:
+shape-realistic, no data-real; la integración con datos reales de
+PX4 se cierra en §8.7/8.8 con la matriz de discriminación 18/18
+sobre tres ULogs PX4 SITL distintos (ADR-0037, v0.2.5).
 
 ### 8.6 Comparación contra RTAMT: matriz de capacidades, no carrera
 

@@ -1261,9 +1261,12 @@ it.
 \textbf{What this section ships in v0.2.5.} A real PX4 ULog from
 the PX4/pyulog test fixtures
 (\texttt{test/sample\_log\_small.ulg}, ${\sim}921$\,KB, PX4 v1.10-era
-SITL flight, BSD-3 via PX4), bundled at
+SITL flight, BSD-3 via PX4), bundled in the source repository at
 \texttt{docs/paper/data/sample.ulg} with SHA-256
-\texttt{68d1020f...}. An end-to-end orchestrator
+\texttt{68d1020f...} (the PyPI wheel ships the verifier code only;
+data files are kept in the repo for size reasons --- reproducing
+\S\ref{sec:realflight} requires a \texttt{git clone} alongside the
+\texttt{pip install}). An end-to-end orchestrator
 \texttt{project\_ghost.adapters.real\_ulog\_smoke.run\_real\_ulog\_smoke}
 reads the ULog via \texttt{parse\_ulog\_pose\_samples}, subsamples
 it to Ghost's 10\,Hz cycle rate, drives the \textbf{unmodified}
