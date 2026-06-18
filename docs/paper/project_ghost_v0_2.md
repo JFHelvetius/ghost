@@ -2,7 +2,21 @@
 
 **Author:** Javier Menéndez Mateos (`jfhelvetius@gmail.com`)
 **Affiliation:** Independent
-**Version:** v0.2.3 (2026-06-12)
+**Version:** v0.2.5 (2026-06-17)
+
+> **About this Markdown rendering.** The canonical reference version
+> of this paper is the PDF compiled from
+> `docs/paper/arxiv/main.tex` (also distributed as the arXiv
+> preprint). This Markdown file is a Pages-friendly rendering kept
+> for browsability; selected sections (front matter, contract count,
+> mechanical-coverage table, parametric eval, realistic-shape
+> scenarios) are synchronised with the v0.2.5 PDF, but historical
+> v0.2.X language remains in places where the narrative documents
+> the project's evolution. For the canonical figure of seven shipped
+> contracts (BAUD-v1, ERUR-v1, ERUR-v2, MD-v1, RLB-v1, FPB-v1,
+> FPB-v2), the 18/18 discrimination matrix on three PX4 SITL ULogs,
+> and the Python↔TLA+ bridge tally (5 of 7 closed via ADR-0043 +
+> ADR-0046), consult the PDF.
 **Repository:** <https://github.com/JFHelvetius/ghost>
 **PyPI:** <https://pypi.org/project/project-ghost/>
 **Documentation:** <https://JFHelvetius.github.io/ghost/>
@@ -270,7 +284,7 @@ Three observations follow:
    contract is shipped as something a reviewer can falsify in one
    shell command rather than as prose.
 
-The five contracts we ship (§3) instantiate this definition on a
+The seven contracts we ship (§3) instantiate this definition on a
 representative autonomy supervisor. The framework permits other
 contracts; FPB-v1 can be tightened, additional contracts on
 sensor-fusion provenance or actuation-budget consumption could be
@@ -1056,8 +1070,8 @@ This is contribution C4 in action.
 
 ### 8.1 Tests, CI, and mechanical verification
 
-At v0.2.3, the test suite contains **1711 tests passing** (ruff +
-mypy strict + deptry clean), of which approximately 50 are dedicated
+At v0.2.5, the test suite contains **1785 tests passing** (ruff +
+mypy strict + deptry clean), of which approximately 130 are dedicated
 property tests in `tests/properties/`. The CI matrix runs on
 ubuntu-latest and windows-latest with Python 3.11 and 3.12, plus a
 `tla-plus` job that runs TLC on the spec described in §5 on every
