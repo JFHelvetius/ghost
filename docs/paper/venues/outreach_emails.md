@@ -69,7 +69,7 @@ Three pieces of the paper might be of interest:
 
 The paper draft is at [ARXIV_URL_WHEN_READY] (12 pages).
 Code, TLA+ specs, and CI artifacts at
-https://github.com/JFHelvetius/ghost (release v0.2.1).
+https://github.com/JFHelvetius/ghost (release v0.2.5).
 
 I am sending this as a polite pre-submission consultation; any
 quick reaction — "this looks reasonable", "you missed X", "the
@@ -96,7 +96,7 @@ verifier vs RTAMT
 Dear Dr. Niković,
 
 I am drafting a paper on a runtime safety-property verifier for
-autonomy pipelines (Project Ghost, v0.2.1). RTAMT
+autonomy pipelines (Project Ghost, v0.2.5). RTAMT
 (ATVA 2020 / STTT 2023) is the closest tool I cite in the related-
 work comparison matrix.
 
@@ -137,7 +137,7 @@ ROS-style autonomy
 Dear Dr. Ferrando,
 
 I am preparing a runtime-verification tool paper on safety properties
-for autonomy under uncertainty (Project Ghost, v0.2.1). I cite
+for autonomy under uncertainty (Project Ghost, v0.2.5). I cite
 ROSMonitoring (TAROS 2020) as the closest live-middleware monitor in
 the related-work section.
 
@@ -208,7 +208,7 @@ than mine.
 
 A short reaction — "fair claim", "you missed X" — would be hugely
 valuable. The draft is at [ARXIV_URL_WHEN_READY] (12 pages); code
-+ specs at https://github.com/JFHelvetius/ghost (release v0.2.1).
++ specs at https://github.com/JFHelvetius/ghost (release v0.2.5).
 
 I appreciate your time even just to read this.
 
