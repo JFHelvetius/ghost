@@ -701,7 +701,7 @@ public API; their JSON serialisation is the wire format the CLI
 emits with \texttt{--json}.
 
 \begin{lstlisting}[language=bash]
-$ pip install project-ghost==0.2.3
+$ pip install project-ghost==0.2.5
 $ python -m project_ghost.examples.closed_loop_smoke
 $ ghost verify-properties --mcap closed_loop_smoke.mcap
 BAUD-v1: HOLDS  (M=4, K=2, 6/10 cycles evaluated)
@@ -970,7 +970,7 @@ A reader who wishes to cite a Project Ghost safety claim can write:
 Project Ghost v0.2.5 satisfies BAUD-v1 on the bundled reference
 smoke MCAP \texttt{SHA-256:<hash>}, as verified by
 \texttt{ghost verify-properties --mcap closed\_loop\_smoke.mcap}
-from \texttt{pip install project-ghost==0.2.3}, and additionally
+from \texttt{pip install project-ghost==0.2.5}, and additionally
 satisfies \texttt{INV\_BAUD}, \texttt{INV\_ERUR},
 \texttt{INV\_PARTITION} over the abstract model
 \texttt{BaudErur.tla} at bounds $M{=}2, K{=}1, W{=}3$, and
@@ -1383,7 +1383,7 @@ contract together. The verifier reports both.}
 \end{table}
 
 \textbf{Reproducibility.} End-to-end runnable from
-\texttt{pip install 'project-ghost[adapters]==0.2.4'}:
+\texttt{pip install 'project-ghost[adapters]==0.2.5'}:
 
 \begin{lstlisting}
 python docs/paper/scripts/verify_real_ulog_discriminate.py \
