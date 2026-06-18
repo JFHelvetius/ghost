@@ -45,7 +45,7 @@
 \author{Javier Menéndez Mateos\\
         \texttt{jfhelvetius@gmail.com}\\
         \small Independent}
-\date{Short paper, v0.2.3 --- \today}
+\date{Short paper, v0.2.5 --- \today}
 
 \begin{document}
 \maketitle
@@ -58,13 +58,14 @@ uncertainty.} Most existing runtime verifiers ask predicates of
 the world (velocity, distance, temperature); we propose asking
 predicates of the agent's posture toward its own uncertainty. We
 call these \textbf{epistemic safety contracts}. We describe
-Project Ghost: five contracts for a reference autonomy supervisor
-(BAUD/ERUR/MD/RLB/FPB), each verified by a pure function over a
-content-addressed MCAP log, with underlying invariants checked
-mechanically by TLA+/TLC. Each contract ships together with its
-recorded run and verifier as an \textbf{executable safety
-citation}: a third party reproduces the verdict from
-\texttt{pip install 'project-ghost[adapters]==0.2.3'} followed by
+Project Ghost: seven contracts for a reference autonomy supervisor
+(BAUD-v1, ERUR-v1, ERUR-v2, MD-v1, RLB-v1, FPB-v1, FPB-v2), each
+verified by a pure function over a content-addressed MCAP log, with
+the five v1 invariants checked mechanically by TLA+/TLC. Each
+contract ships together with its recorded run and verifier as an
+\textbf{executable safety citation}: a third party reproduces the
+verdict from
+\texttt{pip install 'project-ghost[adapters]==0.2.5'} followed by
 \texttt{ghost verify-properties --mcap <log>}. On real PX4 v1.10
 flight telemetry, the verifier \emph{discriminates}: two
 independently buggy components, swapped into the same physical
@@ -147,7 +148,7 @@ content-addressed, pure-function safety-property verifier via
 
 The axis on which Ghost is genuinely different is the \emph{kind}
 of predicate it monitors. RTAMT, MoonLight and shielding monitor
-predicates over the external world; Ghost's five properties
+predicates over the external world; Ghost's seven properties
 (\S\ref{sec:properties}) are contracts over the agent's
 \textbf{epistemic posture}. The \emph{policy-agnostic} row of the
 matrix above is realised at the verifier level
@@ -257,7 +258,7 @@ five anchor contracts are:
         to \texttt{policy.drift\_precondition()}, lifting the
         contract to any calibrator that exposes its own drift
         criterion via the \texttt{DriftPreconditionProvider}
-        Protocol. Both verifiers ship in v0.2.4
+        Protocol. Both verifiers ship in v0.2.5
         (\texttt{verify\_erur} and \texttt{verify\_erur\_v2}); the
         latter accepts a mapping from \texttt{policy\_id} to the
         policy's predicate. Appendix~\ref{app:eval},
@@ -343,7 +344,7 @@ nominal (reference policies)              & ---     & HOLDS & HOLDS & HOLDS & HO
 \bottomrule
 \end{tabular}
 \caption{\textbf{Discrimination on real flight telemetry
-(v0.2.4).} 6/6 categories flip the expected property; 5/6 are
+(v0.2.5).} 6/6 categories flip the expected property; 5/6 are
 isolated. The non-isolated row is a true co-violation: an
 inflated-confidence calibrator breaks MD-v1 and BAUD-v1 together.}
 \label{tab:real-verdict}
@@ -360,7 +361,7 @@ estimate. On the stationary
 \texttt{sample\_logging\_tagged.ulg}, switching the GT source
 (same buggy components, same verifier) lifts FPB
 $\mathit{fire\_fraction}$ from 0 to 0.86 and discriminating
-categories from 2/6 to 6/6 --- closing the v0.2.4 vacuous-HOLDS
+categories from 2/6 to 6/6 --- closing the v0.2.5 vacuous-HOLDS
 gap. The
 \texttt{docs/paper/outputs/multi\_ulog\_discrimination/}
 \texttt{matrix.json} artefact records the
@@ -488,7 +489,7 @@ content-addressed, pure-function safety-property verifier via
 verified underlying invariants. The axis on which Ghost is
 genuinely different is the \emph{kind} of predicate it monitors:
 RTAMT, MoonLight, ROSMonitoring and shielding monitor predicates
-over the external world; Ghost's five contracts
+over the external world; Ghost's seven contracts
 (\S\ref{sec:properties}) are over the agent's epistemic posture.
 
 \section{The recovery latency bound: statement and proof}
@@ -571,8 +572,10 @@ $(M{=}4,K{=}2)$ point.
 \end{tabular}
 \caption{Parametric policy sweep: three $(M,K)$ pairs $\times$
 three trace lengths $n \in \{10, 50, 200\}$. All nine combinations
-pass all five contracts. Verifier runtime is linear in trace
-length; MCAP SHA-256 is byte-identical across replicate runs of
+pass all five v1 contracts evaluated in this experiment (BAUD-v1,
+ERUR-v1, MD-v1, RLB-v1, FPB-v1; v2 variants not part of this matrix).
+Verifier runtime is linear in trace length; MCAP SHA-256 is
+byte-identical across replicate runs of
 the same policy/$n$.}
 \label{tab:parametric}
 \end{table}
@@ -608,7 +611,7 @@ the reference --- not because they are unsafe; ERUR-v2
 (policy-parametric) captures the policy-agnostic contract that
 the comparison matrix claims. Both verdicts are produced by
 \texttt{verify\_erur} and \texttt{verify\_erur\_v2}
-respectively (both ship in v0.2.4, ADR-0040). The matrix is
+respectively (both ship in v0.2.5, ADR-0040). The matrix is
 regenerated by \texttt{docs/paper/scripts/compare\_policies.py}
 on every CI push and emitted to
 \texttt{docs/paper/outputs/policy\_comparison.json}.}
@@ -639,7 +642,7 @@ trivially shaped.
 literature failure modes: short sustained drift +recovery
 (\texttt{gps\_denial}), low-magnitude chronic drift
 (\texttt{slow\_biased\_drift}), three-phase multi-axis cascade
-(\texttt{cascading\_failure}). All five contracts hold under the
+(\texttt{cascading\_failure}). All five v1 contracts hold under the
 reference calibration policy.}
 \label{tab:realistic}
 \end{table}
@@ -655,7 +658,7 @@ the other on the same axes without re-deriving the comparison.
 \centering\small
 \begin{tabularx}{\linewidth}{X c c}
 \toprule
-\textbf{Capability} & \textbf{Ghost v0.2.3} & \textbf{RTAMT 0.3.5} \\
+\textbf{Capability} & \textbf{Ghost v0.2.5} & \textbf{RTAMT 0.3.5} \\
 \midrule
 Native property language & Python predicate on Ghost MCAP schema & Signal temporal logic (STL) \\
 Reads MCAP directly & Yes & No (caller extracts signals) \\

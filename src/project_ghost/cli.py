@@ -56,6 +56,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from project_ghost import __version__
 from project_ghost.analysis import (
     LabeledSummary,
     analyze_belief_calibration,
@@ -109,6 +110,11 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
             "Project Ghost CLI. Subcommands operate on captured runs offline; "
             "no long-running processes or network access."
         ),
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

@@ -940,7 +940,7 @@ producer. The reproducibility surface has five layers: (1)
 content-addressed
 MCAP with SHA-256 in every property report; (2) deterministic
 pipeline (ADR-0030 Replay Verification v1); (3) pure-function
-verifiers with no I/O beyond reading the MCAP; (4) approximately 50
+verifiers with no I/O beyond reading the MCAP; (4) approximately 130
 Hypothesis-based property tests; (5) TLA+ continuous self-check on
 every push.
 
@@ -964,7 +964,7 @@ This is contribution C4 in action.
 
 \subsection{Tests, CI, and mechanical verification}
 At v0.2.5, the test suite contains 1785 tests passing (ruff +
-mypy strict + deptry clean), of which approximately 50 are
+mypy strict + deptry clean), of which approximately 130 are
 dedicated property tests. The CI matrix runs on
 \texttt{ubuntu-latest} and \texttt{windows-latest} with Python
 3.11 and 3.12, plus a \texttt{tla-plus} job that runs TLC on both
