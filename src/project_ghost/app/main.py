@@ -1919,7 +1919,6 @@ def _show_run_results(summary: SmokeSummary, mcap_bytes: bytes) -> None:
         _badges(summary.decisions_by_kind, _KIND_COLOR)
         st.plotly_chart(
             _chart_decision_dist(summary.decisions_by_kind),
-            use_container_width=True,
             config={"displayModeBar": False},
         )
     with col_b:
@@ -1941,7 +1940,6 @@ def _show_run_results(summary: SmokeSummary, mcap_bytes: bytes) -> None:
             )
         st.plotly_chart(
             _chart_calibration(levels),
-            use_container_width=True,
             config={"displayModeBar": False},
         )
 
@@ -2034,7 +2032,7 @@ def _run_tab() -> None:
 
 def _show_overview(messages: dict[str, list[tuple[int, Any]]]) -> None:
     rows = [{"Channel": ch, "Messages": len(msgs)} for ch, msgs in sorted(messages.items())]
-    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame(rows), hide_index=True)
 
 
 def _show_decisions(entries: list[tuple[int, Any]]) -> None:
@@ -2058,10 +2056,10 @@ def _show_decisions(entries: list[tuple[int, Any]]) -> None:
     col_a, col_b = st.columns([1, 2])
     with col_a:
         st.plotly_chart(
-            _chart_decision_dist(counts), use_container_width=True, config={"displayModeBar": False}
+            _chart_decision_dist(counts), config={"displayModeBar": False}
         )
     with col_b:
-        st.dataframe(df, hide_index=True, use_container_width=True)
+        st.dataframe(df, hide_index=True)
 
 
 def _show_calibration(entries: list[tuple[int, Any]]) -> None:
@@ -2100,11 +2098,10 @@ def _show_calibration(entries: list[tuple[int, Any]]) -> None:
     with col_a:
         st.plotly_chart(
             _chart_calibration(list(df["Adjusted level"])),
-            use_container_width=True,
             config={"displayModeBar": False},
         )
     with col_b:
-        st.dataframe(df.drop(columns=["_num"]), hide_index=True, use_container_width=True)
+        st.dataframe(df.drop(columns=["_num"]), hide_index=True)
 
 
 def _show_divergence(entries: list[tuple[int, Any]]) -> None:
@@ -2129,10 +2126,10 @@ def _show_divergence(entries: list[tuple[int, Any]]) -> None:
     col_a, col_b = st.columns([1, 2])
     with col_a:
         st.plotly_chart(
-            _chart_divergence(rows), use_container_width=True, config={"displayModeBar": False}
+            _chart_divergence(rows), config={"displayModeBar": False}
         )
     with col_b:
-        st.dataframe(df, hide_index=True, use_container_width=True)
+        st.dataframe(df, hide_index=True)
 
 
 def _show_actuations(entries: list[tuple[int, Any]]) -> None:
@@ -2152,7 +2149,7 @@ def _show_actuations(entries: list[tuple[int, Any]]) -> None:
     if not rows:
         st.info("No ActuationDirective records.")
         return
-    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame(rows), hide_index=True)
 
 
 def _show_self_assessment(entries: list[tuple[int, Any]]) -> None:
@@ -2173,7 +2170,7 @@ def _show_self_assessment(entries: list[tuple[int, Any]]) -> None:
     if not rows:
         st.info("No BeliefSelfAssessment records.")
         return
-    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame(rows), hide_index=True)
 
 
 def _show_fusion(entries: list[tuple[int, Any]]) -> None:
@@ -2203,10 +2200,10 @@ def _show_fusion(entries: list[tuple[int, Any]]) -> None:
             unsafe_allow_html=True,
         )
         st.plotly_chart(
-            _chart_fusion_x(df), use_container_width=True, config={"displayModeBar": False}
+            _chart_fusion_x(df), config={"displayModeBar": False}
         )
     with col_b:
-        st.dataframe(df, hide_index=True, use_container_width=True)
+        st.dataframe(df, hide_index=True)
 
 
 def _show_replay_verification(file_bytes: bytes) -> None:
@@ -2250,7 +2247,7 @@ def _show_replay_verification(file_bytes: bytes) -> None:
         }
         for cv in vsummary.channels
     ]
-    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame(rows), hide_index=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
