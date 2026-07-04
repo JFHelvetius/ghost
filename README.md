@@ -61,7 +61,7 @@ the producer.
 
 ## Try it without installing anything
 
-**[→ Open the live dashboard](https://project-ghost.streamlit.app/)** —
+**[→ Open the live dashboard](https://ghost-project.streamlit.app/)** —
 runs the reference closed-loop smoke and shows the five property
 veredictos in the browser.
 

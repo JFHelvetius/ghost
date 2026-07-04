@@ -376,7 +376,7 @@ safety property set as the project's central contribution.
   forward prediction → divergence → next cycle, end-to-end in
   <1 second.
 - Streamlit dashboard with EN/ES i18n and Plotly charts
-  (https://project-ghost.streamlit.app/).
+  (https://ghost-project.streamlit.app/).
 - PyPI-ready packaging with `mcap` as a base dependency so the CLI
   works out of the box after `pip install project-ghost`.
 

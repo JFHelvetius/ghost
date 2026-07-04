@@ -27,7 +27,7 @@ replay, no simulation, no trust in the producer.
 
 ## Try it without installing anything
 
-[:material-play-circle: Open the live dashboard](https://project-ghost.streamlit.app/){ .md-button .md-button--primary }
+[:material-play-circle: Open the live dashboard](https://ghost-project.streamlit.app/){ .md-button .md-button--primary }
 [:material-package-variant: Install from PyPI](https://pypi.org/project/project-ghost/){ .md-button }
 
 The hosted dashboard runs the same reference closed-loop smoke and
