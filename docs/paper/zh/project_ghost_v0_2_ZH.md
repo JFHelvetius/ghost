@@ -1,4 +1,4 @@
-# 自主系统的认识论契约：不确定性下安全声明的可验证模式
+﻿# 自主系统的认识论契约：不确定性下安全声明的可验证模式
 
 **作者：** Javier Menéndez Mateos (`jfhelvetius@gmail.com`)
 **单位：** 独立研究者
@@ -45,7 +45,7 @@ Ghost**，一个开源平台，它 (i) 为参考自主性监督器定义了五�
 认识论契约（BAUD/ERUR/MD/RLB/FPB），(ii) 通过对内容寻址的
 MCAP 日志的纯函数验证每一个，(iii) 通过 TLA+/TLC 机械检查底
 层不变式，并 (iv) 将每个契约与录制的运行和验证器一起打包为
-单个**可执行的安全引用**：`pip install project-ghost==0.2.3`
+单个**可执行的安全引用**：`pip install project-ghost==0.2.5`
 然后 `ghost verify-properties --mcap <log>` 使第三方能够重现
 裁定 —— 或反驳它。
 
@@ -63,7 +63,7 @@ MCAP 日志的纯函数验证每一个，(iii) 通过 TLA+/TLC 机械检查底
 VIOLATED，而其他四个属性保持 HOLD —— 上的实证评估表明，验
 证器是策略无关的，在 Linux 和 Windows CI runner 之间具有确
 定性，并在真实遥测上具有信息量。完整工件可从
-`pip install project-ghost==0.2.3` 重新运行。
+`pip install project-ghost==0.2.5` 重新运行。
 
 **关键词：** 认识论安全契约、运行时验证、自主性中的不确定
 性、可执行的安全引用、内容寻址遥测、TLA+/TLC、MCAP。
@@ -189,7 +189,7 @@ flowchart LR
     end
     subgraph R["CI + 签名发布"]
         CIv["⚙ ghost verify-properties<br/>+ TLC + 跨机器"]
-        Tag["🏷 标记发布 v0.2.3<br/>OIDC 签名 PyPI wheel"]
+        Tag["🏷 标记发布 v0.2.5<br/>OIDC 签名 PyPI wheel"]
     end
     subgraph A["可引用工件"]
         MCAP["📦 MCAP 日志<br/>SHA-256，byte-exact"]
@@ -459,7 +459,7 @@ schema。感兴趣的通道包括 `/fusion/results`、`/uncertainty/*`、
 ### 4.3 CLI 表面
 
 ```bash
-$ pip install project-ghost==0.2.3
+$ pip install project-ghost==0.2.5
 $ python -m project_ghost.examples.closed_loop_smoke
 $ ghost verify-properties --mcap closed_loop_smoke.mcap
 BAUD-v1: HOLDS  (M=4, K=2, 6/10 cycles evaluated)
@@ -672,10 +672,10 @@ case 的 TLAPS 证明大纲在
 
 希望引用 Project Ghost 安全声明的读者可以写：
 
-> Project Ghost v0.2.3 在捆绑的参考 smoke MCAP
+> Project Ghost v0.2.5 在捆绑的参考 smoke MCAP
 > `SHA-256:<hash>` 上满足 BAUD-v1，由
 > `ghost verify-properties --mcap closed_loop_smoke.mcap` 从
-> `pip install project-ghost==0.2.3` 验证，并另外在抽象模型
+> `pip install project-ghost==0.2.5` 验证，并另外在抽象模型
 > `BaudErur.tla` 的界限 `M=2, K=1, W=3` 处满足 `INV_BAUD`、
 > `INV_ERUR`、`INV_PARTITION`，以及在 `Rlb.tla` 的 `W=4` 处满
 > 足 `INV_RLB`（恢复延迟界限）。
@@ -756,7 +756,7 @@ cascading_failure）。所有 5 个属性在 3 个上都成立。
 告两个工具在同一 MCAP 上发布的**能力**矩阵（RTAMT 0.3.5；Ghost
 v0.2.3）：
 
-| 能力 | Ghost v0.2.3 | RTAMT 0.3.5 |
+| 能力 | Ghost v0.2.5 | RTAMT 0.3.5 |
 |---|:---:|:---:|
 | 原生属性语言 | 针对 MCAP schema 的 Python 谓词 | STL |
 | 直接读取 MCAP | 是 | 否（用户提取信号） |
@@ -857,7 +857,7 @@ MD-v1 和 BAUD-v1，因为对置信度撒谎的校准器同时破坏 Mahalanobis
 伪影：校准器可能通过多个不变量同时损坏下游行为，验证器报告
 两者。
 
-**可重现性。** 从 `pip install 'project-ghost[adapters]==0.2.4'`
+**可重现性。** 从 `pip install 'project-ghost[adapters]==0.2.5'`
 端到端可运行：
 
 ```
@@ -1151,7 +1151,7 @@ doxastic-logic 和 self-assessment 社区使用相邻词汇的方式有重
 叠）。
 
 我们*确实*声明的内容：该 framing 在操作上是可辩护的 —— 工件
-可从 `pip install project-ghost==0.2.3` 重新运行；真实 PX4
+可从 `pip install project-ghost==0.2.5` 重新运行；真实 PX4
 飞行遥测上的判定可从单个 shell 命令重现；被引用的工件*就是*
 证伪机制。
 

@@ -1,4 +1,4 @@
-# Epistemic Contracts for Autonomous Systems: A Verifiable Pattern for Safety Claims Under Uncertainty
+﻿# Epistemic Contracts for Autonomous Systems: A Verifiable Pattern for Safety Claims Under Uncertainty
 
 **Author:** Javier Menéndez Mateos (`jfhelvetius@gmail.com`)
 **Affiliation:** Independent
@@ -50,7 +50,7 @@ contracts for a reference autonomy supervisor (BAUD/ERUR/MD/RLB/FPB),
 MCAP log, (iii) mechanically checks the underlying invariants via
 TLA+/TLC, and (iv) packages each contract together with a recorded
 run and the verifier into a single **executable safety citation**:
-`pip install project-ghost==0.2.3` followed by
+`pip install project-ghost==0.2.5` followed by
 `ghost verify-properties --mcap <log>` lets a third party reproduce
 the verdict — or contradict it.
 
@@ -72,7 +72,7 @@ the same physical flight, each flip BAUD-v1 from HOLDS to VIOLATED
 while the four other properties remain HOLD — establishes that the
 verifier is policy-agnostic, deterministic across Linux and Windows
 CI runners, and informative on real-world telemetry. The full
-artifact is re-runnable from `pip install project-ghost==0.2.3`.
+artifact is re-runnable from `pip install project-ghost==0.2.5`.
 
 **Keywords:** epistemic safety contracts, runtime verification,
 uncertainty in autonomy, executable safety citations,
@@ -195,13 +195,13 @@ flowchart LR
     subgraph R["CI + signed release"]
         direction TB
         CIv["⚙ ghost verify-properties<br/>+ TLC + cross-machine diff<br/>(every push)"]:::ci
-        Tag["🏷 Tagged release v0.2.3<br/>OIDC-signed PyPI wheel<br/>(no token escrowed)"]:::ci
+        Tag["🏷 Tagged release v0.2.5<br/>OIDC-signed PyPI wheel<br/>(no token escrowed)"]:::ci
     end
 
     subgraph A["Citable artifact"]
         direction TB
         MCAP["📦 MCAP log<br/>SHA-256 content-addressed<br/>byte-exact reproducible"]:::artifact
-        Cite["🔗 The citation<br/>'pip install project-ghost==0.2.3'<br/>+ MCAP SHA-256 + ADR ID"]:::artifact
+        Cite["🔗 The citation<br/>'pip install project-ghost==0.2.5'<br/>+ MCAP SHA-256 + ADR ID"]:::artifact
     end
 
     subgraph V["Third party (anyone)"]
@@ -697,7 +697,7 @@ CLI emits with `--json`.
 ### 4.3 CLI surface
 
 ```bash
-$ pip install project-ghost==0.2.3
+$ pip install project-ghost==0.2.5
 $ python -m project_ghost.examples.closed_loop_smoke
 $ ghost verify-properties --mcap closed_loop_smoke.mcap
 BAUD-v1: HOLDS  (M=4, K=2, 6/10 cycles evaluated)
@@ -1056,10 +1056,10 @@ The reproducibility surface that makes this possible has five layers:
 A reader who wishes to cite a Project Ghost safety claim can therefore
 write, for example:
 
-> Project Ghost v0.2.3 satisfies BAUD-v1 on the bundled reference
+> Project Ghost v0.2.5 satisfies BAUD-v1 on the bundled reference
 > smoke MCAP `SHA-256:<hash>`, as verified by
 > `ghost verify-properties --mcap closed_loop_smoke.mcap` from
-> `pip install project-ghost==0.2.3`, and additionally satisfies
+> `pip install project-ghost==0.2.5`, and additionally satisfies
 > `INV_BAUD`, `INV_ERUR`, and `INV_PARTITION` over the abstract
 > model `BaudErur.tla` at bounds `M=2, K=1, W=3`.
 
@@ -1305,14 +1305,14 @@ is preserved for reproducibility; its output lives in
 
 Instead, the table below states the **capabilities** the two tools
 offer over the same MCAP, evaluated by their published feature sets
-(RTAMT 0.3.5 from PyPI; Ghost v0.2.3). The matrix reflects our
+(RTAMT 0.3.5 from PyPI; Ghost v0.2.5). The matrix reflects our
 reading of each project's documentation and source as of
 mid-2026; a more recent RTAMT release may close some of the rows,
 and we welcome correction from the RTAMT maintainers. This framing
 is what we believe a reader can defend without entering an arms
 race about which STL encoding "really" represents BAUD-v1.
 
-| Capability | Ghost v0.2.3 | RTAMT 0.3.5 |
+| Capability | Ghost v0.2.5 | RTAMT 0.3.5 |
 |---|:---:|:---:|
 | Native property language | Hand-coded Python predicate against the Ghost MCAP schema | Signal temporal logic (STL) |
 | Reads MCAP directly | Yes (`MCAPReplayReader`) | No (caller must extract signals to time series) |
@@ -1465,7 +1465,7 @@ multiple invariants at once, and the verifier reports both. This
 maintainer reading the report.
 
 **Reproducibility.** The discrimination experiment is end-to-end
-runnable from `pip install 'project-ghost[adapters]==0.2.4'` via:
+runnable from `pip install 'project-ghost[adapters]==0.2.5'` via:
 
 ```
 python docs/paper/scripts/verify_real_ulog_discriminate.py \
@@ -1891,7 +1891,7 @@ self-assessment communities have used adjacent vocabulary).
 
 What we *do* claim: that the framing is operationally
 defensible — the artifact is re-runnable from
-`pip install project-ghost==0.2.3`; the verdict on real PX4 flight
+`pip install project-ghost==0.2.5`; the verdict on real PX4 flight
 telemetry is reproducible from a single shell command; the cited
 artefact *is* the falsification mechanism.
 
