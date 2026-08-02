@@ -5,8 +5,9 @@
 **Versión:** v0.2.5 (2026-06-17)
 
 > **Nota sobre esta traducción.** La versión canónica y de
-> referencia del paper es la versión EN (`docs/paper/arxiv/main.tex`
-> en el repo; preprint arXiv). Esta traducción ES se mantiene como
+> referencia del paper es la versión EN (`docs/paper/fmsd/main.tex`
+> en el repo; enviada a FMSD — Formal Methods in System Design,
+> Springer — el 2026-08-02). Esta traducción ES se mantiene como
 > recurso de divulgación; las secciones clave (resumen,
 > contribuciones, cobertura mecánica, evaluación paramétrica,
 > escenarios shape-realistic) están sincronizadas con v0.2.5. Para
@@ -21,7 +22,7 @@
 > **Nota interna:** Esta es una traducción al español del paper técnico
 > [`project_ghost_v0_2.md`](../project_ghost_v0_2.md) para uso del
 > autor y de colaboradores hispanohablantes. La versión canónica
-> para arXiv y FMAS 2026 es la inglesa; cualquier divergencia entre
+> (enviada a FMSD el 2026-08-02) es la inglesa; cualquier divergencia entre
 > las dos debe resolverse a favor de la inglesa. Se mantienen en
 > inglés los nombres técnicos (BAUD-v1, ERUR-v1, etc.), las
 > referencias a archivos del repositorio, las tablas, los snippets

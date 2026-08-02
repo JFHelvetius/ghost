@@ -218,9 +218,9 @@ MCAP without trusting the producer.
         "paper_intro": (
             "The full technical paper — abstract, contributions, proof of "
             "the recovery latency bound, evaluation, and references — available in three "
-            "languages. The English version is canonical for arXiv and "
-            "TOSEM submission; the Spanish and Chinese versions are "
-            "internal translations for collaborators."
+            "languages. The English version has been submitted to FMSD "
+            "(Formal Methods in System Design, Springer, 2026-08-02); "
+            "the Spanish and Chinese versions are internal translations for collaborators."
         ),
         "paper_view_github": "View on GitHub",
         "paper_download_md": "Download Markdown",
@@ -556,9 +556,9 @@ propios runs contra el MCAP capturado sin confiar en el productor.
         "paper_intro": (
             "El paper técnico completo — abstract, contribuciones, prueba "
             "de la cota de latencia de recuperación, evaluación y referencias — disponible en tres "
-            "idiomas. La versión inglesa es la canónica para arXiv y para "
-            "la submission a TOSEM; las versiones española y china son "
-            "traducciones internas para colaboradores."
+            "idiomas. La versión inglesa ha sido enviada a FMSD "
+            "(Formal Methods in System Design, Springer, 2026-08-02); "
+            "las versiones española y china son traducciones internas para colaboradores."
         ),
         "paper_view_github": "Ver en GitHub",
         "paper_download_md": "Descargar Markdown",
@@ -872,9 +872,9 @@ Project Ghost 在不确定性下的机器人自主性的现有文献上贡献了
         "paper_lang_label": "论文语言",
         "paper_intro": (
             "完整的技术论文 —— 摘要、贡献、恢复延迟界限的证明、评估和"
-            "参考文献 —— 有三种语言版本。英文版是 arXiv 的规范版本，"
-            "也是 TOSEM 提交的版本；西班牙文和中文版本是供合作者使用的"
-            "内部翻译。"
+            "参考文献 —— 有三种语言版本。英文版已于 2026-08-02 投稿至"
+            " FMSD（Formal Methods in System Design，Springer）；"
+            "西班牙文和中文版本是供合作者使用的内部翻译。"
         ),
         "paper_view_github": "在 GitHub 上查看",
         "paper_download_md": "下载 Markdown",

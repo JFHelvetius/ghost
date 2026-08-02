@@ -6,8 +6,9 @@
 
 > **About this Markdown rendering.** The canonical reference version
 > of this paper is the PDF compiled from
-> `docs/paper/arxiv/main.tex` (also distributed as the arXiv
-> preprint). This Markdown file is a Pages-friendly rendering kept
+> `docs/paper/fmsd/main.tex` (submitted to FMSD — Formal Methods in
+> System Design, Springer — on 2026-08-02, ID 4ba657b1). This
+> Markdown file is a Pages-friendly rendering kept
 > for browsability; selected sections (front matter, contract count,
 > mechanical-coverage table, parametric eval, realistic-shape
 > scenarios) are synchronised with the v0.2.5 PDF, but historical

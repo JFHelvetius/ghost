@@ -5,7 +5,8 @@
 **版本：** v0.2.5（2026-06-17）
 
 > **关于本翻译。** 本论文的规范参考版本为 EN 版
-> （仓库中的 `docs/paper/arxiv/main.tex`；arXiv 预印本）。
+> （仓库中的 `docs/paper/fmsd/main.tex`；已于 2026-08-02 投稿至
+> FMSD——Formal Methods in System Design，Springer）。
 > 本中文翻译作为推广资源维护；关键章节（摘要、贡献、机械覆
 > 盖、参数化评估、形状真实场景）已与 v0.2.5 同步。关于七个
 > 认识论契约的精确细节、三个 PX4 SITL ULog 上的 18/18 判别
@@ -17,8 +18,9 @@
 
 > **内部说明：** 本文档是英文论文
 > [`project_ghost_v0_2.md`](../project_ghost_v0_2.md) 的中文翻译，
-> 供作者和中文母语合作者使用。提交给 arXiv 和 FMAS 2026 的标准版本
-> 为英文版本；如两版本出现差异，应以英文版本为准。技术名称
+> 供作者和中文母语合作者使用。已投稿至 FMSD（Formal Methods in
+> System Design，Springer，2026-08-02）的标准版本为英文版本；
+> 如两版本出现差异，应以英文版本为准。技术名称
 > （BAUD-v1、ERUR-v1 等）、代码仓库文件引用、表格、代码片段以及
 > 形式化属性名称均保留英文。
 
